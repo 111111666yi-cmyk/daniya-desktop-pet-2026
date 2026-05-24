@@ -1,0 +1,12 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+dist/
+build/
+*.spec
+assets/private/
+data/*.jsonl
+data/*.json
+data/*.txt
+
