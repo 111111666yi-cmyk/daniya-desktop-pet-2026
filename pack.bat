@@ -101,7 +101,9 @@ copy /Y "README.md" "release\%PACKAGE_NAME%\README.md" >nul
 copy /Y "LICENSE" "release\%PACKAGE_NAME%\LICENSE" >nul
 copy /Y "CHANGELOG.md" "release\%PACKAGE_NAME%\CHANGELOG.md" >nul
 copy /Y ".env.example" "release\%PACKAGE_NAME%\.env.example" >nul
+copy /Y "create_shortcut.bat" "release\%PACKAGE_NAME%\create_shortcut.bat" >nul
 if exist "config\app_config.example.json" copy /Y "config\app_config.example.json" "release\%PACKAGE_NAME%\config\app_config.json" >nul
+
 if exist "config\api_config.example.json" copy /Y "config\api_config.example.json" "release\%PACKAGE_NAME%\config\api_config.json" >nul
 
 echo [Daniya] Removing forbidden package content if present...

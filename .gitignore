@@ -39,3 +39,11 @@ __pycache__/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Claude / AI assistant session files
+.agents/
+.claude/
+skills-lock.json
+
+# Scratch / temporary work
+scratch/
