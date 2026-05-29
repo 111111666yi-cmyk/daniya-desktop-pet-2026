@@ -1,18 +1,2 @@
-from .base import ChatProvider, ProviderTestResult
-from .errors import (
-    ProviderAuthError,
-    ProviderConfigError,
-    ProviderConnectionError,
-    ProviderError,
-    ProviderFormatError,
-)
-
-__all__ = [
-    "ChatProvider",
-    "ProviderTestResult",
-    "ProviderError",
-    "ProviderConnectionError",
-    "ProviderAuthError",
-    "ProviderFormatError",
-    "ProviderConfigError",
-]
+# LLM provider layer — boundary modules handle all external I/O.
+# ProviderManager routes to the correct boundary based on active profile.

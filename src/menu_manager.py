@@ -46,6 +46,13 @@ class MenuManager:
         call_here_action = basic.addAction("召唤到鼠标位置")
         call_here_action.triggered.connect(self._call_pet_to_cursor)
 
+        if self.window.is_minimized_to_tray():
+            restore_action = basic.addAction("恢复显示")
+            restore_action.triggered.connect(self.window.restore_from_tray)
+        else:
+            minimize_action = basic.addAction("最小化到托盘")
+            minimize_action.triggered.connect(self.window.minimize_to_tray)
+
         size_menu = basic.addMenu("大小")
         labels = {
             80: "迷你 80px",

@@ -30,7 +30,9 @@ class ChatClient:
         """从配置文件重新加载参数和 Provider"""
         self.app_config = self.config_manager.load_app_config()
         self.system_prompt = self.config_manager.load_system_prompt()
-        api_config = self.app_config.get("api", {})
+        from .settings_manager import SettingsManager
+        settings_mgr = SettingsManager(self.config_manager)
+        api_config = settings_mgr.load_api_config()
         
         # 兼容旧配置：合并根节点的聊天配置到 api_config 内
         chat_config = self.app_config.get("chat", {})
@@ -52,10 +54,11 @@ class ChatClient:
         注意：在 v0.415 的新架构中，user_text 实际上是 PromptBuilder 生成的完整 prompt 字符串。
         """
         if self.local_mode:
-            print("[Daniya] chat source=local reason=local_mode_enabled")
+            print("[Daniya] Chat response: provider=none, model=none, source=local, fallback_used=True, error_summary=\"local_mode_enabled\"")
             return self.local_reply(missing_key=False), "local"
             
         if not self.provider_manager:
+            print("[Daniya] Chat response: provider=none, model=none, source=local, fallback_used=True, error_summary=\"provider_manager_missing\"")
             return self.local_reply(missing_key=True), "local"
             
         # 兼容旧代码：由于 DialogueEngine 的适配器只传了单个 prompt 字符串，

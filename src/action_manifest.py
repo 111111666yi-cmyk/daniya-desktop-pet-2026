@@ -15,7 +15,10 @@ DEFAULT_MANIFEST: dict[str, Any] = {
         "drag": {"frames": ["normal2.png"], "loop": True, "duration_ms": 250, "fallback": ["normal2.png", "normal1.png"]},
         "sleep": {"frames": ["normal1.png"], "loop": True, "duration_ms": 900, "fallback": ["normal1.png"]},
         "happy": {"frames": ["normal2.png"], "loop": False, "duration_ms": 350, "fallback": ["normal2.png", "normal1.png"]},
-        "remind": {"frames": ["normal2.png"], "loop": False, "duration_ms": 350, "fallback": ["normal2.png", "normal1.png"]}
+        "remind": {"frames": ["normal2.png"], "loop": False, "duration_ms": 350, "fallback": ["normal2.png", "normal1.png"]},
+        "walking": {"frames": ["normal1.png", "normal2.png"], "loop": True, "duration_ms": 150, "fallback": ["normal1.png", "normal2.png"]},
+        "edge_peek_left": {"frames": ["normal1.png"], "loop": True, "duration_ms": 500, "fallback": ["normal1.png"]},
+        "edge_peek_right": {"frames": ["normal1.png"], "loop": True, "duration_ms": 500, "fallback": ["normal1.png"]}
     }
 }
 
@@ -48,10 +51,16 @@ class ActionManifest:
         self.validate_manifest()
 
     def validate_manifest(self) -> None:
-        if "actions" not in self.data:
-            self.data["actions"] = DEFAULT_MANIFEST["actions"]
+        if "actions" not in self.data or not isinstance(self.data["actions"], dict):
+            self.data["actions"] = {}
+            
+        for action_name, default_config in DEFAULT_MANIFEST["actions"].items():
+            if action_name not in self.data["actions"]:
+                self.data["actions"][action_name] = default_config.copy()
             
         for action_name, action_config in self.data["actions"].items():
+            if not isinstance(action_config, dict):
+                continue
             if "frames" not in action_config:
                 action_config["frames"] = []
             if "fallback" not in action_config:

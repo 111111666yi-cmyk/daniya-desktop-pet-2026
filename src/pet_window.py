@@ -3,11 +3,11 @@ from __future__ import annotations
 import ctypes
 import math
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from PySide6.QtCore import QPoint, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import QCursor, QGuiApplication, QIcon, QMouseEvent, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QMenu, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QMenu, QSizePolicy, QSystemTrayIcon, QVBoxLayout, QWidget
 
 from .animation_manager import AnimationManager
 from .asset_manager import AssetManager
@@ -31,6 +31,7 @@ class ClickableLabel(QLabel):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            self.grabMouse()
             self.drag_started.emit(event.globalPosition().toPoint())
         elif event.button() == Qt.MouseButton.RightButton:
             self.context_requested.emit(event.globalPosition().toPoint())
@@ -43,6 +44,10 @@ class ClickableLabel(QLabel):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            try:
+                self.releaseMouse()
+            except Exception:
+                pass
             self.drag_finished.emit(event.globalPosition().toPoint())
         super().mouseReleaseEvent(event)
 
@@ -64,6 +69,7 @@ class PetWindow(QWidget):
     message_submitted = Signal(str)
     pet_clicked = Signal()
     position_changed = Signal(int, int)
+    drag_completed = Signal(int, int)
     activity_detected = Signal()
 
     def __init__(self, asset_manager: AssetManager, app_config: dict[str, Any]) -> None:
@@ -80,7 +86,10 @@ class PetWindow(QWidget):
         self.dock_side: str | None = None
         self.always_on_top = bool(app_config.get("window", {}).get("always_on_top", True))
         self._last_render_debug: tuple[Any, ...] | None = None
+        self._tray_icon: QSystemTrayIcon | None = None
+        self._minimized_to_tray = False
 
+        self._setup_tray()
         self._configure_window()
         self._build_ui()
         self.animation_manager = AnimationManager(self, self.asset_manager)
@@ -193,7 +202,44 @@ class PetWindow(QWidget):
     def closeEvent(self, event) -> None:  # type: ignore[no-untyped-def]
         self._stop_pet_feature_timers()
         self._cancel_walk_move()
+        if self._tray_icon is not None:
+            self._tray_icon.hide()
         super().closeEvent(event)
+
+    def _setup_tray(self) -> None:
+        icon_path = self.asset_manager.icon_path()
+        if not icon_path.exists():
+            return
+        self._tray_icon = QSystemTrayIcon(QIcon(str(icon_path)), self)
+        self._tray_icon.setToolTip("Daniya Summer Desktop Pet")
+        self._tray_icon.activated.connect(self._on_tray_activated)
+        self._tray_icon.show()
+
+    def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self.restore_from_tray()
+
+    def minimize_to_tray(self) -> None:
+        self._minimized_to_tray = True
+        self.hide()
+        self._refresh_context_menu()
+
+    def restore_from_tray(self) -> None:
+        self._minimized_to_tray = False
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self._refresh_context_menu()
+
+    def is_minimized_to_tray(self) -> bool:
+        return self._minimized_to_tray
+
+    def set_menu_refresh_callback(self, callback: Callable[[], None]) -> None:
+        self._menu_refresh_callback = callback
+
+    def _refresh_context_menu(self) -> None:
+        if hasattr(self, "_menu_refresh_callback") and self._menu_refresh_callback:
+            self._menu_refresh_callback()
 
     def show_at_config_position(self) -> None:
         window_config = self.app_config.get("window", {})
@@ -323,6 +369,10 @@ class PetWindow(QWidget):
         self.move(self._clamped_position(self.drag_start_window + delta))
 
     def _finish_drag(self, global_pos: QPoint) -> None:
+        try:
+            self.image_label.releaseMouse()
+        except Exception:
+            pass
         self.image_label.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
         self.animation_manager.set_dragging(False)
         if self.drag_distance < 8:
@@ -331,6 +381,7 @@ class PetWindow(QWidget):
             self._dock_if_near_edge()
             pos = self.pos()
             self.position_changed.emit(pos.x(), pos.y())
+            self.drag_completed.emit(pos.x(), pos.y())
         self.drag_start_global = None
         self.drag_start_window = None
         self.drag_distance = 0
@@ -373,6 +424,15 @@ class PetWindow(QWidget):
             self.animation_manager.set_edge_peek(self.dock_side)
 
     def _tick_global_click(self) -> None:
+        if self.drag_start_global is not None:
+            try:
+                key_state = ctypes.windll.user32.GetAsyncKeyState(0x01)
+                left_down = bool(key_state & 0x8000)
+                if not left_down:
+                    self._finish_drag(QCursor.pos())
+            except Exception:
+                pass
+
         pet_config = self.app_config.get("pet", {})
         if not bool(pet_config.get("click_to_call_enabled", False)):
             self._last_left_button_down = False

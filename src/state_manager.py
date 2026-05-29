@@ -11,6 +11,9 @@ class StateManager:
         "sleeping": "sleep",
         "happy": "happy",
         "reminding": "remind",
+        "walking": "walking",
+        "edge_peek_left": "edge_peek_left",
+        "edge_peek_right": "edge_peek_right",
     }
 
     V0415_FALLBACKS = {
@@ -56,15 +59,15 @@ class StateManager:
         if next_state == "dragging":
             return True
         
-        # 正在拖拽时，其他一切状态都不能打断
+        # 正在拖拽时，其他一切状态都不能打断，除了回到 idle
         if current_state == "dragging":
-            return False
+            return next_state == "idle"
 
         # 如果正在说话，不允许普通动作打断，除非是更高级别交互（比如 clicked, happy）
         if current_state == "talking":
-            if next_state in ["idle", "sleeping"]:
+            if next_state in ["sleeping", "walking", "edge_peek_left", "edge_peek_right"]:
                 return False
             return True
 
-        # 如果处于 idle, sleeping，可以被任何动作打断
+        # 如果处于 idle, sleeping 等，可以被任何动作打断
         return True

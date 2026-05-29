@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -74,24 +75,49 @@ class SettingsWindow(QDialog):
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
 
-        self._build_api_tab()
-        self._build_multimodal_tab()
-        self._build_local_model_tab()
+        self._build_model_tab()
         self._build_pet_tab()
-        self._build_actions_tab()
-        self._build_character_tab()
-        self._build_relationship_tab()
-        self._build_events_tab()
-        self._build_data_tab()
-        self._build_diagnostics_tab()
+        self._build_character_resources_tab()
+        self._build_relationship_events_tab()
+        self._build_system_tab()
 
         close = QPushButton("关闭")
         close.clicked.connect(self.accept)
         layout.addWidget(close, alignment=Qt.AlignmentFlag.AlignRight)
 
-    def _build_api_tab(self) -> None:
+    def _build_model_tab(self) -> None:
         tab = QWidget()
-        layout = QVBoxLayout(tab)
+        main_layout = QVBoxLayout(tab)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+
+        # 云端 API 配置
+        api_group = QGroupBox("云端 API 配置 (Cloud Service)")
+        api_group_layout = QVBoxLayout(api_group)
+        self._build_api_section(api_group_layout)
+        scroll_layout.addWidget(api_group)
+
+        # 本地部署与引擎配置
+        local_group = QGroupBox("本地部署与引擎配置 (Local Service)")
+        local_group_layout = QVBoxLayout(local_group)
+        self._build_local_model_section(local_group_layout)
+        scroll_layout.addWidget(local_group)
+
+        # 多模态配置（预留，折叠）
+        multi_group = QGroupBox("多模态配置 (v0.46+ 预留)")
+        multi_group.setStyleSheet("QGroupBox { color: gray; }")
+        multi_layout = QVBoxLayout(multi_group)
+        self._build_multimodal_section(multi_layout)
+        scroll_layout.addWidget(multi_group)
+
+        scroll.setWidget(scroll_content)
+        main_layout.addWidget(scroll)
+        self.tabs.addTab(tab, "模型与引擎")
+
+    def _build_api_section(self, parent_layout: Any) -> None:
         form = QFormLayout()
         self.api = self.settings_manager.load_api_config()
         active = self.api.get("active_provider", "deepseek")
@@ -118,7 +144,7 @@ class SettingsWindow(QDialog):
         form.addRow("Model", self.model_input)
         form.addRow("API Key", self.api_key_input)
         form.addRow("本地模式", self.local_mode_input)
-        layout.addLayout(form)
+        parent_layout.addLayout(form)
 
         buttons = QHBoxLayout()
         save = QPushButton("保存 API 设置")
@@ -128,49 +154,41 @@ class SettingsWindow(QDialog):
         buttons.addWidget(save)
         buttons.addWidget(test)
         buttons.addStretch(1)
-        layout.addLayout(buttons)
-        layout.addWidget(self.api_result)
-        layout.addStretch(1)
-        self.tabs.addTab(tab, "API / 模型")
+        parent_layout.addLayout(buttons)
+        parent_layout.addWidget(self.api_result)
+        parent_layout.addStretch(1)
 
-    def _build_multimodal_tab(self) -> None:
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
-        
+    def _build_multimodal_section(self, parent_layout: Any) -> None:
         from .provider_capability_schema import ProviderCapabilitySchema
         schema = ProviderCapabilitySchema(root=self.settings_manager.root)
-        
+
         form = QFormLayout()
-        
+
         self.tts_combo = QComboBox()
         self.tts_combo.addItems(schema.get_tts_providers())
         self.tts_combo.setCurrentText("none")
-        
+
         self.t2i_combo = QComboBox()
         self.t2i_combo.addItems(schema.get_image_providers())
         self.t2i_combo.setCurrentText("none")
-        
+
         self.video_combo = QComboBox()
         self.video_combo.addItems(schema.get_video_providers())
         self.video_combo.setCurrentText("none")
-        
-        form.addRow("TTS 语音引擎 (v0.46预留)", self.tts_combo)
-        form.addRow("文生图/图生图引擎 (预留)", self.t2i_combo)
-        form.addRow("视频引擎 (预留)", self.video_combo)
-        
-        layout.addLayout(form)
-        
-        hint = QLabel("提示：当前版本这些选项仅作为架构占位，修改不产生实际效果。真正的多模态能力将在 v0.46 后续版本实现。")
-        hint.setWordWrap(True)
-        hint.setStyleSheet("color: gray; margin-top: 20px;")
-        layout.addWidget(hint)
-        
-        layout.addStretch(1)
-        self.tabs.addTab(tab, "多模态配置")
 
-    def _build_local_model_tab(self) -> None:
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
+        form.addRow("TTS 语音引擎", self.tts_combo)
+        form.addRow("文生图/图生图引擎", self.t2i_combo)
+        form.addRow("视频引擎", self.video_combo)
+
+        parent_layout.addLayout(form)
+
+        hint = QLabel("当前版本这些选项仅作为架构占位，修改不产生实际效果。")
+        hint.setWordWrap(True)
+        hint.setStyleSheet("color: gray; margin-top: 10px;")
+        parent_layout.addWidget(hint)
+        parent_layout.addStretch(1)
+
+    def _build_local_model_section(self, parent_layout: Any) -> None:
         
         from .provider_capability_schema import ProviderCapabilitySchema
         from .local_model_manager import LocalModelManager
@@ -190,35 +208,34 @@ class SettingsWindow(QDialog):
         form.addRow("服务类型", self.local_service_combo)
         form.addRow("Base URL", self.local_base_url)
         form.addRow("模型", self.local_model_list)
-        layout.addLayout(form)
-        
+        parent_layout.addLayout(form)
+
         btn_layout = QHBoxLayout()
         self.fetch_models_btn = QPushButton("拉取模型列表")
         self.test_local_btn = QPushButton("测试服务连接")
         btn_layout.addWidget(self.fetch_models_btn)
         btn_layout.addWidget(self.test_local_btn)
         btn_layout.addStretch(1)
-        layout.addLayout(btn_layout)
-        
+        parent_layout.addLayout(btn_layout)
+
         self.local_status = QLabel("状态：未测试")
         self.local_status.setWordWrap(True)
-        layout.addWidget(self.local_status)
-        
+        parent_layout.addWidget(self.local_status)
+
         self.fetch_models_btn.clicked.connect(self._fetch_local_models)
         self.test_local_btn.clicked.connect(self._test_local_service)
-        
+
         # 许可证占位区
         license_label = QLabel("⚠️ 本地模型下载器预留入口 (v0.47)\n您必须同意并遵守对应模型 (如 Llama 3 / Gemma / Qwen) 的开源许可证和商业使用条款，才能进行下载。目前此功能仅作为 UI 占位，无法下载模型。")
         license_label.setWordWrap(True)
         license_label.setStyleSheet("color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; margin-top: 15px;")
-        layout.addWidget(license_label)
-        
+        parent_layout.addWidget(license_label)
+
         downloader_btn = QPushButton("打开内置下载器 (不可用)")
         downloader_btn.setEnabled(False)
-        layout.addWidget(downloader_btn, alignment=Qt.AlignmentFlag.AlignLeft)
-        
-        layout.addStretch(1)
-        self.tabs.addTab(tab, "本地模型")
+        parent_layout.addWidget(downloader_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        parent_layout.addStretch(1)
 
     def _fetch_local_models(self) -> None:
         from .local_model_manager import LocalModelManager
@@ -299,117 +316,160 @@ class SettingsWindow(QDialog):
         self.tabs.addTab(tab, "桌宠")
 
     def _build_actions_tab(self) -> None:
+        """已合并到 _build_character_resources_tab"""
+        pass
+
+    def _build_character_tab(self) -> None:
+        """已合并到 _build_character_resources_tab"""
+        pass
+
+    def _build_character_resources_tab(self) -> None:
         tab = QWidget()
         layout = QVBoxLayout(tab)
+
+        # 上半部分：动作资源
+        actions_group = QGroupBox("动作资源")
+        actions_layout = QVBoxLayout(actions_group)
         self.action_status = QTextEdit()
         self.action_status.setReadOnly(True)
         self.action_combo = QComboBox()
         self.action_combo.addItems(["idle", "talk", "clicked", "drag", "sleep", "happy", "remind", "soft_idle", "close_idle", "bubble", "look_away"])
-        buttons = QHBoxLayout()
+        btn_row = QHBoxLayout()
         reload_btn = QPushButton("重载动作资源")
         test_btn = QPushButton("测试动作")
         reload_btn.clicked.connect(self._reload_actions)
         test_btn.clicked.connect(self._test_action)
-        buttons.addWidget(self.action_combo)
-        buttons.addWidget(test_btn)
-        buttons.addWidget(reload_btn)
-        buttons.addStretch(1)
-        layout.addLayout(buttons)
-        layout.addWidget(self.action_status)
-        self.tabs.addTab(tab, "动作资源")
-        self._refresh_action_status()
+        btn_row.addWidget(self.action_combo)
+        btn_row.addWidget(test_btn)
+        btn_row.addWidget(reload_btn)
+        btn_row.addStretch(1)
+        actions_layout.addLayout(btn_row)
+        actions_layout.addWidget(self.action_status)
+        layout.addWidget(actions_group)
 
-    def _build_character_tab(self) -> None:
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
+        # 下半部分：角色包编辑器
+        pack_group = QGroupBox("角色包编辑器")
+        pack_layout = QVBoxLayout(pack_group)
         self.character_status = QLabel("")
         self.character_status.setWordWrap(True)
         self.pack_file_combo = QComboBox()
         self.pack_file_combo.addItems(["character.yaml", "speech.yaml", "relationship.yaml", "events.yaml", "lore.md", "lore_index.yaml", "actions.yaml"])
         self.pack_file_combo.currentTextChanged.connect(self._load_pack_file)
         self.pack_editor_text = QTextEdit()
-        buttons = QHBoxLayout()
+        pack_btn_row = QHBoxLayout()
         save = QPushButton("备份并保存 YAML")
         validate = QPushButton("重新校验")
         open_file = QPushButton("打开文件")
         save.clicked.connect(self._save_pack_file)
         validate.clicked.connect(self._refresh_character_status)
         open_file.clicked.connect(self._open_pack_file)
-        buttons.addWidget(self.pack_file_combo)
-        buttons.addWidget(save)
-        buttons.addWidget(validate)
-        buttons.addWidget(open_file)
-        buttons.addStretch(1)
-        layout.addWidget(self.character_status)
-        layout.addLayout(buttons)
-        layout.addWidget(self.pack_editor_text)
-        self.tabs.addTab(tab, "角色包")
+        pack_btn_row.addWidget(self.pack_file_combo)
+        pack_btn_row.addWidget(save)
+        pack_btn_row.addWidget(validate)
+        pack_btn_row.addWidget(open_file)
+        pack_btn_row.addStretch(1)
+        pack_layout.addWidget(self.character_status)
+        pack_layout.addLayout(pack_btn_row)
+        pack_layout.addWidget(self.pack_editor_text)
+        layout.addWidget(pack_group)
+
+        self.tabs.addTab(tab, "角色与资源")
+        self._refresh_action_status()
         self._refresh_character_status()
         self._load_pack_file(self.pack_file_combo.currentText())
 
     def _build_relationship_tab(self) -> None:
+        """已合并到 _build_relationship_events_tab"""
+        pass
+
+    def _build_events_tab(self) -> None:
+        """已合并到 _build_relationship_events_tab"""
+        pass
+
+    def _build_relationship_events_tab(self) -> None:
         tab = QWidget()
         layout = QVBoxLayout(tab)
+
+        # 上半部分：关系状态
+        rel_group = QGroupBox("关系状态")
+        rel_layout = QVBoxLayout(rel_group)
         self.relationship_text = QTextEdit()
         self.relationship_text.setReadOnly(True)
-        buttons = QHBoxLayout()
+        rel_buttons = QHBoxLayout()
         refresh = QPushButton("刷新")
         export = QPushButton("导出关系状态")
         reset = QPushButton("备份后重置")
         refresh.clicked.connect(self._refresh_relationship)
         export.clicked.connect(self._export_relationship)
         reset.clicked.connect(self._reset_relationship)
-        buttons.addWidget(refresh)
-        buttons.addWidget(export)
-        buttons.addWidget(reset)
-        buttons.addStretch(1)
-        layout.addLayout(buttons)
-        layout.addWidget(self.relationship_text)
-        self.tabs.addTab(tab, "关系状态")
-        self._refresh_relationship()
+        rel_buttons.addWidget(refresh)
+        rel_buttons.addWidget(export)
+        rel_buttons.addWidget(reset)
+        rel_buttons.addStretch(1)
+        rel_layout.addLayout(rel_buttons)
+        rel_layout.addWidget(self.relationship_text)
+        layout.addWidget(rel_group)
 
-    def _build_events_tab(self) -> None:
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
+        # 下半部分：事件日志
+        evt_group = QGroupBox("事件日志")
+        evt_layout = QVBoxLayout(evt_group)
         self.events_text = QTextEdit()
         self.events_text.setReadOnly(True)
-        refresh = QPushButton("刷新事件")
-        refresh.clicked.connect(self._refresh_relationship)
-        layout.addWidget(refresh, alignment=Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(self.events_text)
-        self.tabs.addTab(tab, "事件")
+        evt_refresh = QPushButton("刷新事件")
+        evt_refresh.clicked.connect(self._refresh_events)
+        evt_layout.addWidget(evt_refresh, alignment=Qt.AlignmentFlag.AlignLeft)
+        evt_layout.addWidget(self.events_text)
+        layout.addWidget(evt_group)
+
+        self.tabs.addTab(tab, "关系与事件")
+        self._refresh_relationship()
+        self._refresh_events()
 
     def _build_data_tab(self) -> None:
+        """已合并到 _build_system_tab"""
+        pass
+
+    def _build_diagnostics_tab(self) -> None:
+        """已合并到 _build_system_tab"""
+        pass
+
+    def _build_system_tab(self) -> None:
         tab = QWidget()
         layout = QVBoxLayout(tab)
+
+        # 上半部分：数据管理
+        data_group = QGroupBox("数据管理")
+        data_layout = QVBoxLayout(data_group)
         self.data_text = QTextEdit()
         self.data_text.setReadOnly(True)
-        buttons = QHBoxLayout()
+        data_buttons = QHBoxLayout()
         refresh = QPushButton("刷新数据状态")
         backup = QPushButton("导出备份")
         open_dir = QPushButton("打开数据目录")
         refresh.clicked.connect(self._refresh_data)
         backup.clicked.connect(self._backup_data)
         open_dir.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.relationship_viewer.data_dir))))
-        buttons.addWidget(refresh)
-        buttons.addWidget(backup)
-        buttons.addWidget(open_dir)
-        buttons.addStretch(1)
-        layout.addLayout(buttons)
-        layout.addWidget(self.data_text)
-        self.tabs.addTab(tab, "数据")
-        self._refresh_data()
+        data_buttons.addWidget(refresh)
+        data_buttons.addWidget(backup)
+        data_buttons.addWidget(open_dir)
+        data_buttons.addStretch(1)
+        data_layout.addLayout(data_buttons)
+        data_layout.addWidget(self.data_text)
+        layout.addWidget(data_group)
 
-    def _build_diagnostics_tab(self) -> None:
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
+        # 下半部分：诊断
+        diag_group = QGroupBox("系统诊断")
+        diag_layout = QVBoxLayout(diag_group)
         self.diagnostics_text = QTextEdit()
         self.diagnostics_text.setReadOnly(True)
         run = QPushButton("运行诊断")
         run.clicked.connect(self._run_diagnostics)
-        layout.addWidget(run, alignment=Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(self.diagnostics_text)
-        self.tabs.addTab(tab, "诊断")
+        diag_layout.addWidget(run, alignment=Qt.AlignmentFlag.AlignLeft)
+        diag_layout.addWidget(self.diagnostics_text)
+        layout.addWidget(diag_group)
+
+        self.tabs.addTab(tab, "系统")
+        self._refresh_data()
 
     def _on_provider_changed(self, provider_id: str) -> None:
         prov_conf = self.api.get("providers", {}).get(provider_id, {})
@@ -514,13 +574,16 @@ class SettingsWindow(QDialog):
         status = self.relationship_viewer.status()
         state = status["relationship_state"]
         state_lines = [f"{key}: {value}" for key, value in state.items()]
+        self.relationship_text.setPlainText("\n".join(state_lines) or "relationship_state.json 不可读或为空。")
+
+    def _refresh_events(self) -> None:
+        status = self.relationship_viewer.status()
         events = status["event_log"][-20:]
         event_lines = [
             f"- {e.get('timestamp','')} event={e.get('event_id')} source={e.get('source')} effect={e.get('relationship_effect')} lore={e.get('lore_fragments_used')} {e.get('stage_before')}->{e.get('stage_after')}"
             for e in events
             if isinstance(e, dict)
         ]
-        self.relationship_text.setPlainText("\n".join(state_lines) or "relationship_state.json 不可读或为空。")
         if hasattr(self, "events_text"):
             self.events_text.setPlainText("\n".join(event_lines) or "暂无事件记录。")
 

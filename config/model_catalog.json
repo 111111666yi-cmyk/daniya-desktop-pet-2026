@@ -1,0 +1,175 @@
+{
+  "recommended_models": [
+    {
+      "id": "qwen2_5_0_5b_instruct",
+      "display_name": "Qwen2.5 0.5B Instruct",
+      "vendor": "Alibaba / Qwen",
+      "size_class": "0.5B",
+      "recommended_for": [
+        "低配置测试",
+        "中文轻量聊天",
+        "本地模式验证"
+      ],
+      "download_methods": [
+        {
+          "type": "ollama",
+          "model": "qwen2.5:0.5b"
+        },
+        {
+          "type": "direct_gguf",
+          "url": "https://modelscope.cn/api/v1/models/qwen/Qwen2.5-0.5B-Instruct-GGUF/repo?path=qwen2.5-0.5b-instruct-q4_k_m.gguf",
+          "filename": "qwen2.5-0.5b-instruct-q4_k_m.gguf"
+        },
+        {
+          "type": "external_link",
+          "label": "Hugging Face",
+          "model_id": "Qwen/Qwen2.5-0.5B-Instruct"
+        }
+      ],
+      "license_name": "Qwen Research License Agreement",
+      "license_url": "https://github.com/QwenLM/Qwen2.5/blob/main/LICENSE",
+      "official_url": "https://qwenlm.github.io/blog/qwen2.5/",
+      "docs_url": "https://qwen.readthedocs.io/",
+      "download_url": "https://ollama.com/library/qwen2.5:0.5b",
+      "estimated_disk_size": "397MB",
+      "recommended_hardware": "内存 >= 4GB, CPU / 显存不限",
+      "gated_access": false,
+      "bundle_weight": false,
+      "default_download": false,
+      "tags": [
+        "recommended",
+        "chinese",
+        "lightweight"
+      ],
+      "requires_license_confirmation": true
+    },
+    {
+      "id": "qwen2_5_1_5b_instruct",
+      "display_name": "Qwen2.5 1.5B Instruct",
+      "vendor": "Alibaba / Qwen",
+      "size_class": "1.5B",
+      "recommended_for": [
+        "日常对话",
+        "性能均衡",
+        "中等配置推荐"
+      ],
+      "download_methods": [
+        {
+          "type": "ollama",
+          "model": "qwen2.5:1.5b"
+        },
+        {
+          "type": "direct_gguf",
+          "url": "https://modelscope.cn/api/v1/models/qwen/Qwen2.5-1.5B-Instruct-GGUF/repo?path=qwen2.5-1.5b-instruct-q4_k_m.gguf",
+          "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+        },
+        {
+          "type": "external_link",
+          "label": "Hugging Face",
+          "model_id": "Qwen/Qwen2.5-1.5B-Instruct"
+        }
+      ],
+      "license_name": "Qwen Research License Agreement",
+      "license_url": "https://github.com/QwenLM/Qwen2.5/blob/main/LICENSE",
+      "official_url": "https://qwenlm.github.io/blog/qwen2.5/",
+      "docs_url": "https://qwen.readthedocs.io/",
+      "download_url": "https://ollama.com/library/qwen2.5:1.5b",
+      "estimated_disk_size": "986MB",
+      "recommended_hardware": "内存 >= 8GB, 显存 >= 2GB 最佳",
+      "gated_access": false,
+      "bundle_weight": false,
+      "default_download": false,
+      "tags": [
+        "recommended",
+        "chinese",
+        "balanced"
+      ],
+      "requires_license_confirmation": true
+    },
+    {
+      "id": "gemma2_2b_instruct",
+      "display_name": "Gemma 2 2B Instruct",
+      "vendor": "Google",
+      "size_class": "2B",
+      "recommended_for": [
+        "英语/通用对话",
+        "轻量学术验证"
+      ],
+      "download_methods": [
+        {
+          "type": "ollama",
+          "model": "gemma2:2b"
+        },
+        {
+          "type": "direct_gguf",
+          "url": "https://modelscope.cn/api/v1/models/LLM-Research/gemma-2-2b-it-GGUF/repo?path=gemma-2-2b-it-Q4_K_M.gguf",
+          "filename": "gemma-2-2b-it-Q4_K_M.gguf"
+        },
+        {
+          "type": "external_link",
+          "label": "Hugging Face",
+          "model_id": "google/gemma-2-2b-it"
+        }
+      ],
+      "license_name": "Gemma Terms of Use",
+      "license_url": "https://ai.google.dev/gemma/terms",
+      "official_url": "https://ai.google.dev/gemma",
+      "docs_url": "https://ai.google.dev/gemma/docs",
+      "download_url": "https://ollama.com/library/gemma2:2b",
+      "estimated_disk_size": "1.6GB",
+      "recommended_hardware": "内存 >= 8GB, 显存 >= 4GB 最佳",
+      "gated_access": true,
+      "bundle_weight": false,
+      "default_download": false,
+      "tags": [
+        "recommended",
+        "google",
+        "english"
+      ],
+      "requires_license_confirmation": true
+    },
+    {
+      "id": "llama3_8b_instruct",
+      "display_name": "Llama 3 8B Instruct",
+      "vendor": "Meta",
+      "size_class": "8B",
+      "recommended_for": [
+        "高级逻辑推理",
+        "英文复杂对话",
+        "高配置体验"
+      ],
+      "download_methods": [
+        {
+          "type": "ollama",
+          "model": "llama3:8b"
+        },
+        {
+          "type": "direct_gguf",
+          "url": "https://modelscope.cn/api/v1/models/LLM-Research/Meta-Llama-3-8B-Instruct-GGUF/repo?path=Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
+          "filename": "Meta-Llama-3-8B-Instruct-Q4_K_M.gguf"
+        },
+        {
+          "type": "external_link",
+          "label": "Hugging Face",
+          "model_id": "meta-llama/Meta-Llama-3-8B-Instruct"
+        }
+      ],
+      "license_name": "Meta Llama 3 Community License",
+      "license_url": "https://llama.meta.com/llama3/license/",
+      "official_url": "https://llama.meta.com/",
+      "docs_url": "https://llama.meta.com/docs/",
+      "download_url": "https://ollama.com/library/llama3:8b",
+      "estimated_disk_size": "4.7GB",
+      "recommended_hardware": "内存 >= 16GB, 显存 >= 6GB 最佳",
+      "gated_access": true,
+      "bundle_weight": false,
+      "default_download": false,
+      "tags": [
+        "recommended",
+        "meta",
+        "heavy"
+      ],
+      "requires_license_confirmation": true
+    }
+  ]
+}

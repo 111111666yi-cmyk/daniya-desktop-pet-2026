@@ -50,9 +50,15 @@ class DaniyaEngineAdapter:
         return fallback, [result.error_summary() or f"Character pack failed to load: {character_id}"]
 
     def _dispatch_action(self, result: EngineResult) -> None:
+        # Ignore drag actions visually since dragging is managed directly in GUI mouse events
+        if result.action in ("drag", "dragging", "drag_pickup", "drag_hold", "drag_drop"):
+            return
         targets = [action for action in ([result.action] + list(result.fallback_chain or [])) if action]
         for action in _dedupe(targets):
-            if _try_state_manager(self.state_manager, action) or _try_animation_manager(self.animation_manager, action):
+            # animation_manager 已由 ThreadSafeAnimationManager 包装，跨线程安全
+            if _try_animation_manager(self.animation_manager, action):
+                return
+            if _try_state_manager(self.state_manager, action):
                 return
 
 

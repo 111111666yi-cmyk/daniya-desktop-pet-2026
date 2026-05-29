@@ -1,10 +1,10 @@
 {
   "version": "v0.49",
   "window": {
-    "start_x": 1180,
-    "start_y": 680,
+    "start_x": 342,
+    "start_y": 460,
     "always_on_top": true,
-    "show_input": false
+    "show_input": true
   },
   "pet": {
     "pet_height": 96,
@@ -52,7 +52,8 @@
   },
   "api": {
     "base_url": "https://api.deepseek.com",
-    "model": "deepseek-chat"
+    "model": "deepseek-chat",
+    "local_mode": false
   },
   "typewriter": {
     "char_interval_ms": 35,

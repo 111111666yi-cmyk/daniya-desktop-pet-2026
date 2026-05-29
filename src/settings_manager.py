@@ -23,28 +23,32 @@ DEFAULT_API_CONFIG: dict[str, Any] = {
             "model": "deepseek-chat",
             "timeout": 20,
             "max_tokens": 360,
-            "temperature": 0.8
+            "temperature": 0.8,
+            "api_key_env": "DEEPSEEK_API_KEY"
         },
         "openai": {
             "base_url": "https://api.openai.com/v1",
             "model": "gpt-4o",
             "timeout": 30,
             "max_tokens": 360,
-            "temperature": 0.8
+            "temperature": 0.8,
+            "api_key_env": "OPENAI_API_KEY"
         },
         "claude": {
             "base_url": "https://api.anthropic.com/v1",
             "model": "claude-3-5-sonnet-20240620",
             "timeout": 30,
             "max_tokens": 1024,
-            "temperature": 0.8
+            "temperature": 0.8,
+            "api_key_env": "ANTHROPIC_API_KEY"
         },
         "local_openai_compatible": {
             "base_url": "http://localhost:1234/v1",
             "model": "local-model",
             "timeout": 60,
             "max_tokens": 512,
-            "temperature": 0.8
+            "temperature": 0.8,
+            "api_key_env": "OPENAI_COMPATIBLE_API_KEY"
         }
     },
     "local_mode": False,
@@ -62,15 +66,92 @@ class SettingsManager:
         self.config_dir = ensure_dir(self.root / "config")
         self.env_path = self.root / ".env"
         self.api_config_path = self.config_dir / "api_config.json"
+        self.model_profiles_path = self.config_dir / "model_profiles.json"
         self.ensure_configs()
 
     def ensure_configs(self) -> None:
         self.config_manager.load_app_config()
         if not self.api_config_path.exists():
             self.save_api_config(DEFAULT_API_CONFIG)
-            return
-        loaded = self._load_json(self.api_config_path, DEFAULT_API_CONFIG)
-        self.save_api_config(loaded)
+        else:
+            loaded = self._load_json(self.api_config_path, DEFAULT_API_CONFIG)
+            self.save_api_config(loaded)
+            
+        if not self.model_profiles_path.exists():
+            default_profiles = {
+                "active_text_profile_id": "deepseek_default",
+                "active_vision_profile_id": "",
+                "active_tts_profile_id": "",
+                "active_image_profile_id": "",
+                "profiles": [
+                    {
+                        "id": "deepseek_default",
+                        "name": "DeepSeek 默认",
+                        "type": "text",
+                        "provider": "deepseek",
+                        "api_style": "openai_compatible",
+                        "base_url": "https://api.deepseek.com",
+                        "model": "deepseek-chat",
+                        "api_key_env": "DEEPSEEK_API_KEY",
+                        "enabled": True,
+                        "capabilities": ["text"],
+                        "source": "cloud"
+                    },
+                    {
+                        "id": "openai_default",
+                        "name": "OpenAI GPT-4o",
+                        "type": "text",
+                        "provider": "openai",
+                        "api_style": "openai_compatible",
+                        "base_url": "https://api.openai.com/v1",
+                        "model": "gpt-4o",
+                        "api_key_env": "OPENAI_API_KEY",
+                        "enabled": True,
+                        "capabilities": ["text"],
+                        "source": "cloud"
+                    },
+                    {
+                        "id": "ollama_qwen25_05b",
+                        "name": "Qwen2.5 0.5B - Ollama",
+                        "type": "text",
+                        "provider": "ollama",
+                        "api_style": "ollama",
+                        "base_url": "http://localhost:11434",
+                        "model": "qwen2.5:0.5b",
+                        "enabled": False,
+                        "capabilities": ["text"],
+                        "source": "local",
+                        "license_required": True
+                    }
+                ]
+            }
+            self.save_model_profiles(default_profiles)
+        else:
+            self.load_model_profiles()
+
+    def load_model_profiles(self) -> dict[str, Any]:
+        default_profiles = {
+            "active_text_profile_id": "deepseek_default",
+            "active_vision_profile_id": "",
+            "active_tts_profile_id": "",
+            "active_image_profile_id": "",
+            "profiles": []
+        }
+        loaded = self._load_json(self.model_profiles_path, default_profiles)
+        # 自动脱敏，防止明文 key 写入 JSON
+        profiles = loaded.get("profiles", [])
+        for p in profiles:
+            p.pop("api_key", None)
+            p.pop("api_key_masked", None)
+        return loaded
+
+    def save_model_profiles(self, profiles_dict: dict[str, Any]) -> None:
+        clean = deepcopy(profiles_dict)
+        profiles = clean.get("profiles", [])
+        for p in profiles:
+            p.pop("api_key", None)
+            p.pop("api_key_masked", None)
+        self._save_json_atomic(self.model_profiles_path, clean)
 
     def load_app_config(self) -> dict[str, Any]:
         return self.config_manager.load_app_config()
@@ -99,18 +180,15 @@ class SettingsManager:
                 "chat": loaded.get("chat", DEFAULT_API_CONFIG["chat"])
             }
         config = deep_merge(DEFAULT_API_CONFIG, loaded)
-        
-        # 为当前 active_provider 脱敏 key
+
+        # 为当前 active_provider 脱敏 key（不创建完整 ProviderManager 实例）
         active_provider = config.get("active_provider", "deepseek")
         providers = config.get("providers", {})
         if active_provider in providers:
-            # 拿到真实的 key
-            pm = ProviderManager(config)
-            prov = pm.get_active_provider()
             env_key_name = providers[active_provider].get("api_key_env", f"{active_provider.upper()}_API_KEY")
             raw_key = self.current_api_key(env_key_name)
             providers[active_provider]["api_key_masked"] = mask_key(raw_key)
-            
+
         return config
 
     def save_api_config(self, config: dict[str, Any]) -> None:
@@ -151,10 +229,11 @@ class SettingsManager:
             env_key_name = f"{provider.upper()}_API_KEY"
             
         prov_conf["api_key_env"] = env_key_name
-        
+
         self.save_api_config(config)
         self._sync_app_api(config)
-        
+        self._sync_model_profiles(provider, base_url, model, env_key_name)
+
         if api_key is not None and env_key_name:
             self.write_env_values(
                 {
@@ -182,28 +261,61 @@ class SettingsManager:
         config = self.load_api_config()
         if config.get("local_mode"):
             return True, "本地模式已开启，API 测试跳过。"
-        
+
         pm = ProviderManager(config)
-        provider = pm.get_active_provider()
-        
-        # 获取脱敏后的 key 仅仅用于显示
-        prov_conf = pm.get_provider_config(provider.provider_id)
-        env_key_name = prov_conf.get("api_key_env", f"{provider.provider_id.upper()}_API_KEY")
+        profile = pm.get_active_profile()
+
+        env_key_name = profile.get("api_key_env", "")
         raw_key = self.current_api_key(env_key_name)
-        
-        result = pm.test_connection(provider.provider_id)
-        
-        # 补充 key 信息
-        message = result.message
-        if provider.provider_id != "local_openai_compatible":
-            message += f" (key={mask_key(raw_key)})"
-            
-        return result.success, message
+        provider = profile.get("provider", "")
+
+        ok, msg = pm.test_profile_model(profile)
+
+        if provider not in ("ollama",) and raw_key:
+            msg += f" (key={mask_key(raw_key)})"
+
+        return ok, msg
 
     def _sync_app_api(self, api_config: dict[str, Any]) -> None:
         app_config = self.load_app_config()
         app_config.setdefault("api", {})["local_mode"] = bool(api_config.get("local_mode", False))
         self.save_app_config(app_config)
+
+    def _sync_model_profiles(self, provider: str, base_url: str, model: str, env_key_name: str) -> None:
+        """将 api_config.json 的 active_provider 同步到 model_profiles.json 的 active_text_profile_id。"""
+        profiles_data = self.load_model_profiles()
+        profiles = profiles_data.get("profiles", [])
+
+        # 查找匹配的 profile，或创建新的
+        target_id = f"{provider}_default"
+        found = False
+        for p in profiles:
+            if p.get("id") == target_id:
+                p["base_url"] = base_url
+                p["model"] = model
+                p["api_key_env"] = env_key_name
+                p["enabled"] = True
+                found = True
+                break
+
+        if not found:
+            source = "local" if provider in ("ollama", "lm_studio", "llama_cpp", "local_openai_compatible") else "cloud"
+            profiles.append({
+                "id": target_id,
+                "name": f"{provider} ({model})",
+                "type": "text",
+                "provider": provider,
+                "api_style": "ollama" if provider == "ollama" else "openai_compatible",
+                "base_url": base_url,
+                "model": model,
+                "api_key_env": env_key_name,
+                "enabled": True,
+                "capabilities": ["text"],
+                "source": source,
+            })
+
+        profiles_data["active_text_profile_id"] = target_id
+        self.save_model_profiles(profiles_data)
 
     def _load_json(self, path: Path, default: dict[str, Any]) -> Any:
         try:

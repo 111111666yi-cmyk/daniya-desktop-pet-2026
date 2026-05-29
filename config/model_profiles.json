@@ -1,0 +1,54 @@
+{
+  "active_text_profile_id": "deepseek_default",
+  "active_vision_profile_id": "",
+  "active_tts_profile_id": "",
+  "active_image_profile_id": "",
+  "profiles": [
+    {
+      "id": "deepseek_default",
+      "name": "DeepSeek 默认",
+      "type": "text",
+      "provider": "deepseek",
+      "api_style": "openai_compatible",
+      "base_url": "https://api.deepseek.com",
+      "model": "deepseek-chat",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "enabled": true,
+      "capabilities": [
+        "text"
+      ],
+      "source": "cloud"
+    },
+    {
+      "id": "openai_default",
+      "name": "OpenAI GPT-4o",
+      "type": "text",
+      "provider": "openai",
+      "api_style": "openai_compatible",
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-4o",
+      "api_key_env": "OPENAI_API_KEY",
+      "enabled": true,
+      "capabilities": [
+        "text"
+      ],
+      "source": "cloud"
+    },
+    {
+      "id": "ollama_qwen25_05b",
+      "name": "Ollama qwen2.5:0.5b",
+      "type": "text",
+      "provider": "ollama",
+      "api_style": "ollama",
+      "base_url": "http://localhost:11434",
+      "model": "qwen2.5:0.5b",
+      "enabled": true,
+      "capabilities": [
+        "text"
+      ],
+      "source": "local",
+      "license_required": true,
+      "api_key_env": ""
+    }
+  ]
+}

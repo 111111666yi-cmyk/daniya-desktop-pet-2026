@@ -142,6 +142,7 @@ class AppController(QObject):
         self.idle_manager = IdleManager(self.app_config, self.window.can_show_idle_message)
         self.menu_manager = MenuManager(self.window, self)
         self.window.set_context_menu(self.menu_manager.create_menu())
+        self.window.set_menu_refresh_callback(lambda: self.window.set_context_menu(self.menu_manager.create_menu()))
 
         # [CHANGE-001] 延迟绑定适配器的 animation_manager（PetWindow 必须先创建）
         # [CHANGE-005-FIX] 使用线程安全的动画管理器包装，防止后台线程崩溃 GUI
@@ -152,6 +153,7 @@ class AppController(QObject):
         self.window.message_submitted.connect(self.send_message)
         self.window.pet_clicked.connect(self.on_pet_clicked)
         self.window.position_changed.connect(self.save_window_position)
+        self.window.drag_completed.connect(self.on_drag_completed)
         self.window.activity_detected.connect(self.idle_manager.mark_activity)
         self.reminder_manager.reminder_due.connect(self.on_reminder_due)
         self.time_event_manager.hourly_chime.connect(self.speak_remind)
@@ -210,6 +212,8 @@ class AppController(QObject):
         self.app_config.setdefault("window", {})["start_x"] = x
         self.app_config.setdefault("window", {})["start_y"] = y
         self.config_manager.save_app_config(self.app_config)
+
+    def on_drag_completed(self, x: int, y: int) -> None:
         # [CHANGE-003+005] 拖拽事件防抖：500ms 内不重复触发，拖拽结束才执行一次
         self._drag_debounce.start()
 

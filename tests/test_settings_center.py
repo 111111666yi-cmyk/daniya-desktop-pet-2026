@@ -153,7 +153,7 @@ controller = AppController(app)
 controller.open_settings_center()
 app.processEvents()
 tabs = [controller.settings_window.tabs.tabText(i) for i in range(controller.settings_window.tabs.count())]
-assert tabs == ['API / 模型', '多模态配置', '本地模型', '桌宠', '动作资源', '角色包', '关系状态', '事件', '数据', '诊断']
+assert tabs == ['模型与引擎', '桌宠', '角色与资源', '关系与事件', '系统']
 assert controller.settings_window.pack_editor_text.isReadOnly() is False
 print('SETTINGS_WINDOW_OK', flush=True)
 os._exit(0)
@@ -168,3 +168,59 @@ os._exit(0)
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
     assert "SETTINGS_WINDOW_OK" in completed.stdout
+
+
+def test_settings_window_saves_local_model_settings_and_syncs_in_subprocess(tmp_path):
+    env = os.environ.copy()
+    env["QT_QPA_PLATFORM"] = "offscreen"
+    env["DANIYA_RELATION_DATA_DIR"] = str(tmp_path / "relation")
+    script = r"""
+import os, sys, json
+from PySide6.QtWidgets import QApplication
+from src.app import AppController
+app = QApplication.instance() or QApplication(sys.argv)
+controller = AppController(app)
+controller.open_settings_center()
+app.processEvents()
+
+# Simulate setting values on local model tab
+window = controller.settings_window
+window.local_service_combo.setCurrentText("Ollama")
+window.local_base_url.setText("http://localhost:11434")
+
+# Mock the model list dropdown selection
+window.local_model_list.clear()
+window.local_model_list.addItem("qwen2.5:0.5b")
+window.local_model_list.setCurrentText("qwen2.5:0.5b")
+
+# Trigger save
+profile_id = window._save_local_settings_only()
+app.processEvents()
+
+# Verify that settings_manager saved the local model config in model_profiles.json
+profiles_data = window.settings_manager.load_model_profiles()
+active_profile = None
+for p in profiles_data.get("profiles", []):
+    if p.get("id") == profile_id:
+        active_profile = p
+        break
+
+assert active_profile is not None
+assert active_profile.get("provider") == "ollama"
+assert active_profile.get("base_url") == "http://localhost:11434"
+assert active_profile.get("model") == "qwen2.5:0.5b"
+
+print('SETTINGS_LOCAL_SAVE_OK', flush=True)
+os._exit(0)
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path.cwd(),
+        env=env,
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert "SETTINGS_LOCAL_SAVE_OK" in completed.stdout
+

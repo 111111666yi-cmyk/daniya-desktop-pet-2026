@@ -2,68 +2,34 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .utils import ensure_dir, runtime_root
-
-
-DEFAULT_CATALOG = {
-    "recommended_models": [
-        {
-            "id": "qwen2.5-7b",
-            "name": "Qwen 2.5 7B Instruct",
-            "provider": "ollama",
-            "tags": ["recommended", "fast", "multilingual"]
-        },
-        {
-            "id": "llama-3-8b",
-            "name": "Llama 3 8B Instruct",
-            "provider": "lm_studio",
-            "tags": ["powerful", "english"]
-        },
-        {
-            "id": "gemma-2-9b",
-            "name": "Gemma 2 9B It",
-            "provider": "llama.cpp",
-            "tags": ["balanced", "google"]
-        }
-    ],
-    "license_accepted": False
-}
+from src.utils import runtime_root
 
 
 class ModelCatalog:
     """
-    负责管理本地模型花名册及许可证状态 (v0.46 / v0.47 预留)。
-    解析读取 config/local_model_config.json。
+    模型目录类，负责加载和查询推荐的本地大语言模型。
+    该目录与模型权重本身分离，不内置权重，仅提供指向官方地址、许可证、Ollama 下载名及硬件配置推荐的元数据。
     """
-
     def __init__(self, root: Path | None = None) -> None:
         self.root = root or runtime_root()
-        self.config_dir = ensure_dir(self.root / "config")
-        self.config_file = self.config_dir / "local_model_config.json"
-        self._ensure_file()
+        self.catalog_path = self.root / "config" / "model_catalog.json"
+        self.catalog_data = self.load_catalog()
 
-    def _ensure_file(self) -> None:
-        if not self.config_file.exists():
-            self._save(DEFAULT_CATALOG)
-
-    def _save(self, data: dict[str, Any]) -> None:
-        tmp = self.config_file.with_suffix(".tmp")
-        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        tmp.replace(self.config_file)
-
-    def load_config(self) -> dict[str, Any]:
-        try:
-            return json.loads(self.config_file.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            return DEFAULT_CATALOG
-
-    def is_license_accepted(self) -> bool:
-        return self.load_config().get("license_accepted", False)
-
-    def accept_license(self) -> None:
-        cfg = self.load_config()
-        cfg["license_accepted"] = True
-        self._save(cfg)
+    def load_catalog(self) -> dict[str, Any]:
+        if self.catalog_path.exists():
+            try:
+                with open(self.catalog_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        # 兜底
+        return {"recommended_models": []}
 
     def get_recommended_models(self) -> list[dict[str, Any]]:
-        return self.load_config().get("recommended_models", [])
+        return self.catalog_data.get("recommended_models", [])
+
+    def get_model_by_id(self, model_id: str) -> dict[str, Any] | None:
+        for m in self.get_recommended_models():
+            if m.get("id") == model_id:
+                return m
+        return None

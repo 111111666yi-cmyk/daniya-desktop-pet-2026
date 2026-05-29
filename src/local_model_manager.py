@@ -4,7 +4,7 @@ from typing import Any
 class LocalModelManager:
     """
     负责本地大模型服务连接测试和模型列表获取 (Ollama / LM Studio / llama.cpp / Custom)。
-    不直接负责聊天 (聊天依然由 src/llm/ 里的 local_provider 负责)，仅处理服务探测和配置辅助。
+    不直接负责聊天 (聊天由 src/llm/boundaries/ 的边界模块负责)，仅处理服务探测和配置辅助。
     """
 
     @classmethod
