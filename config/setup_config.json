@@ -1,0 +1,10 @@
+{
+  "first_run_setup": true,
+  "run_mode": "fast",
+  "multimodal_enabled": {
+    "tts": false,
+    "text_to_image": false,
+    "image_to_image": false,
+    "video": false
+  }
+}

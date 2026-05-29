@@ -1,9 +1,10 @@
 {
+  "version": "v0.49",
   "window": {
-    "start_x": 1025,
-    "start_y": 571,
+    "start_x": 1180,
+    "start_y": 680,
     "always_on_top": true,
-    "show_input": true
+    "show_input": false
   },
   "pet": {
     "pet_height": 96,

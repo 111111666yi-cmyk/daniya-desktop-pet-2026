@@ -19,6 +19,7 @@ dist/
 build/
 *.spec
 *.log
+*.broken-*
 
 # User-specific config (may contain real API settings)
 config/api_config.json

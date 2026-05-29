@@ -73,7 +73,7 @@ Acceptance:
 - Sensitive files are not tracked.
 - Tests and character validation pass.
 
-Status: current stage.
+Status: completed.
 
 ## v0.44 - EXE Packaging Test
 
@@ -90,7 +90,7 @@ Acceptance:
 - Private assets remain excluded by default.
 - No secrets or runtime data are bundled.
 
-Status: next stage.
+Status: completed.
 
 ## v0.45 - Multi-Model Backend
 
@@ -106,7 +106,7 @@ Acceptance:
 - Provider errors fall back safely.
 - Settings do not expose API keys.
 
-Status: planned.
+Status: integrated.
 
 ## v0.46 - Local Model Connection
 
@@ -122,7 +122,7 @@ Acceptance:
 - API mode remains intact.
 - UI does not block during model calls.
 
-Status: planned.
+Status: integrated.
 
 ## v0.47 - Action Asset Pack Integration
 
@@ -137,7 +137,7 @@ Acceptance:
 - Missing assets fall back.
 - Placeholder mode still works.
 
-Status: planned.
+Status: integrated.
 
 ## v0.48 - Release Candidate
 
@@ -151,7 +151,7 @@ Acceptance:
 - Tests pass.
 - Startup, settings center, action fallback, data fallback, and no-API fallback pass.
 
-Status: planned.
+Status: accepted.
 
 ## v0.49 - Public Release
 
@@ -165,4 +165,4 @@ Acceptance:
 - Release checklist is complete.
 - No secrets, private assets, models, runtime data, or unauthorized assets are included.
 
-Status: planned.
+Status: current stable release.

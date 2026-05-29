@@ -84,6 +84,7 @@ class PetWindow(QWidget):
         self._configure_window()
         self._build_ui()
         self.animation_manager = AnimationManager(self, self.asset_manager)
+        self.animation_manager.set_pixmap_callback(lambda p: self.render_pet_pixmap(Path(p)))
         self.typewriter = Typewriter(self.bubble, self.set_pet_state, app_config)
         self.bubble.clicked.connect(self.typewriter.click)
         self.set_pet_state(self.asset_manager.state_name("idle"))
@@ -188,6 +189,11 @@ class PetWindow(QWidget):
 
     def set_context_menu(self, menu: QMenu) -> None:
         self.context_menu = menu
+
+    def closeEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        self._stop_pet_feature_timers()
+        self._cancel_walk_move()
+        super().closeEvent(event)
 
     def show_at_config_position(self) -> None:
         window_config = self.app_config.get("window", {})
@@ -345,6 +351,12 @@ class PetWindow(QWidget):
         self.walk_move_timer.timeout.connect(self._tick_walk_move)
         self.walk_move_timer.start(80)
 
+    def _stop_pet_feature_timers(self) -> None:
+        for name in ("edge_timer", "global_click_timer", "walk_move_timer"):
+            timer = getattr(self, name, None)
+            if timer is not None:
+                timer.stop()
+
     def _tick_edge_peek(self) -> None:
         pet_config = self.app_config.get("pet", {})
         if not bool(pet_config.get("edge_peek_enabled", True)):
@@ -482,11 +494,13 @@ class PetWindow(QWidget):
 
     def _nearest_edge_side(self, threshold: int) -> str | None:
         bounds = self._desktop_bounds()
+        right_edge = bounds.right() + 1
+        bottom_edge = bounds.bottom() + 1
         distances = {
             "left": abs(self.x() - bounds.left()),
-            "right": abs(bounds.right() - (self.x() + self.width())),
+            "right": abs(right_edge - (self.x() + self.width())),
             "top": abs(self.y() - bounds.top()),
-            "bottom": abs(bounds.bottom() - (self.y() + self.height())),
+            "bottom": abs(bottom_edge - (self.y() + self.height())),
         }
         side, distance = min(distances.items(), key=lambda item: item[1])
         return side if distance <= threshold else None
@@ -515,16 +529,21 @@ class PetWindow(QWidget):
         bounds = self._desktop_bounds()
         if visible is None:
             visible = self._dock_visible_px_for_cursor()
-        visible = max(16, min(80, int(visible)))
         current = self.pos()
+        width = max(1, self.width())
+        height = max(1, self.height())
+        max_x = max(bounds.left(), bounds.right() - width + 1)
+        max_y = max(bounds.top(), bounds.bottom() - height + 1)
+        current_x = max(bounds.left(), min(max_x, current.x()))
+        current_y = max(bounds.top(), min(max_y, current.y()))
         if side == "left":
-            return QPoint(bounds.left() - max(0, self.width() - visible), max(bounds.top(), min(bounds.bottom() - self.height(), current.y())))
+            return QPoint(bounds.left(), current_y)
         if side == "right":
-            return QPoint(bounds.right() - visible, max(bounds.top(), min(bounds.bottom() - self.height(), current.y())))
+            return QPoint(max_x, current_y)
         if side == "top":
-            return QPoint(max(bounds.left(), min(bounds.right() - self.width(), current.x())), bounds.top() - max(0, self.height() - visible))
+            return QPoint(current_x, bounds.top())
         if side == "bottom":
-            return QPoint(max(bounds.left(), min(bounds.right() - self.width(), current.x())), bounds.bottom() - visible)
+            return QPoint(current_x, max_y)
         return self._clamped_position(current)
 
     def _show_context_menu(self, global_pos: QPoint) -> None:
@@ -534,11 +553,12 @@ class PetWindow(QWidget):
 
     def _clamped_position(self, position: QPoint) -> QPoint:
         bounds = self._desktop_bounds()
-        keep_visible = 32
-        min_x = bounds.left() - max(0, self.width() - keep_visible)
-        max_x = bounds.right() - keep_visible
-        min_y = bounds.top() - max(0, self.height() - keep_visible)
-        max_y = bounds.bottom() - keep_visible
+        width = max(1, self.width())
+        height = max(1, self.height())
+        min_x = bounds.left()
+        max_x = max(min_x, bounds.right() - width + 1)
+        min_y = bounds.top()
+        max_y = max(min_y, bounds.bottom() - height + 1)
         return QPoint(
             max(min_x, min(max_x, position.x())),
             max(min_y, min(max_y, position.y())),

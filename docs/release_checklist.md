@@ -1,5 +1,27 @@
 # Release Checklist
 
+## v0.49 Release Check Result
+
+Status: passed for local packaging and smoke verification on 2026-05-29.
+
+- v0.48 RC report exists: pass.
+- v0.48 known issues file exists: pass.
+- Blocking issues: none recorded in `docs/V0.48_RC_REPORT.md` or `docs/KNOWN_ISSUES_v0.48.md`.
+- Version metadata updated to `v0.49`: pass.
+- Public placeholder assets are neutral abstract placeholders: pass.
+- Pet window startup, drag, docking, resize, and offscreen recovery are constrained inside the screen: pass, covered by regression tests.
+- `python tools\validate_character_pack.py characters\daniya`: pass.
+- `python tools\validate_assets.py assets\private`: pass.
+- `pytest -q`: pass, 99 tests.
+- `run.bat`: startup smoke pass.
+- `pack.bat`: pass.
+- Official zip: `release/DaniyaSummerPet-v0.49-win-x64.zip`.
+- Independent unpack smoke test: pass.
+- Wrong API key startup smoke test: pass.
+- No `.env`, `data/`, `assets/private/`, `models/`, `backups/`, `build/`, `dist/`, `__pycache__/`, `*.log`, `*.spec`, or `*.broken-*` in zip: pass.
+- Git tracked sensitive file check: pass.
+- Real valid API key network test: not run; no valid release-test key was provided in this environment.
+
 v0.43 does not publish a Release. This checklist prepares future v0.44/v0.49 release work.
 
 ## Forbidden In Release Packages

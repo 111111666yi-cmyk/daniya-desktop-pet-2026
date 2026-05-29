@@ -356,6 +356,18 @@ class AppController(QObject):
 def run() -> None:
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
+    
+    from .setup_state_manager import SetupStateManager
+    from .first_run_wizard import FirstRunWizard
+    
+    setup_manager = SetupStateManager()
+    if not setup_manager.is_first_run_complete():
+        wizard = FirstRunWizard(setup_manager)
+        wizard.exec()
+        if not setup_manager.is_first_run_complete():
+            # 用户关闭了向导而没有完成设置
+            sys.exit(0)
+            
     controller = AppController(app)
     controller.show()
     sys.exit(app.exec())

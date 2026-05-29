@@ -1,0 +1,33 @@
+{
+  "llm_providers": [
+    "deepseek",
+    "openai_compatible",
+    "openai",
+    "claude",
+    "local_openai_compatible",
+    "local_fallback"
+  ],
+  "tts_providers": [
+    "cloud_tts",
+    "local_tts",
+    "none"
+  ],
+  "image_providers": [
+    "text_to_image",
+    "image_to_image",
+    "none"
+  ],
+  "video_providers": [
+    "image_to_video",
+    "text_to_video",
+    "none"
+  ],
+  "local_model_providers": [
+    "ollama",
+    "lm_studio",
+    "llama_cpp_server",
+    "openai_compatible_local",
+    "gemma_local_placeholder",
+    "custom_local"
+  ]
+}

@@ -75,6 +75,8 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.tabs)
 
         self._build_api_tab()
+        self._build_multimodal_tab()
+        self._build_local_model_tab()
         self._build_pet_tab()
         self._build_actions_tab()
         self._build_character_tab()
@@ -91,20 +93,25 @@ class SettingsWindow(QDialog):
         tab = QWidget()
         layout = QVBoxLayout(tab)
         form = QFormLayout()
-        api = self.settings_manager.load_api_config()
+        self.api = self.settings_manager.load_api_config()
+        active = self.api.get("active_provider", "deepseek")
+        providers = self.api.get("providers", {})
+        prov_conf = providers.get(active, {})
 
         self.provider_input = QComboBox()
-        self.provider_input.addItems(["deepseek"])
-        self.provider_input.setCurrentText(str(api.get("provider", "deepseek")))
-        self.base_url_input = QLineEdit(str(api.get("base_url", "")))
-        self.model_input = QLineEdit(str(api.get("model", "")))
+        self.provider_input.addItems(["deepseek", "openai", "claude", "openai_compatible", "local_openai_compatible"])
+        self.provider_input.setCurrentText(str(active))
+        self.base_url_input = QLineEdit(str(prov_conf.get("base_url", "")))
+        self.model_input = QLineEdit(str(prov_conf.get("model", "")))
         self.api_key_input = QLineEdit()
         self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.api_key_input.setPlaceholderText(str(api.get("api_key_masked", "<empty>")))
+        self.api_key_input.setPlaceholderText(str(prov_conf.get("api_key_masked", "<empty>")))
         self.local_mode_input = QCheckBox("启用本地 fallback 模式")
-        self.local_mode_input.setChecked(bool(api.get("local_mode", False)))
+        self.local_mode_input.setChecked(bool(self.api.get("local_mode", False)))
         self.api_result = QLabel("API Key 不会完整写入日志；留空保存则不改当前 key。")
         self.api_result.setWordWrap(True)
+
+        self.provider_input.currentTextChanged.connect(self._on_provider_changed)
 
         form.addRow("Provider", self.provider_input)
         form.addRow("Base URL", self.base_url_input)
@@ -125,6 +132,121 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.api_result)
         layout.addStretch(1)
         self.tabs.addTab(tab, "API / 模型")
+
+    def _build_multimodal_tab(self) -> None:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        
+        from .provider_capability_schema import ProviderCapabilitySchema
+        schema = ProviderCapabilitySchema(root=self.settings_manager.root)
+        
+        form = QFormLayout()
+        
+        self.tts_combo = QComboBox()
+        self.tts_combo.addItems(schema.get_tts_providers())
+        self.tts_combo.setCurrentText("none")
+        
+        self.t2i_combo = QComboBox()
+        self.t2i_combo.addItems(schema.get_image_providers())
+        self.t2i_combo.setCurrentText("none")
+        
+        self.video_combo = QComboBox()
+        self.video_combo.addItems(schema.get_video_providers())
+        self.video_combo.setCurrentText("none")
+        
+        form.addRow("TTS 语音引擎 (v0.46预留)", self.tts_combo)
+        form.addRow("文生图/图生图引擎 (预留)", self.t2i_combo)
+        form.addRow("视频引擎 (预留)", self.video_combo)
+        
+        layout.addLayout(form)
+        
+        hint = QLabel("提示：当前版本这些选项仅作为架构占位，修改不产生实际效果。真正的多模态能力将在 v0.46 后续版本实现。")
+        hint.setWordWrap(True)
+        hint.setStyleSheet("color: gray; margin-top: 20px;")
+        layout.addWidget(hint)
+        
+        layout.addStretch(1)
+        self.tabs.addTab(tab, "多模态配置")
+
+    def _build_local_model_tab(self) -> None:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        
+        from .provider_capability_schema import ProviderCapabilitySchema
+        from .local_model_manager import LocalModelManager
+        schema = ProviderCapabilitySchema(root=self.settings_manager.root)
+        
+        form = QFormLayout()
+        
+        self.local_service_combo = QComboBox()
+        self.local_service_combo.addItems(["Ollama", "LM Studio", "llama.cpp server", "OpenAI-compatible local", "Custom"])
+        
+        self.local_base_url = QLineEdit()
+        self.local_base_url.setPlaceholderText("http://localhost:11434")
+        
+        self.local_model_list = QComboBox()
+        self.local_model_list.setEditable(True)
+        
+        form.addRow("服务类型", self.local_service_combo)
+        form.addRow("Base URL", self.local_base_url)
+        form.addRow("模型", self.local_model_list)
+        layout.addLayout(form)
+        
+        btn_layout = QHBoxLayout()
+        self.fetch_models_btn = QPushButton("拉取模型列表")
+        self.test_local_btn = QPushButton("测试服务连接")
+        btn_layout.addWidget(self.fetch_models_btn)
+        btn_layout.addWidget(self.test_local_btn)
+        btn_layout.addStretch(1)
+        layout.addLayout(btn_layout)
+        
+        self.local_status = QLabel("状态：未测试")
+        self.local_status.setWordWrap(True)
+        layout.addWidget(self.local_status)
+        
+        self.fetch_models_btn.clicked.connect(self._fetch_local_models)
+        self.test_local_btn.clicked.connect(self._test_local_service)
+        
+        # 许可证占位区
+        license_label = QLabel("⚠️ 本地模型下载器预留入口 (v0.47)\n您必须同意并遵守对应模型 (如 Llama 3 / Gemma / Qwen) 的开源许可证和商业使用条款，才能进行下载。目前此功能仅作为 UI 占位，无法下载模型。")
+        license_label.setWordWrap(True)
+        license_label.setStyleSheet("color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; margin-top: 15px;")
+        layout.addWidget(license_label)
+        
+        downloader_btn = QPushButton("打开内置下载器 (不可用)")
+        downloader_btn.setEnabled(False)
+        layout.addWidget(downloader_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+        
+        layout.addStretch(1)
+        self.tabs.addTab(tab, "本地模型")
+
+    def _fetch_local_models(self) -> None:
+        from .local_model_manager import LocalModelManager
+        service = self.local_service_combo.currentText()
+        url = self.local_base_url.text()
+        self.local_status.setText("状态：正在获取...")
+        try:
+            models = LocalModelManager.fetch_model_list(service, url)
+            self.local_model_list.clear()
+            if models:
+                self.local_model_list.addItems(models)
+                self.local_status.setText(f"状态：成功获取 {len(models)} 个模型")
+            else:
+                self.local_status.setText("状态：未获取到模型列表，请检查服务或手动输入模型名")
+        except Exception as e:
+            self.local_status.setText(f"状态：获取失败 ({str(e)})")
+
+    def _test_local_service(self) -> None:
+        from .local_model_manager import LocalModelManager
+        service = self.local_service_combo.currentText()
+        url = self.local_base_url.text()
+        self.local_status.setText("状态：正在连接...")
+        ok, msg = LocalModelManager.test_connection(service, url)
+        self.local_status.setText(f"状态：{msg}")
+        if ok:
+            self.local_status.setStyleSheet("color: green;")
+        else:
+            self.local_status.setStyleSheet("color: red;")
 
     def _build_pet_tab(self) -> None:
         tab = QWidget()
@@ -288,6 +410,12 @@ class SettingsWindow(QDialog):
         layout.addWidget(run, alignment=Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(self.diagnostics_text)
         self.tabs.addTab(tab, "诊断")
+
+    def _on_provider_changed(self, provider_id: str) -> None:
+        prov_conf = self.api.get("providers", {}).get(provider_id, {})
+        self.base_url_input.setText(str(prov_conf.get("base_url", "")))
+        self.model_input.setText(str(prov_conf.get("model", "")))
+        self.api_key_input.setPlaceholderText(str(prov_conf.get("api_key_masked", "<empty>")))
 
     def _save_api_settings(self) -> None:
         api_key = self.api_key_input.text()

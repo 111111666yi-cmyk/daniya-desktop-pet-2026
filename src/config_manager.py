@@ -7,9 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from .utils import bundled_root, ensure_dir, runtime_root
+from .version import APP_VERSION
 
 
 DEFAULT_APP_CONFIG: dict[str, Any] = {
+    "version": APP_VERSION,
     "window": {
         "start_x": 1180,
         "start_y": 680,

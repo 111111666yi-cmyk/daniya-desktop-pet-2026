@@ -153,7 +153,7 @@ controller = AppController(app)
 controller.open_settings_center()
 app.processEvents()
 tabs = [controller.settings_window.tabs.tabText(i) for i in range(controller.settings_window.tabs.count())]
-assert tabs == ['API / 模型', '桌宠', '动作资源', '角色包', '关系状态', '事件', '数据', '诊断']
+assert tabs == ['API / 模型', '多模态配置', '本地模型', '桌宠', '动作资源', '角色包', '关系状态', '事件', '数据', '诊断']
 assert controller.settings_window.pack_editor_text.isReadOnly() is False
 print('SETTINGS_WINDOW_OK', flush=True)
 os._exit(0)

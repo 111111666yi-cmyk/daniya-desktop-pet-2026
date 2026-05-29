@@ -43,7 +43,7 @@ ACTION_MODULES: dict[str, str] = {
 
 DEFAULT_MANIFEST: dict[str, Any] = {
     "name": PET_ID,
-    "display_name": "达妮娅·夏日形态",
+    "display_name": "Public Placeholder Asset",
     "default_height": 96,
     "actions_version": "0.4",
     "animations": {

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.49 - Official Open Source Release
+
+- Prepared the official open source release.
+- Updated project version metadata to `v0.49`.
+- Generated the formal Windows package name `DaniyaSummerPet-v0.49-win-x64`.
+- Prepared GitHub Release Notes for the public release.
+- Confirmed sensitive files must not enter the release package.
+- Confirmed v0.48 blocking issues are clear based on the RC report.
+- Preserved known non-blocking issue handling for the release notes.
+
 ## v0.43 - GitHub Open Source Cleanup
 
 - Organized the repository for public GitHub use.

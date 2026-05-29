@@ -9,9 +9,15 @@ This is an unofficial fan project. The repository does not distribute official g
 - v0.41 action resource system: integrated baseline with placeholder/private asset fallback.
 - v0.415 Daniya character pack and relationship engine: integrated.
 - v0.42 settings center: integrated.
-- v0.43 GitHub open source cleanup: current repository organization stage.
+- v0.43 GitHub open source cleanup: completed.
+- v0.44 executable packaging test: completed.
+- v0.45 multi-model Provider support: integrated.
+- v0.46 local model connection fallback: integrated.
+- v0.47 action asset pack fallback: integrated.
+- v0.48 release candidate: accepted with no known blocking issues.
+- v0.49 official open source release: current stable version.
 
-Not included in v0.43: exe packaging, GitHub Release publishing, multi-model Provider architecture, local model downloading, TTS, Vision, or new private action asset packs.
+The public release does not include official game resources, private character assets, model weights, user runtime data, or API keys.
 
 ## Features
 
@@ -21,6 +27,8 @@ Not included in v0.43: exe packaging, GitHub Release publishing, multi-model Pro
 - Character pack structure under `characters/`, including `characters/template/` for new roles and `characters/daniya/` as the public example pack.
 - Relationship state, event log, and user memory runtime data under `data/daniya_relation/`, ignored by Git.
 - Settings center for API settings, pet settings, action resources, character pack status/editing, relationship status, data, and diagnostics.
+- Multi-model Provider configuration for DeepSeek, OpenAI-compatible, OpenAI, Claude, and local OpenAI-compatible endpoints.
+- Local fallback behavior when no API key is configured, an API key is invalid, or the local model service is unavailable.
 
 ## Requirements
 
@@ -40,6 +48,8 @@ install.bat
 ```
 
 ## Run
+
+For the official Windows build, download `DaniyaSummerPet-v0.49-win-x64.zip` from the GitHub Release, unzip it, and run `DaniyaSummerPet.exe`.
 
 ```bat
 run.bat
@@ -69,7 +79,7 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-chat
 ```
 
-`.env` is ignored by Git. Do not commit real API keys. v0.42 keeps Provider configuration DeepSeek-compatible; full multi-model Provider work is reserved for v0.45.
+`.env` is ignored by Git. Do not commit real API keys. v0.49 supports DeepSeek, OpenAI-compatible, OpenAI, Claude, and local OpenAI-compatible configuration, with local fallback when no usable key is available.
 
 Optional default config examples are provided:
 
@@ -153,12 +163,12 @@ Read:
 
 ## Roadmap
 
-- v0.44: exe packaging test.
-- v0.45: multi-model backend.
-- v0.46: local model connection.
-- v0.47: action asset pack integration.
-- v0.48: release candidate.
-- v0.49: public release.
+- v0.44: exe packaging test, completed.
+- v0.45: multi-model backend, integrated.
+- v0.46: local model connection, integrated.
+- v0.47: action asset pack integration, integrated.
+- v0.48: release candidate, accepted.
+- v0.49: official open source release, current stable version.
 
 ## License
 

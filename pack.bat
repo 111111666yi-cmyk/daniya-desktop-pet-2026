@@ -5,8 +5,8 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 set "APP_NAME=DaniyaSummerPet"
-set "VERSION=v0.44"
-set "PACKAGE_NAME=DaniyaSummerPet-v0.44-win-x64"
+set "VERSION=v0.49"
+set "PACKAGE_NAME=DaniyaSummerPet-v0.49-win-x64"
 set "PYTHON_EXE=python"
 
 if exist ".venv\Scripts\python.exe" (
@@ -50,7 +50,7 @@ echo [Daniya] Cleaning old build artifacts...
 if exist "build" rmdir /s /q "build"
 if exist "dist" rmdir /s /q "dist"
 if exist "release\%PACKAGE_NAME%" rmdir /s /q "release\%PACKAGE_NAME%"
-if exist "release\test_run_v0.44" rmdir /s /q "release\test_run_v0.44"
+if exist "release\test_run_v0.49" rmdir /s /q "release\test_run_v0.49"
 if exist "release\%PACKAGE_NAME%.zip" del /q "release\%PACKAGE_NAME%.zip"
 if not exist "release" mkdir "release"
 
@@ -67,6 +67,7 @@ echo [Daniya] Running PyInstaller...
   --add-data "docs;docs" ^
   --add-data "README.md;." ^
   --add-data "LICENSE;." ^
+  --add-data "CHANGELOG.md;." ^
   --add-data ".env.example;." ^
   main.py
 
@@ -98,6 +99,7 @@ if not exist "release\%PACKAGE_NAME%\config" robocopy "config" "release\%PACKAGE
 if not exist "release\%PACKAGE_NAME%\docs" robocopy "docs" "release\%PACKAGE_NAME%\docs" /E >nul
 copy /Y "README.md" "release\%PACKAGE_NAME%\README.md" >nul
 copy /Y "LICENSE" "release\%PACKAGE_NAME%\LICENSE" >nul
+copy /Y "CHANGELOG.md" "release\%PACKAGE_NAME%\CHANGELOG.md" >nul
 copy /Y ".env.example" "release\%PACKAGE_NAME%\.env.example" >nul
 if exist "config\app_config.example.json" copy /Y "config\app_config.example.json" "release\%PACKAGE_NAME%\config\app_config.json" >nul
 if exist "config\api_config.example.json" copy /Y "config\api_config.example.json" "release\%PACKAGE_NAME%\config\api_config.json" >nul
@@ -108,7 +110,7 @@ if exist "release\%PACKAGE_NAME%\assets\private" rmdir /s /q "release\%PACKAGE_N
 if exist "release\%PACKAGE_NAME%\data" rmdir /s /q "release\%PACKAGE_NAME%\data"
 if exist "release\%PACKAGE_NAME%\models" rmdir /s /q "release\%PACKAGE_NAME%\models"
 if exist "release\%PACKAGE_NAME%\backups" rmdir /s /q "release\%PACKAGE_NAME%\backups"
-for /r "release\%PACKAGE_NAME%" %%F in (*.log *.spec) do del /q "%%F"
+for /r "release\%PACKAGE_NAME%" %%F in (*.log *.spec *.broken-*) do del /q "%%F"
 for /d /r "release\%PACKAGE_NAME%" %%D in (__pycache__) do rmdir /s /q "%%D" 2>nul
 
 echo [Daniya] Creating zip package...

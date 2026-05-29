@@ -7,21 +7,51 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import requests
 from dotenv import dotenv_values
 
 from .chat_client import mask_key
-from .config_manager import DEFAULT_APP_CONFIG, ConfigManager, deep_merge
+from .config_manager import ConfigManager, deep_merge
 from .utils import ensure_dir, runtime_root
+from .llm.provider_manager import ProviderManager
 
 
 DEFAULT_API_CONFIG: dict[str, Any] = {
-    "provider": "deepseek",
-    "base_url": "https://api.deepseek.com",
-    "model": "deepseek-chat",
+    "active_provider": "deepseek",
+    "providers": {
+        "deepseek": {
+            "base_url": "https://api.deepseek.com",
+            "model": "deepseek-chat",
+            "timeout": 20,
+            "max_tokens": 360,
+            "temperature": 0.8
+        },
+        "openai": {
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4o",
+            "timeout": 30,
+            "max_tokens": 360,
+            "temperature": 0.8
+        },
+        "claude": {
+            "base_url": "https://api.anthropic.com/v1",
+            "model": "claude-3-5-sonnet-20240620",
+            "timeout": 30,
+            "max_tokens": 1024,
+            "temperature": 0.8
+        },
+        "local_openai_compatible": {
+            "base_url": "http://localhost:1234/v1",
+            "model": "local-model",
+            "timeout": 60,
+            "max_tokens": 512,
+            "temperature": 0.8
+        }
+    },
     "local_mode": False,
-    "timeout_seconds": 20,
-    "api_key_env": "DEEPSEEK_API_KEY",
+    "chat": {
+        "fallback_reply": "达妮娅现在还没有连上大脑，但我已经在这里啦！",
+        "api_error_fallback_reply": "达妮娅刚刚走神了一下……但我还在哦。"
+    }
 }
 
 
@@ -52,14 +82,43 @@ class SettingsManager:
         loaded = self._load_json(self.api_config_path, DEFAULT_API_CONFIG)
         if not isinstance(loaded, dict):
             loaded = {}
+        # 向下兼容旧版本 api_config.json
+        if "providers" not in loaded:
+            old_provider = loaded.get("provider", "deepseek")
+            loaded = {
+                "active_provider": old_provider,
+                "providers": {
+                    old_provider: {
+                        "base_url": loaded.get("base_url", "https://api.deepseek.com"),
+                        "model": loaded.get("model", "deepseek-chat"),
+                        "timeout": loaded.get("timeout_seconds", 20),
+                        "api_key_env": loaded.get("api_key_env", "DEEPSEEK_API_KEY"),
+                    }
+                },
+                "local_mode": loaded.get("local_mode", False),
+                "chat": loaded.get("chat", DEFAULT_API_CONFIG["chat"])
+            }
         config = deep_merge(DEFAULT_API_CONFIG, loaded)
-        config["api_key_masked"] = mask_key(self.current_api_key())
+        
+        # 为当前 active_provider 脱敏 key
+        active_provider = config.get("active_provider", "deepseek")
+        providers = config.get("providers", {})
+        if active_provider in providers:
+            # 拿到真实的 key
+            pm = ProviderManager(config)
+            prov = pm.get_active_provider()
+            env_key_name = providers[active_provider].get("api_key_env", f"{active_provider.upper()}_API_KEY")
+            raw_key = self.current_api_key(env_key_name)
+            providers[active_provider]["api_key_masked"] = mask_key(raw_key)
+            
         return config
 
     def save_api_config(self, config: dict[str, Any]) -> None:
         safe = deep_merge(DEFAULT_API_CONFIG, config if isinstance(config, dict) else {})
-        safe.pop("api_key", None)
-        safe.pop("api_key_masked", None)
+        # 清除可能存在的明文 key
+        for p_name, p_conf in safe.get("providers", {}).items():
+            p_conf.pop("api_key", None)
+            p_conf.pop("api_key_masked", None)
         self._save_json_atomic(self.api_config_path, safe)
 
     def save_api_settings(
@@ -71,28 +130,42 @@ class SettingsManager:
         local_mode: bool = False,
     ) -> None:
         config = self.load_api_config()
-        config.update(
-            {
-                "provider": provider or "deepseek",
-                "base_url": base_url or DEFAULT_API_CONFIG["base_url"],
-                "model": model or DEFAULT_API_CONFIG["model"],
-                "local_mode": bool(local_mode),
-            }
-        )
+        config["active_provider"] = provider or "deepseek"
+        config["local_mode"] = bool(local_mode)
+        
+        providers = config.setdefault("providers", {})
+        prov_conf = providers.setdefault(provider, {})
+        prov_conf["base_url"] = base_url or DEFAULT_API_CONFIG["providers"]["deepseek"]["base_url"]
+        prov_conf["model"] = model or DEFAULT_API_CONFIG["providers"]["deepseek"]["model"]
+        
+        env_key_name = ""
+        if provider == "deepseek":
+            env_key_name = "DEEPSEEK_API_KEY"
+        elif provider == "openai":
+            env_key_name = "OPENAI_API_KEY"
+        elif provider == "claude":
+            env_key_name = "ANTHROPIC_API_KEY"
+        elif provider == "local_openai_compatible":
+            env_key_name = "OPENAI_COMPATIBLE_API_KEY"
+        else:
+            env_key_name = f"{provider.upper()}_API_KEY"
+            
+        prov_conf["api_key_env"] = env_key_name
+        
         self.save_api_config(config)
         self._sync_app_api(config)
-        if api_key is not None:
+        
+        if api_key is not None and env_key_name:
             self.write_env_values(
                 {
-                    "DEEPSEEK_API_KEY": api_key.strip(),
-                    "DEEPSEEK_BASE_URL": str(config["base_url"]).strip(),
-                    "DEEPSEEK_MODEL": str(config["model"]).strip(),
+                    env_key_name: api_key.strip(),
                 }
             )
 
-    def current_api_key(self) -> str:
+    def current_api_key(self, env_key_name: str = "DEEPSEEK_API_KEY") -> str:
         env = dotenv_values(self.env_path) if self.env_path.exists() else {}
-        return str(env.get("DEEPSEEK_API_KEY") or "").strip()
+        key = os.environ.get(env_key_name) or env.get(env_key_name)
+        return str(key or "").strip()
 
     def write_env_values(self, values: dict[str, str]) -> None:
         current = _read_env_lines(self.env_path)
@@ -109,32 +182,26 @@ class SettingsManager:
         config = self.load_api_config()
         if config.get("local_mode"):
             return True, "本地模式已开启，API 测试跳过。"
-        api_key = self.current_api_key()
-        if not api_key or api_key == "your_api_key_here":
-            return False, "未配置 API Key。"
-        try:
-            response = requests.post(
-                str(config.get("base_url", DEFAULT_API_CONFIG["base_url"])).rstrip("/") + "/chat/completions",
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={
-                    "model": str(config.get("model", DEFAULT_API_CONFIG["model"])),
-                    "messages": [{"role": "user", "content": "ping"}],
-                    "max_tokens": 4,
-                    "temperature": 0,
-                },
-                timeout=max(1, min(timeout, 20)),
-            )
-            if response.status_code < 400:
-                return True, f"连接成功，key={mask_key(api_key)}。"
-            return False, f"连接失败：HTTP {response.status_code}，key={mask_key(api_key)}。"
-        except requests.RequestException as exc:
-            return False, f"连接失败：{exc.__class__.__name__}，key={mask_key(api_key)}。"
+        
+        pm = ProviderManager(config)
+        provider = pm.get_active_provider()
+        
+        # 获取脱敏后的 key 仅仅用于显示
+        prov_conf = pm.get_provider_config(provider.provider_id)
+        env_key_name = prov_conf.get("api_key_env", f"{provider.provider_id.upper()}_API_KEY")
+        raw_key = self.current_api_key(env_key_name)
+        
+        result = pm.test_connection(provider.provider_id)
+        
+        # 补充 key 信息
+        message = result.message
+        if provider.provider_id != "local_openai_compatible":
+            message += f" (key={mask_key(raw_key)})"
+            
+        return result.success, message
 
     def _sync_app_api(self, api_config: dict[str, Any]) -> None:
         app_config = self.load_app_config()
-        app_config.setdefault("api", {})["base_url"] = api_config.get("base_url", DEFAULT_API_CONFIG["base_url"])
-        app_config.setdefault("api", {})["model"] = api_config.get("model", DEFAULT_API_CONFIG["model"])
-        app_config.setdefault("api", {})["provider"] = api_config.get("provider", "deepseek")
         app_config.setdefault("api", {})["local_mode"] = bool(api_config.get("local_mode", False))
         self.save_app_config(app_config)
 
