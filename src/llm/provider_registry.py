@@ -187,15 +187,20 @@ class ProviderMeta:
         """将任意字符串标准化为规范 Provider key。
 
         处理流程：
-        1. 去除首尾空白、转小写、空格替换为下划线
-        2. 检查别名映射表
-        3. 检查是否是已知 key
-        4. 兜底返回 local_openai_compatible（或原值）
+        1. 去除首尾空白
+        2. 检查原始形式的别名映射表（空格保留）
+        3. 转小写 + 空格替换为下划线，再查别名映射表
+        4. 检查是否是已知 key
+        5. 兜底返回 local_openai_compatible
         """
         if not raw:
             return Provider.LOCAL_OPENAI_COMPATIBLE
-        cleaned = raw.strip().lower().replace(" ", "_")
-        # 别名优先
+        stripped = raw.strip()
+        # 别名检查：先检查原始形式，再检查规范化形式
+        lower_original = stripped.lower()
+        if lower_original in Provider._ALIASES:
+            return Provider._ALIASES[lower_original]
+        cleaned = lower_original.replace(" ", "_")
         if cleaned in Provider._ALIASES:
             return Provider._ALIASES[cleaned]
         # 已知 key 直接返回

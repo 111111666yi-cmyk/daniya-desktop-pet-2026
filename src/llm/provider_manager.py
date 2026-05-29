@@ -20,6 +20,7 @@ from .boundaries import ollama_api
 from .boundaries import openai_api
 from .boundaries import anthropic_api
 from .boundaries.ollama_api import ModelNotFoundError
+from .provider_registry import Provider, ProviderMeta
 
 
 class ProviderManager:
@@ -69,7 +70,7 @@ class ProviderManager:
 
     def get_active_profile(self) -> dict[str, Any]:
         profiles = self.profiles_data.get("profiles", [])
-        active_id = self.profiles_data.get("active_text_profile_id", "deepseek_default")
+        active_id = self.profiles_data.get("active_text_profile_id", ProviderMeta.make_profile_id(Provider.DEEPSEEK))
         for p in profiles:
             if p.get("id") == active_id:
                 return p
@@ -91,14 +92,14 @@ class ProviderManager:
         api_key = self._get_api_key(profile.get("api_key_env", ""))
 
         try:
-            if provider == "ollama":
+            if provider == Provider.OLLAMA:
                 response = ollama_api.chat(
                     messages,
                     base_url=base_url,
                     model=model,
                     timeout=int(profile.get("timeout", 20)),
                 )
-            elif provider in ("claude", "anthropic"):
+            elif provider in (Provider.CLAUDE, "anthropic"):  # "anthropic" 为历史兼容
                 response = anthropic_api.chat(
                     messages,
                     api_key=api_key,
@@ -107,7 +108,7 @@ class ProviderManager:
                     max_tokens=int(profile.get("max_tokens", 1024)),
                     timeout=int(profile.get("timeout", 30)),
                 )
-            elif provider == "deepseek":
+            elif provider == Provider.DEEPSEEK:
                 response = deepseek_api.chat(
                     messages,
                     api_key=api_key,
@@ -117,7 +118,7 @@ class ProviderManager:
                     timeout=int(profile.get("timeout", 20)),
                 )
             else:
-                # openai, openai_compatible, lm_studio, llama_cpp, custom
+                # openai, openai_compatible, lm_studio, llama_cpp, local_openai_compatible, custom
                 response = openai_api.chat(
                     messages,
                     api_key=api_key,
@@ -167,17 +168,17 @@ class ProviderManager:
         api_key = self._get_api_key(profile.get("api_key_env", ""))
 
         try:
-            if provider == "ollama":
+            if provider == Provider.OLLAMA:
                 ok = ollama_api.test_connection(base_url=base_url)
                 return ok, "Ollama 服务连接成功" if ok else "Ollama 服务不可达"
-            elif provider in ("claude", "anthropic"):
+            elif provider in (Provider.CLAUDE, "anthropic"):
                 ok = anthropic_api.chat(
                     [{"role": "user", "content": "Hi"}],
                     api_key=api_key, base_url=base_url, model=model,
                     max_tokens=5, timeout=8,
                 )
                 return True, "连接成功"
-            elif provider == "deepseek":
+            elif provider == Provider.DEEPSEEK:
                 ok = deepseek_api.test_connection(
                     api_key=api_key, base_url=base_url, model=model, timeout=8,
                 )
