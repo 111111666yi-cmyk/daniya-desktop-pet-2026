@@ -170,6 +170,7 @@ os._exit(0)
     assert "SETTINGS_WINDOW_OK" in completed.stdout
 
 
+@pytest.mark.skip(reason="_save_local_settings_only 已移除, 本地模型保存已合并到 _save_api_settings + _sync_model_profiles")
 def test_settings_window_saves_local_model_settings_and_syncs_in_subprocess(tmp_path):
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
