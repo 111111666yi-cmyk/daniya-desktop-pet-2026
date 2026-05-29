@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtCore import QObject, QThread, Signal
+from PySide6.QtCore import QObject, QThread, QTimer, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from .affinity_manager import AffinityManager
@@ -49,6 +49,25 @@ class ChatWorker(QThread):
             self.reply_ready.emit("……达妮娅刚刚走神了。", "engine_error")
         # [LEGACY] 原逻辑: reply, source = self.chat_client.reply(self.user_text)
         #                   self.reply_ready.emit(reply, source)
+
+
+class PhysicalEventWorker(QThread):
+    """后台线程：处理物理事件的引擎调用，避免阻塞 GUI。
+
+    [CHANGE-005] 物理事件（点击/拖拽/提醒）涉及文件 I/O
+    (relationship_state.json 读写)，必须在后台执行。
+    """
+
+    def __init__(self, adapter: DaniyaEngineAdapter, event_name: str) -> None:
+        super().__init__()
+        self.adapter = adapter
+        self.event_name = event_name
+
+    def run(self) -> None:
+        try:
+            self.adapter.handle_physical_event(self.event_name)
+        except Exception as exc:
+            print(f"[Daniya] Engine physical event error ({self.event_name}): {exc}")
 
 
 class AppController(QObject):
@@ -102,6 +121,12 @@ class AppController(QObject):
         self.worker: ChatWorker | None = None
         self.reminder_boxes: list[QMessageBox] = []
         self.settings_window: SettingsWindow | None = None
+        # [CHANGE-005] 物理事件后台线程引用 + 拖拽防抖定时器
+        self._phys_workers: list[PhysicalEventWorker] = []
+        self._drag_debounce = QTimer(self)
+        self._drag_debounce.setSingleShot(True)
+        self._drag_debounce.setInterval(500)  # 500ms 防抖
+        self._drag_debounce.timeout.connect(self._fire_drag_event)
 
     def show(self) -> None:
         self.window.show_at_config_position()
@@ -139,21 +164,15 @@ class AppController(QObject):
         else:
             self.window.animation_manager.trigger_clicked()
         self.window.speak(self.day_night_manager.click_line())
-        # [CHANGE-003] 物理点击事件流入引擎，更新关系数值 (defense_level +1)
-        try:
-            self.daniya_adapter.handle_physical_event("user_click")
-        except Exception as exc:
-            print(f"[Daniya] Engine physical event error: {exc}")
+        # [CHANGE-003+005] 物理点击事件流入引擎（后台线程，不阻塞 GUI）
+        self._fire_physical_event("user_click")
 
     def save_window_position(self, x: int, y: int) -> None:
         self.app_config.setdefault("window", {})["start_x"] = x
         self.app_config.setdefault("window", {})["start_y"] = y
         self.config_manager.save_app_config(self.app_config)
-        # [CHANGE-003] 拖拽释放事件流入引擎，更新关系数值 (defense_level +1)
-        try:
-            self.daniya_adapter.handle_physical_event("user_drag")
-        except Exception as exc:
-            print(f"[Daniya] Engine physical event error: {exc}")
+        # [CHANGE-003+005] 拖拽事件防抖：500ms 内不重复触发，拖拽结束才执行一次
+        self._drag_debounce.start()
 
     def save_pet_height(self, height: int) -> None:
         actual = self.window.set_pet_height(height)
@@ -210,11 +229,8 @@ class AppController(QObject):
         self.window.set_always_on_top(True)
         self.window.animation_manager.trigger_remind()
         self.window.speak(f"提醒时间到啦：{text}")
-        # [CHANGE-003] 提醒到期事件流入引擎
-        try:
-            self.daniya_adapter.handle_physical_event("reminder_due")
-        except Exception as exc:
-            print(f"[Daniya] Engine physical event error: {exc}")
+        # [CHANGE-003+005] 提醒到期事件流入引擎（后台线程）
+        self._fire_physical_event("reminder_due")
         box = QMessageBox(self.window)
         box.setWindowTitle("达妮娅提醒")
         box.setText(f"提醒时间到啦：{text}")
@@ -279,6 +295,24 @@ class AppController(QObject):
     def quit(self) -> None:
         self.qapp.quit()
 
+
+    # -- [CHANGE-005] 物理事件后台调度 --
+
+    def _fire_physical_event(self, event_name: str) -> None:
+        """在后台线程中触发物理事件，避免阻塞 GUI 主线程。"""
+        w = PhysicalEventWorker(self.daniya_adapter, event_name)
+        self._phys_workers.append(w)
+        w.finished.connect(lambda: self._cleanup_phys_worker(w))
+        w.start()
+
+    def _fire_drag_event(self) -> None:
+        """拖拽防抖定时器到期后触发一次拖拽事件。"""
+        self._fire_physical_event("user_drag")
+
+    def _cleanup_phys_worker(self, w: PhysicalEventWorker) -> None:
+        if w in self._phys_workers:
+            self._phys_workers.remove(w)
+        w.deleteLater()
 
 def run() -> None:
     app = QApplication(sys.argv)
