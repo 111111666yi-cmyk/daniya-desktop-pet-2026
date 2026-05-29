@@ -1,7 +1,9 @@
 """OpenAI / OpenAI-compatible API 边界模块。
 
-适用于：官方 OpenAI API、LM Studio、llama.cpp server、自定义兼容端点。
+适用于：DeepSeek、OpenAI、LM Studio、llama.cpp server、自定义兼容端点。
 失败模式：鉴权失败(401)、限流(429)、服务端错误(5xx)、网络不可达、响应格式异常。
+
+注：deepseek_api.py 现为此模块的薄封装（保持向后兼容）。
 """
 
 from __future__ import annotations
@@ -23,12 +25,16 @@ def chat(
     max_tokens: int = 360,
     timeout: int = 20,
 ) -> str:
-    """向 OpenAI-compatible 端点发送对话请求，返回响应文本。"""
-    headers = {"Content-Type": "application/json"}
+    """向 OpenAI-compatible 端点发送对话请求，返回响应文本。
+
+    适用于 DeepSeek / OpenAI / LM Studio / llama.cpp / 自定义端点。
+    api_key 为空时不发送 Authorization header（本地无鉴权服务）。
+    """
+    headers: dict[str, str] = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
-    payload = {
+    payload: dict[str, Any] = {
         "model": model,
         "messages": messages,
         "temperature": temperature,

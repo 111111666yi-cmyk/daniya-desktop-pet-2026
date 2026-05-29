@@ -17,6 +17,7 @@ class DaniyaSettingsDialog(QDialog):
         self.controller = controller
         self.setWindowTitle("达妮娅设定")
         self.resize(760, 560)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
 
         layout = QVBoxLayout(self)
         self.editor = QTextEdit()

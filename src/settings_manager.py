@@ -317,6 +317,56 @@ class SettingsManager:
         profiles_data["active_text_profile_id"] = target_id
         self.save_model_profiles(profiles_data)
 
+    def save_local_model_profile(self, provider: str, base_url: str, model: str, service_label: str = "") -> None:
+        """保存本地模型 profile 到 model_profiles.json，不改变当前活跃的云端 Provider。"""
+        profiles_data = self.load_model_profiles()
+        profiles = profiles_data.get("profiles", [])
+
+        target_id = f"{provider}_{model.replace(':', '_').replace('.', '_')}"
+        found = False
+        for p in profiles:
+            if p.get("id") == target_id:
+                p["base_url"] = base_url
+                p["model"] = model
+                p["provider"] = provider
+                p["enabled"] = True
+                found = True
+                break
+
+        if not found:
+            profiles.append({
+                "id": target_id,
+                "name": f"{service_label or provider} {model}",
+                "type": "text",
+                "provider": provider,
+                "api_style": "ollama" if provider == "ollama" else "openai_compatible",
+                "base_url": base_url,
+                "model": model,
+                "api_key_env": "",
+                "enabled": True,
+                "capabilities": ["text"],
+                "source": "local",
+            })
+
+        # 不改变 active_text_profile_id
+        self.save_model_profiles(profiles_data)
+
+    def save_and_activate_local_model_profile(self, provider: str, base_url: str, model: str, service_label: str = "") -> None:
+        """保存本地模型 profile 到 model_profiles.json，并将其设为当前活跃的 Provider/模型。"""
+        self.save_local_model_profile(provider, base_url, model, service_label)
+        
+        profiles_data = self.load_model_profiles()
+        target_id = f"{provider}_{model.replace(':', '_').replace('.', '_')}"
+        profiles_data["active_text_profile_id"] = target_id
+        self.save_model_profiles(profiles_data)
+        
+        # 同时同步到 api_config.json 保持活跃 provider 一致
+        config = self.load_api_config()
+        config["active_provider"] = provider
+        config["local_mode"] = False  # 确保关闭了本地 fallback 模式
+        self.save_api_config(config)
+        self._sync_app_api(config)
+
     def _load_json(self, path: Path, default: dict[str, Any]) -> Any:
         try:
             if not path.exists():

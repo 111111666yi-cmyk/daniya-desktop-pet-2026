@@ -38,8 +38,8 @@ class FirstRunWizard(QDialog):
         self.setWindowTitle("欢迎来到 达妮娅 (Daniya) - 首次运行向导")
         self.setMinimumSize(600, 700)
         self.setModal(True)
-        # 移除帮助按钮
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
+        # 移除帮助按钮并加上最小化和最大化按钮
+        self.setWindowFlags((self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint) | Qt.WindowType.WindowMinimizeButtonHint | Qt.WindowType.WindowMaximizeButtonHint)
 
         # UI 构建
         layout = QVBoxLayout(self)

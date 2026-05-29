@@ -347,6 +347,7 @@ class HistoryDialog(QDialog):
         self.controller = controller
         self.setWindowTitle("历史记录")
         self.resize(720, 520)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
         self.layout = QVBoxLayout(self)
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
