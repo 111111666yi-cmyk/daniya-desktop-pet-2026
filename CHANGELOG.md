@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.49.1 - Settings Optimization & Window Controls Patch
+
+- **Window Control Enhancement**: Added window minimize/maximize flags (`Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint`) to SettingsWindow, DaniyaSettingsDialog, HistoryDialog, FirstRunWizard, and the model downloader dialog.
+- **Tab Consolidation**: Unified settings panels by merging `API / 模型` and `本地模型` into `模型与引擎` tab, and merging `关系与事件` and `系统` into a scrollable `数据与系统` tab to optimize page real-estate and user flow.
+- **Local Model Auto-Activation**: Implemented `save_and_activate_local_model_profile` to automatically switch and activate local model profiles upon saving, resolving configuration sync conflicts.
+- **Test Encoding Resilience**: Fixed CP936/UTF-8 console decoding timeout issues on Windows in subprocess tests by using Unicode escapes for non-ASCII tab names.
+
 ## v0.49 - Official Open Source Release
 
 - Prepared the official open source release.
