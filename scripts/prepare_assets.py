@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
 from pathlib import Path
 
 from PIL import Image
@@ -13,12 +14,33 @@ PRIVATE_DIR = ROOT / "assets" / "private" / "daniya_summer"
 def remove_white_background(source: Path, destination: Path, threshold: int = 245) -> None:
     image = Image.open(source).convert("RGBA")
     pixels = image.load()
+    queue: deque[tuple[int, int]] = deque()
+    visited: set[tuple[int, int]] = set()
 
+    def is_background(x: int, y: int) -> bool:
+        red, green, blue, alpha = pixels[x, y]
+        return alpha > 0 and red >= threshold and green >= threshold and blue >= threshold
+
+    def enqueue(x: int, y: int) -> None:
+        point = (x, y)
+        if point not in visited and is_background(x, y):
+            visited.add(point)
+            queue.append(point)
+
+    for x in range(image.width):
+        enqueue(x, 0)
+        enqueue(x, image.height - 1)
     for y in range(image.height):
-        for x in range(image.width):
-            red, green, blue, alpha = pixels[x, y]
-            if red >= threshold and green >= threshold and blue >= threshold:
-                pixels[x, y] = (red, green, blue, 0)
+        enqueue(0, y)
+        enqueue(image.width - 1, y)
+
+    while queue:
+        x, y = queue.popleft()
+        red, green, blue, alpha = pixels[x, y]
+        pixels[x, y] = (red, green, blue, 0)
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= nx < image.width and 0 <= ny < image.height:
+                enqueue(nx, ny)
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     image.save(destination)
@@ -59,12 +81,16 @@ def main() -> None:
   "name": "daniya_summer",
   "display_name": "达妮娅·夏日形态",
   "default_height": 96,
+  "actions_version": "0.4",
   "animations": {
     "idle": ["normal1.png"],
+    "talk": ["normal1.png", "normal2.png"],
     "talking": ["normal1.png", "normal2.png"],
     "hover": ["normal1.png"],
     "clicked": ["normal2.png"],
+    "drag": ["normal2.png"],
     "dragging": ["normal2.png"],
+    "sleep": ["normal1.png"],
     "sleeping": ["normal1.png"],
     "happy": ["normal2.png"],
     "remind": ["normal2.png"]

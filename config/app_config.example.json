@@ -1,0 +1,55 @@
+{
+  "window": {
+    "start_x": 1000,
+    "start_y": 500,
+    "always_on_top": true,
+    "show_input": false,
+    "opacity_percent": 100
+  },
+  "pet": {
+    "pet_height": 96,
+    "target_height": 96,
+    "min_pet_height": 80,
+    "max_pet_height": 160,
+    "size_presets": [80, 96, 112, 128, 144, 160],
+    "idle_animation_interval_ms": 10000,
+    "click_to_call_enabled": false,
+    "states": {
+      "idle": "idle",
+      "speaking": "talking"
+    }
+  },
+  "ui": {
+    "bubble_max_width": 300,
+    "input_min_width": 180
+  },
+  "chat": {
+    "timeout_seconds": 20,
+    "context_limit": 8,
+    "temperature": 0.8,
+    "max_tokens": 360,
+    "fallback_reply": "Daniya is offline right now, but local fallback is available.",
+    "api_error_fallback_reply": "The API request failed, so local fallback is being used."
+  },
+  "api": {
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-chat"
+  },
+  "typewriter": {
+    "char_interval_ms": 35,
+    "mouth_interval_ms": 180,
+    "click_cooldown_ms": 500,
+    "auto_next_ms": 2000,
+    "auto_hide_ms": 3000
+  },
+  "affinity": {
+    "click_cooldown_seconds": 5
+  },
+  "hourly_chime_enabled": true,
+  "idle_chat_enabled": true,
+  "idle_chat_minutes": 10,
+  "reminder_enabled": true,
+  "day_night_enabled": true,
+  "night_start_hour": 23,
+  "night_end_hour": 7
+}

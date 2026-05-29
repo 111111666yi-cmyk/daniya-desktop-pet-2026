@@ -1,0 +1,13 @@
+events:
+  - id: example_event
+    name: 示例事件
+    type: example
+    trigger_keywords:
+      - 示例
+    triggers:
+      - 示例
+    response_style: default
+    lines:
+      - 示例回应
+    action: idle
+    state_delta: {}

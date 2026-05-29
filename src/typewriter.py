@@ -88,7 +88,8 @@ class Typewriter(QObject):
         self.is_typing = True
         self.label.setText("")
         self.label.show()
-        self.mouth_open = False
+        self.mouth_open = True
+        self.set_pet_state(self.speaking_state)
         self.char_timer.start(self.char_interval_ms)
         self.mouth_timer.start(self.mouth_interval_ms)
 
@@ -101,7 +102,7 @@ class Typewriter(QObject):
 
     def _tick_mouth(self) -> None:
         self.mouth_open = not self.mouth_open
-        self.set_pet_state(self.speaking_state if self.mouth_open else self.idle_state)
+        self.set_pet_state(self.speaking_state)
 
     def _show_full_current(self) -> None:
         self.label.setText(self.current_text)

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QDateTime, Qt
+from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QDateTimeEdit,
     QDialog,
@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .daniya_settings_window import DaniyaSettingsDialog
 from .utils import resource_path
 
 if TYPE_CHECKING:
@@ -42,12 +43,15 @@ class MenuManager:
         top_action = basic.addAction("取消置顶" if self.window.always_on_top else "保持置顶")
         top_action.triggered.connect(self._toggle_top)
 
+        call_here_action = basic.addAction("召唤到鼠标位置")
+        call_here_action.triggered.connect(self._call_pet_to_cursor)
+
         size_menu = basic.addMenu("大小")
         labels = {
             80: "迷你 80px",
             96: "推荐 96px",
             112: "稍大 112px",
-            128: "清楚 128px",
+            128: "清晰 128px",
             144: "大号 144px",
             160: "最大 160px",
         }
@@ -58,6 +62,9 @@ class MenuManager:
             action.setChecked(height == current_height)
             action.triggered.connect(lambda checked=False, value=height: self.controller.save_pet_height(value))
 
+        self._add_action_module_menu(basic)
+        self._add_pet_feature_menu(basic)
+
         chat = menu.addMenu("对话")
         history_action = chat.addAction("历史记录")
         history_action.triggered.connect(self.show_history_dialog)
@@ -65,6 +72,10 @@ class MenuManager:
         prompt_action.triggered.connect(self.show_prompt_dialog)
         profile_action = chat.addAction("御主档案")
         profile_action.triggered.connect(self.show_profile_dialog)
+        daniya_settings_action = chat.addAction("达妮娅设定")
+        daniya_settings_action.triggered.connect(self.show_daniya_settings_dialog)
+        settings_center_action = chat.addAction("设置中心")
+        settings_center_action.triggered.connect(self.controller.open_settings_center)
 
         companion = menu.addMenu("陪伴")
         note_action = companion.addAction("记一笔")
@@ -95,6 +106,52 @@ class MenuManager:
 
         return menu
 
+    def _add_action_module_menu(self, parent: QMenu) -> None:
+        module_menu = parent.addMenu("动作模组")
+        module_labels = {
+            "A_sit_base": "A 坐姿 / 表情",
+            "B_stand_base_pack": "B 站姿 / 挥手",
+            "C_sleep_base_pack": "C 睡姿",
+            "D_special_motion_pack": "D 特殊 / 探头",
+        }
+        active_module = self.controller.asset_manager.active_action_module()
+        for module, label in module_labels.items():
+            action = module_menu.addAction(label)
+            action.setCheckable(True)
+            action.setChecked(module == active_module)
+            action.triggered.connect(lambda checked=False, value=module: self.controller.set_action_module(value))
+
+    def _add_pet_feature_menu(self, parent: QMenu) -> None:
+        pet_features = parent.addMenu("宠物功能")
+        pet_config = self.controller.app_config.get("pet", {})
+
+        hover_action = pet_features.addAction("鼠标悬停动作")
+        hover_action.setCheckable(True)
+        hover_action.setChecked(bool(pet_config.get("hover_animation_enabled", False)))
+        hover_action.triggered.connect(
+            lambda checked=False: self.controller.set_pet_feature("hover_animation_enabled", bool(checked))
+        )
+
+        edge_action = pet_features.addAction("左右边缘探头")
+        edge_action.setCheckable(True)
+        edge_action.setChecked(bool(pet_config.get("edge_peek_enabled", True)))
+        edge_action.triggered.connect(
+            lambda checked=False: self.controller.set_pet_feature("edge_peek_enabled", bool(checked))
+        )
+
+        call_action = pet_features.addAction("左键点击桌面召唤")
+        call_action.setCheckable(True)
+        call_action.setChecked(bool(pet_config.get("click_to_call_enabled", False)))
+        call_action.triggered.connect(
+            lambda checked=False: self.controller.set_pet_feature("click_to_call_enabled", bool(checked))
+        )
+
+        modules = pet_config.get("enabled_action_modules", {})
+        drag_action = pet_features.addAction("E 拖拽动作系统")
+        drag_action.setCheckable(True)
+        drag_action.setChecked(not isinstance(modules, dict) or bool(modules.get("E_QQ_pet_drag_system", True)))
+        drag_action.triggered.connect(lambda checked=False: self.controller.set_drag_module_enabled(bool(checked)))
+
     def _toggle_top(self) -> None:
         enabled = not self.window.always_on_top
         self.window.set_always_on_top(enabled)
@@ -107,6 +164,11 @@ class MenuManager:
         self.controller.app_config.setdefault("window", {})["show_input"] = self.window.input_box.isVisible()
         self.controller.config_manager.save_app_config(self.controller.app_config)
         self.window.set_context_menu(self.create_menu())
+
+    def _call_pet_to_cursor(self) -> None:
+        self.window.move_near(QCursor.pos())
+        self.window.raise_()
+        self.window.activateWindow()
 
     def show_history_dialog(self) -> None:
         dialog = HistoryDialog(self.controller, self.window)
@@ -169,6 +231,10 @@ class MenuManager:
 
         save.clicked.connect(on_save)
         cancel.clicked.connect(dialog.reject)
+        dialog.exec()
+
+    def show_daniya_settings_dialog(self) -> None:
+        dialog = DaniyaSettingsDialog(self.controller, self.window)
         dialog.exec()
 
     def show_note_dialog(self) -> None:

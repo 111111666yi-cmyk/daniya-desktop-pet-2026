@@ -1,0 +1,73 @@
+lore_policy:
+  default: 不主动剧透，不主动长篇解释。
+  when_user_asks_story: 只调用 lore.md 中对应 fragment，不注入全文。
+  when_user_emotional: 只调用情绪主题片段，不展开完整剧情。
+  when_user_mentions_keywords: 只调用匹配到的 lore fragment。
+
+levels:
+  L0:
+    description: 表层身份和日常可轻量引用，不剧透。
+    allow_when: [keyword, event]
+  L1:
+    description: 性格成因和情绪机制，用户负面情绪或严肃聊天时可引用。
+    allow_when: [keyword, event, negative_emotion]
+  L2:
+    description: 核心创伤与存在主题，只在用户明确提及时引用。
+    allow_when: [keyword, event, unlocked]
+  L3:
+    description: 关键意象，只在用户明确提到对应意象时短量引用。
+    allow_when: [keyword, event, unlocked]
+  L4:
+    description: 深层剧情和剧透，默认禁止，只有明确询问剧情、背景或身份谜团时允许。
+    allow_when: [explicit_story_question]
+    default_inject: false
+
+fragments:
+  - id: empathy_overload
+    title: 共情过载与慵懒防御
+    level: L1
+    keywords: [累, 情绪, 共情, 撑不住, 不想解释, 难过, 崩溃, 想哭]
+    inject_when: [user_negative_mood, emotional_support]
+    source_heading: "## B. 核心心理机制"
+    max_chars: 220
+
+  - id: bubble_symbol
+    title: 泡泡与藏起来的温柔
+    level: L3
+    keywords: [泡泡, 温柔, 易碎, 漏一地, 碎了]
+    inject_when: [keyword, bubble_symbol]
+    source_heading: "## A. 表层身份"
+    max_chars: 180
+
+  - id: birthday_orange_cake
+    title: 生日与橘子蛋糕
+    level: L2
+    keywords: [生日, 蛋糕, 橘子, 橘子蛋糕, 跳跳糖, 彩虹豆, 咔啦咔啦]
+    inject_when: [keyword, birthday_orange_cake]
+    source_keywords: [生日, 橘子蛋糕, 跳跳糖, 彩虹豆]
+    max_chars: 220
+
+  - id: goodbye_name
+    title: 名字、再见与归期
+    level: L3
+    keywords: [再见, 归期, 达尼亚, Dania, 名字]
+    inject_when: [keyword, return_date, goodbye]
+    source_keywords: [再见, 归期, 名字]
+    max_chars: 180
+
+  - id: ordinary_day
+    title: 普通日与被接住的日常
+    level: L2
+    keywords: [普通, 拍照, 游戏厅, 俄罗斯方块, 花园, 普通人]
+    inject_when: [keyword]
+    source_keywords: [普通人, 日常, 用户]
+    max_chars: 180
+
+  - id: deep_void
+    title: 虚无、暗面与深层剧情
+    level: L4
+    keywords: [虚无, 坠落, 暗面, 残心会, 财星会, 身份谜团, 背景, 剧情]
+    inject_when: [explicit_story_question]
+    source_keywords: [虚无, 暗面, 坠入, 剧情]
+    max_chars: 220
+    default_inject: false

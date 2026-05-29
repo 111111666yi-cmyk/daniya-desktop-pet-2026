@@ -1,0 +1,9 @@
+action_mapping:
+  idle:
+    triggers:
+      - no_input
+    fallback: normal1
+    lines:
+      - 示例 idle 台词
+    assets:
+      - assets/new_character/idle/idle_01.png

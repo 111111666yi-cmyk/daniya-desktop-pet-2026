@@ -10,6 +10,7 @@ from .asset_manager import AssetManager
 from .bookmark_manager import BookmarkManager
 from .chat_client import ChatClient
 from .config_manager import ConfigManager
+from .daniya_engine_adapter import DaniyaEngineAdapter  # [CHANGE-001] v0.415 引擎接入
 from .day_night_manager import DayNightManager
 from .history_manager import HistoryManager
 from .idle_manager import IdleManager
@@ -19,20 +20,35 @@ from .notes_manager import NotesManager
 from .pet_window import PetWindow
 from .profile_manager import ProfileManager
 from .reminder_manager import ReminderManager
+from .settings_window import SettingsWindow
 from .time_event_manager import TimeEventManager
 
 
 class ChatWorker(QThread):
-    reply_ready = Signal(str, str)
+    """后台线程：通过 DaniyaEngineAdapter 处理用户消息，避免阻塞 GUI。
 
-    def __init__(self, chat_client: ChatClient, user_text: str) -> None:
+    [CHANGE-002] 原始版本直接调用 chat_client.reply()，现改为走完整引擎管线。
+    还原方法：恢复 reply_ready = Signal(str, str)，__init__ 接收 ChatClient，
+    run() 调用 self.chat_client.reply(self.user_text)。
+    """
+    reply_ready = Signal(str, str)  # (response_text, source)
+
+    def __init__(self, adapter: DaniyaEngineAdapter, user_text: str) -> None:
         super().__init__()
-        self.chat_client = chat_client
+        self.adapter = adapter
         self.user_text = user_text
+        # [LEGACY] 原签名: def __init__(self, chat_client: ChatClient, user_text: str)
 
     def run(self) -> None:
-        reply, source = self.chat_client.reply(self.user_text)
-        self.reply_ready.emit(reply, source)
+        try:
+            result = self.adapter.handle_user_text(self.user_text)
+            self.reply_ready.emit(result.response, result.source)
+        except Exception as exc:
+            # 引擎异常时 fallback 到安全回复，不让线程崩溃
+            print(f"[Daniya] Engine error in ChatWorker: {exc.__class__.__name__}: {exc}")
+            self.reply_ready.emit("……达妮娅刚刚走神了。", "engine_error")
+        # [LEGACY] 原逻辑: reply, source = self.chat_client.reply(self.user_text)
+        #                   self.reply_ready.emit(reply, source)
 
 
 class AppController(QObject):
@@ -58,10 +74,22 @@ class AppController(QObject):
         self.mini_games = MiniGames()
         self.bookmark_manager = BookmarkManager(self.config_manager)
 
+        # [CHANGE-001] v0.415 引擎适配器初始化
+        # 将 chat_client 作为 model_client 传入，适配器内部通过 _wrap_model_client
+        # 自动包装其 .reply() 方法为 DialogueEngine 所需的接口。
+        # animation_manager 和 state_manager 在 PetWindow 创建后再绑定。
+        self.daniya_adapter = DaniyaEngineAdapter(
+            model_client=self.chat_client,
+        )
+
         self.window = PetWindow(self.asset_manager, self.app_config)
         self.idle_manager = IdleManager(self.app_config, self.window.can_show_idle_message)
         self.menu_manager = MenuManager(self.window, self)
         self.window.set_context_menu(self.menu_manager.create_menu())
+
+        # [CHANGE-001] 延迟绑定适配器的 animation_manager（PetWindow 必须先创建）
+        self.daniya_adapter.animation_manager = self.window.animation_manager
+        self.daniya_adapter.state_manager = self.window
 
         self.window.message_submitted.connect(self.send_message)
         self.window.pet_clicked.connect(self.on_pet_clicked)
@@ -73,9 +101,11 @@ class AppController(QObject):
         self.window.update_affinity(self.affinity_manager.badge())
         self.worker: ChatWorker | None = None
         self.reminder_boxes: list[QMessageBox] = []
+        self.settings_window: SettingsWindow | None = None
 
     def show(self) -> None:
         self.window.show_at_config_position()
+        self.config_manager.save_app_config(self.app_config)
 
     def send_message(self, user_text: str) -> None:
         self.idle_manager.mark_activity()
@@ -84,7 +114,9 @@ class AppController(QObject):
             return
         self.window.set_input_enabled(False)
         self.window.show_message("达妮娅正在想...")
-        self.worker = ChatWorker(self.chat_client, user_text)
+        # [CHANGE-002] 使用适配器代替直连 chat_client
+        self.worker = ChatWorker(self.daniya_adapter, user_text)
+        # [LEGACY] 原: self.worker = ChatWorker(self.chat_client, user_text)
         self.worker.reply_ready.connect(lambda reply, source: self._handle_reply(user_text, reply, source))
         self.worker.finished.connect(self.worker.deleteLater)
         self.worker.start()
@@ -107,16 +139,46 @@ class AppController(QObject):
         else:
             self.window.animation_manager.trigger_clicked()
         self.window.speak(self.day_night_manager.click_line())
+        # [CHANGE-003] 物理点击事件流入引擎，更新关系数值 (defense_level +1)
+        try:
+            self.daniya_adapter.handle_physical_event("user_click")
+        except Exception as exc:
+            print(f"[Daniya] Engine physical event error: {exc}")
 
     def save_window_position(self, x: int, y: int) -> None:
         self.app_config.setdefault("window", {})["start_x"] = x
         self.app_config.setdefault("window", {})["start_y"] = y
         self.config_manager.save_app_config(self.app_config)
+        # [CHANGE-003] 拖拽释放事件流入引擎，更新关系数值 (defense_level +1)
+        try:
+            self.daniya_adapter.handle_physical_event("user_drag")
+        except Exception as exc:
+            print(f"[Daniya] Engine physical event error: {exc}")
 
     def save_pet_height(self, height: int) -> None:
         actual = self.window.set_pet_height(height)
         self.app_config.setdefault("pet", {})["pet_height"] = actual
         self.app_config.setdefault("pet", {})["target_height"] = actual
+        self.config_manager.save_app_config(self.app_config)
+        self.window.set_context_menu(self.menu_manager.create_menu())
+
+    def set_action_module(self, module: str) -> None:
+        active = self.window.animation_manager.set_action_module(module)
+        self.app_config.setdefault("pet", {})["active_action_module"] = active
+        self.config_manager.save_app_config(self.app_config)
+        self.window.set_context_menu(self.menu_manager.create_menu())
+
+    def set_pet_feature(self, key: str, enabled: bool) -> None:
+        if key not in {"hover_animation_enabled", "edge_peek_enabled", "click_to_call_enabled"}:
+            return
+        self.app_config.setdefault("pet", {})[key] = bool(enabled)
+        self.config_manager.save_app_config(self.app_config)
+        self.window.set_context_menu(self.menu_manager.create_menu())
+
+    def set_drag_module_enabled(self, enabled: bool) -> None:
+        modules = self.app_config.setdefault("pet", {}).setdefault("enabled_action_modules", {})
+        if isinstance(modules, dict):
+            modules["E_QQ_pet_drag_system"] = bool(enabled)
         self.config_manager.save_app_config(self.app_config)
         self.window.set_context_menu(self.menu_manager.create_menu())
 
@@ -148,6 +210,11 @@ class AppController(QObject):
         self.window.set_always_on_top(True)
         self.window.animation_manager.trigger_remind()
         self.window.speak(f"提醒时间到啦：{text}")
+        # [CHANGE-003] 提醒到期事件流入引擎
+        try:
+            self.daniya_adapter.handle_physical_event("reminder_due")
+        except Exception as exc:
+            print(f"[Daniya] Engine physical event error: {exc}")
         box = QMessageBox(self.window)
         box.setWindowTitle("达妮娅提醒")
         box.setText(f"提醒时间到啦：{text}")
@@ -196,6 +263,18 @@ class AppController(QObject):
         if ok:
             self.window.animation_manager.trigger_happy()
         self.window.speak(message)
+
+    def open_settings_center(self) -> None:
+        try:
+            if self.settings_window is not None and self.settings_window.isVisible():
+                self.settings_window.raise_()
+                self.settings_window.activateWindow()
+                return
+            self.settings_window = SettingsWindow(self, self.window)
+            self.settings_window.finished.connect(lambda _result: setattr(self, "settings_window", None))
+            self.settings_window.show()
+        except Exception as exc:
+            QMessageBox.warning(self.window, "设置中心", f"设置中心打开失败：{exc.__class__.__name__}")
 
     def quit(self) -> None:
         self.qapp.quit()

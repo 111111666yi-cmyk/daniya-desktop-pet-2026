@@ -1,0 +1,15 @@
+speech_style:
+  base:
+    - 待填写
+  sentence_length:
+    default: short
+    max_lines_normal: 3
+    max_lines_serious: 5
+
+forbidden_style:
+  - 待填写
+
+special_responses:
+  - trigger:
+      - 示例关键词
+    response: 示例固定回应

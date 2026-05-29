@@ -1,0 +1,10 @@
+lore_policy:
+  default: 不主动剧透，不主动长篇解释。
+
+fragments:
+  - id: example_fragment
+    title: 示例背景片段
+    keywords:
+      - 示例关键词
+    level: level_0_public
+    summary: 待填写。

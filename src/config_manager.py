@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,20 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
         "min_pet_height": 80,
         "max_pet_height": 160,
         "size_presets": [80, 96, 112, 128, 144, 160],
+        "idle_animation_interval_ms": 10000,
+        "active_action_module": "A_sit_base",
+        "enabled_action_modules": {
+            "A_sit_base": True,
+            "B_stand_base_pack": True,
+            "C_sleep_base_pack": True,
+            "D_special_motion_pack": True,
+            "E_QQ_pet_drag_system": True,
+        },
+        "hover_animation_enabled": False,
+        "edge_peek_enabled": True,
+        "edge_dock_visible_px": 32,
+        "edge_dock_hover_visible_px": 52,
+        "click_to_call_enabled": False,
         "states": {
             "idle": "idle",
             "speaking": "talking",
@@ -136,12 +151,27 @@ class ConfigManager:
             if not path.exists():
                 return deepcopy(default)
             return json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except json.JSONDecodeError:
+            self._backup_broken_json(path)
+            self.save_json(path, default)
+            return deepcopy(default)
+        except OSError:
             return deepcopy(default)
 
     def save_json(self, path: Path, value: Any) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp.replace(path)
+
+    def _backup_broken_json(self, path: Path) -> None:
+        if not path.exists():
+            return
+        backup = path.with_suffix(path.suffix + f".broken-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+        try:
+            path.replace(backup)
+        except OSError:
+            pass
 
     def _normalize_app_config(self, config: dict[str, Any]) -> dict[str, Any]:
         pet = config.setdefault("pet", {})
@@ -173,6 +203,41 @@ class ConfigManager:
             }
             or {96}
         )
+
+        try:
+            idle_interval_ms = int(pet.get("idle_animation_interval_ms", 10000))
+        except (TypeError, ValueError):
+            idle_interval_ms = 10000
+        pet["idle_animation_interval_ms"] = max(10000, idle_interval_ms)
+
+        valid_modules = {
+            "A_sit_base",
+            "B_stand_base_pack",
+            "C_sleep_base_pack",
+            "D_special_motion_pack",
+        }
+        if pet.get("active_action_module") not in valid_modules:
+            pet["active_action_module"] = "A_sit_base"
+
+        enabled_modules = pet.get("enabled_action_modules")
+        if not isinstance(enabled_modules, dict):
+            enabled_modules = {}
+        for key in (*valid_modules, "E_QQ_pet_drag_system"):
+            enabled_modules[key] = bool(enabled_modules.get(key, True))
+        pet["enabled_action_modules"] = enabled_modules
+        pet["hover_animation_enabled"] = bool(pet.get("hover_animation_enabled", False))
+        pet["edge_peek_enabled"] = bool(pet.get("edge_peek_enabled", True))
+        pet["click_to_call_enabled"] = bool(pet.get("click_to_call_enabled", False))
+        try:
+            dock_visible_px = int(pet.get("edge_dock_visible_px", 32))
+        except (TypeError, ValueError):
+            dock_visible_px = 32
+        pet["edge_dock_visible_px"] = max(16, min(64, dock_visible_px))
+        try:
+            dock_hover_visible_px = int(pet.get("edge_dock_hover_visible_px", 52))
+        except (TypeError, ValueError):
+            dock_hover_visible_px = 52
+        pet["edge_dock_hover_visible_px"] = max(pet["edge_dock_visible_px"], min(80, dock_hover_visible_px))
 
         states = pet.get("states")
         if not isinstance(states, dict):

@@ -1,0 +1,32 @@
+metrics:
+  affection: 好感
+  familiarity: 熟悉
+  trust: 信任
+  boundary: 边界感
+
+initial_state:
+  character_id: new_character_id
+  relationship_stage: stage_1
+  week: 1
+  weekly_action_points: 5
+  max_weekly_action_points: 5
+  affection: 0
+  familiarity: 0
+  trust: 0
+  boundary: 50
+
+relationship_stages:
+  - id: stage_1
+    name: 阶段 1
+    min_score: 0
+    description: 待填写
+
+stages:
+  - id: stage_1
+    name: 阶段 1
+    min_score: 0
+    description: 待填写
+
+update_rules:
+  normal_chat:
+    familiarity: 1

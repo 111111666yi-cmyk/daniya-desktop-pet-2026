@@ -1,0 +1,79 @@
+action_mapping:
+  idle:
+    triggers: [no_input, normal_state]
+    fallback: normal1
+    lines: ["......", "......还在啊。"]
+    assets:
+      - assets/daniya/idle/idle_01.png
+      - assets/daniya/idle/idle_02.png
+
+  soft_idle:
+    triggers: [user_sadness, quiet_companion]
+    fallback: idle
+    lines: ["......坐会儿。"]
+    assets:
+      - assets/daniya/idle/idle_01.png
+
+  clicked:
+    triggers: [user_click, repeated_click]
+    fallback: normal2
+    lines: ["......别戳。", "......烦。"]
+    assets:
+      - assets/daniya/clicked/clicked_01.png
+
+  drag:
+    triggers: [user_drag]
+    fallback: normal2
+    lines: ["......你又想把我丢哪。", "......行吧。"]
+    assets:
+      - assets/daniya/drag/drag_01.png
+      - assets/daniya/drag/drag_02.png
+
+  talk:
+    triggers: [ai_speaking]
+    fallback: [normal1, normal2]
+    assets:
+      - assets/daniya/talk/talk_01.png
+      - assets/daniya/talk/talk_02.png
+
+  sleep:
+    triggers: [late_night, user_inactive_long]
+    fallback: idle
+    lines: ["......困了。", "......别吵。"]
+    assets:
+      - assets/daniya/sleep/sleep_01.png
+      - assets/daniya/sleep/sleep_02.png
+
+  happy:
+    triggers: [user_affection, user_returns, softness_leak_up]
+    fallback: normal2
+    lines: ["......谁高兴了。", "......乱说。"]
+    assets:
+      - assets/daniya/happy/happy_01.png
+
+  remind:
+    triggers: [reminder_time, task_due]
+    fallback: normal2
+    lines: ["......该做事了。", "......别装没看见。"]
+    assets:
+      - assets/daniya/remind/remind_01.png
+      - assets/daniya/remind/remind_02.png
+
+  bubble:
+    triggers: [lore_bubble, soft_emotion, birthday_memory]
+    fallback: [happy, talk, idle]
+    lines: ["......别碰。会碎。"]
+    assets:
+      - assets/daniya/bubble/bubble_01.png
+
+  look_away:
+    triggers: [defense_high]
+    fallback: idle
+    assets:
+      - assets/daniya/idle/idle_02.png
+
+  close_idle:
+    triggers: [trust_high, quiet_together]
+    fallback: happy
+    assets:
+      - assets/daniya/idle/idle_01.png

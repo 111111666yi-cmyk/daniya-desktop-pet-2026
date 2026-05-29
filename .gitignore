@@ -1,12 +1,40 @@
+# Local secrets
 .env
-.venv/
-__pycache__/
-*.py[cod]
+.env.*
+!.env.example
+
+# Runtime data
+data/
+data/daniya_relation/
+
+# Private or generated assets
+assets/private/
+models/
+backups/
+output/
+release/
+
+# Build artifacts
 dist/
 build/
 *.spec
-assets/private/
-data/*.jsonl
-data/*.json
-data/*.txt
+*.log
 
+# User-specific config (may contain real API settings)
+config/api_config.json
+
+# Python
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Editors and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,8 @@
+{
+  "provider": "deepseek",
+  "base_url": "https://api.deepseek.com",
+  "model": "deepseek-chat",
+  "local_mode": false,
+  "timeout_seconds": 20,
+  "api_key_env": "DEEPSEEK_API_KEY"
+}

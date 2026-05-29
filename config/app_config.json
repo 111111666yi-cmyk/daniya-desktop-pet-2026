@@ -1,9 +1,9 @@
 {
   "window": {
-    "start_x": 1199,
-    "start_y": 462,
+    "start_x": 1025,
+    "start_y": 571,
     "always_on_top": true,
-    "show_input": false
+    "show_input": true
   },
   "pet": {
     "pet_height": 96,
@@ -18,6 +18,20 @@
       144,
       160
     ],
+    "idle_animation_interval_ms": 10000,
+    "active_action_module": "A_sit_base",
+    "enabled_action_modules": {
+      "A_sit_base": true,
+      "B_stand_base_pack": true,
+      "C_sleep_base_pack": true,
+      "D_special_motion_pack": true,
+      "E_QQ_pet_drag_system": true
+    },
+    "hover_animation_enabled": false,
+    "edge_peek_enabled": true,
+    "edge_dock_visible_px": 32,
+    "edge_dock_hover_visible_px": 52,
+    "click_to_call_enabled": false,
     "states": {
       "idle": "idle",
       "speaking": "talking"

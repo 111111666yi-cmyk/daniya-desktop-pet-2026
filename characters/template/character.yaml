@@ -1,0 +1,23 @@
+id: new_character_id
+display_name: 新角色名
+role_type: optional_character
+project_position: 可扩展角色
+
+core_identity:
+  - 身份 1
+  - 身份 2
+  - 核心矛盾
+
+public_personality:
+  - 表层性格
+
+hidden_personality:
+  - 深层性格
+
+relationship_to_user:
+  user_is_special: false
+  treats_others: 待填写
+  treats_user: 待填写
+
+forbidden_behavior:
+  - 待填写

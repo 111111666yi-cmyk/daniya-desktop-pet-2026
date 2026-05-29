@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import ctypes
+import math
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QPoint, QRect, Qt, Signal
+from PySide6.QtCore import QPoint, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import QCursor, QGuiApplication, QIcon, QMouseEvent, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QMenu, QSizePolicy, QVBoxLayout, QWidget
 
@@ -54,6 +56,10 @@ class BubbleLabel(QLabel):
         super().mousePressEvent(event)
 
 
+class WinPoint(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+
+
 class PetWindow(QWidget):
     message_submitted = Signal(str)
     pet_clicked = Signal()
@@ -68,6 +74,10 @@ class PetWindow(QWidget):
         self.drag_start_global: QPoint | None = None
         self.drag_start_window: QPoint | None = None
         self.drag_distance = 0
+        self._last_left_button_down = False
+        self._walk_target: QPoint | None = None
+        self._walk_step = 0
+        self.dock_side: str | None = None
         self.always_on_top = bool(app_config.get("window", {}).get("always_on_top", True))
         self._last_render_debug: tuple[Any, ...] | None = None
 
@@ -78,6 +88,8 @@ class PetWindow(QWidget):
         self.bubble.clicked.connect(self.typewriter.click)
         self.set_pet_state(self.asset_manager.state_name("idle"))
         self.update_affinity("")
+        self._start_pet_feature_timers()
+        print("[Daniya] PetWindow created")
 
     def _configure_window(self) -> None:
         flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
@@ -85,6 +97,11 @@ class PetWindow(QWidget):
             flags |= Qt.WindowType.WindowStaysOnTopHint
         self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        try:
+            opacity = int(self.app_config.get("window", {}).get("opacity_percent", 100)) / 100
+        except (TypeError, ValueError):
+            opacity = 1.0
+        self.setWindowOpacity(max(0.3, min(1.0, opacity)))
         self.setWindowTitle("Daniya Summer Desktop Pet")
         icon_path = self.asset_manager.icon_path()
         if icon_path.exists():
@@ -174,9 +191,23 @@ class PetWindow(QWidget):
 
     def show_at_config_position(self) -> None:
         window_config = self.app_config.get("window", {})
-        self.move(int(window_config.get("start_x", 1000)), int(window_config.get("start_y", 500)))
+        requested = QPoint(
+            _safe_int(window_config.get("start_x"), 1000),
+            _safe_int(window_config.get("start_y"), 500),
+        )
+        self.move(requested)
         self.show()
-        self.move(self._clamped_position(self.pos()))
+        self._resize_to_content()
+        final_pos = self._safe_start_position(requested)
+        self.move(final_pos)
+        window_config["start_x"] = final_pos.x()
+        window_config["start_y"] = final_pos.y()
+        print(
+            "[Daniya] window geometry "
+            f"requested=({requested.x()},{requested.y()}) "
+            f"final=({self.x()},{self.y()},{self.width()}x{self.height()}) "
+            f"visible={self.isVisible()}"
+        )
 
     def set_pet_state(self, state: str) -> None:
         self.animation_manager.set_state(state)
@@ -184,10 +215,11 @@ class PetWindow(QWidget):
     def render_pet_pixmap(self, path: Path, visual_scale: float = 1.0) -> None:
         pixmap = QPixmap(str(path))
         if pixmap.isNull():
+            print(f"[Daniya] pixmap loaded path={path} loaded=false")
             return
 
         target_height = self.asset_manager.target_height()
-        logical_height = max(1, int(round(target_height * visual_scale)))
+        logical_height = max(1, target_height)
         dpr = self._current_device_pixel_ratio()
         physical_height = max(1, int(round(logical_height * dpr)))
         physical_width = max(1, int(round(pixmap.width() * physical_height / max(1, pixmap.height()))))
@@ -269,6 +301,8 @@ class PetWindow(QWidget):
 
     def _start_drag(self, global_pos: QPoint) -> None:
         self.activity_detected.emit()
+        self._cancel_walk_move()
+        self.dock_side = None
         self.animation_manager.set_dragging(True)
         self.image_label.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
         self.drag_start_global = global_pos
@@ -288,6 +322,7 @@ class PetWindow(QWidget):
         if self.drag_distance < 8:
             self.pet_clicked.emit()
         else:
+            self._dock_if_near_edge()
             pos = self.pos()
             self.position_changed.emit(pos.x(), pos.y())
         self.drag_start_global = None
@@ -297,6 +332,201 @@ class PetWindow(QWidget):
     def _hover_changed(self, hovered: bool) -> None:
         self.animation_manager.set_hovered(hovered)
 
+    def _start_pet_feature_timers(self) -> None:
+        self.edge_timer = QTimer(self)
+        self.edge_timer.timeout.connect(self._tick_edge_peek)
+        self.edge_timer.start(500)
+
+        self.global_click_timer = QTimer(self)
+        self.global_click_timer.timeout.connect(self._tick_global_click)
+        self.global_click_timer.start(80)
+
+        self.walk_move_timer = QTimer(self)
+        self.walk_move_timer.timeout.connect(self._tick_walk_move)
+        self.walk_move_timer.start(80)
+
+    def _tick_edge_peek(self) -> None:
+        pet_config = self.app_config.get("pet", {})
+        if not bool(pet_config.get("edge_peek_enabled", True)):
+            self.dock_side = None
+            return
+        if self.drag_start_global is not None or self.context_menu is not None and self.context_menu.isVisible():
+            return
+        if self.dock_side is None:
+            self.dock_side = self._nearest_edge_side(8)
+        if self.dock_side is None:
+            return
+        self.move(self._docked_position(self.dock_side, self._dock_visible_px_for_cursor()))
+        if self.dock_side in {"left", "right"}:
+            self.animation_manager.set_edge_peek(self.dock_side)
+
+    def _tick_global_click(self) -> None:
+        pet_config = self.app_config.get("pet", {})
+        if not bool(pet_config.get("click_to_call_enabled", False)):
+            self._last_left_button_down = False
+            return
+        key_state = ctypes.windll.user32.GetAsyncKeyState(0x01)
+        left_down = bool(key_state & 0x8000)
+        left_pressed = bool(key_state & 0x0001) or (left_down and not self._last_left_button_down)
+        if left_pressed:
+            cursor = QCursor.pos()
+            if self._should_call_to(cursor):
+                self.move_near(cursor)
+        self._last_left_button_down = left_down
+
+    def _should_call_to(self, point: QPoint) -> bool:
+        if self.geometry().contains(point):
+            return False
+        if self._walk_target is not None:
+            return True
+        return self._is_desktop_point(point)
+
+    def _is_desktop_point(self, point: QPoint) -> bool:
+        user32 = ctypes.windll.user32
+        user32.WindowFromPoint.argtypes = [WinPoint]
+        user32.WindowFromPoint.restype = ctypes.c_void_p
+        user32.GetParent.argtypes = [ctypes.c_void_p]
+        user32.GetParent.restype = ctypes.c_void_p
+        user32.GetAncestor.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+        user32.GetAncestor.restype = ctypes.c_void_p
+        user32.GetShellWindow.restype = ctypes.c_void_p
+
+        hwnd = user32.WindowFromPoint(WinPoint(point.x(), point.y()))
+        if not hwnd:
+            return False
+
+        desktop_roots = {"Progman", "WorkerW"}
+        desktop_children = {"SHELLDLL_DefView", "SysListView32"}
+
+        def class_name(handle: int) -> str:
+            name = ctypes.create_unicode_buffer(256)
+            user32.GetClassNameW(ctypes.c_void_p(handle), name, 256)
+            return name.value
+
+        shell_window = user32.GetShellWindow()
+        root = user32.GetAncestor(ctypes.c_void_p(hwnd), 2)
+        if root and (root == shell_window or class_name(root) in desktop_roots):
+            return True
+
+        seen_classes: list[str] = []
+        current = hwnd
+        for _ in range(12):
+            if not current:
+                break
+            current_class = class_name(current)
+            seen_classes.append(current_class)
+            if current_class in desktop_roots:
+                return True
+            parent = user32.GetParent(ctypes.c_void_p(current))
+            if not parent or parent == current:
+                break
+            current = parent
+        return any(name in desktop_children for name in seen_classes)
+
+    def move_near(self, global_pos: QPoint) -> None:
+        was_walking = self._walk_target is not None
+        self._cancel_walk_move()
+        self.dock_side = None
+        self.animation_manager.set_walking(True)
+        target = QPoint(global_pos.x() - self.width() // 2, global_pos.y() - self.height() + 12)
+        self._walk_target = self._clamped_position(target)
+        if not was_walking:
+            self._walk_step = 0
+
+    def _cancel_walk_move(self) -> None:
+        if self._walk_target is not None:
+            self._walk_target = None
+            self._walk_step = 0
+            self.animation_manager.set_walking(False)
+
+    def _finish_walk_move(self) -> None:
+        self._walk_target = None
+        self._walk_step = 0
+        self.animation_manager.set_walking(False)
+        self.position_changed.emit(self.x(), self.y())
+
+    def _movement_duration_ms(self, start: QPoint, end: QPoint) -> int:
+        distance = ((end.x() - start.x()) ** 2 + (end.y() - start.y()) ** 2) ** 0.5
+        speed_px_per_second = 110.0
+        return max(1800, min(16000, int(distance / speed_px_per_second * 1000)))
+
+    def _tick_walk_move(self) -> None:
+        if self._walk_target is None:
+            return
+        current = self.pos()
+        dx = self._walk_target.x() - current.x()
+        dy = self._walk_target.y() - current.y()
+        distance = math.hypot(dx, dy)
+        if distance <= 4:
+            self.move(self._walk_target)
+            self._finish_walk_move()
+            return
+
+        step = min(4.0, distance)
+        nx = current.x() + int(round(dx / distance * step))
+        ny = current.y() + int(round(dy / distance * step))
+        self._walk_step += 1
+        bob = int(round(math.sin(self._walk_step * math.pi / 4) * 1))
+        self.move(self._clamped_position(QPoint(nx, ny + bob)))
+
+    def _dock_if_near_edge(self) -> None:
+        pet_config = self.app_config.get("pet", {})
+        if not bool(pet_config.get("edge_peek_enabled", True)):
+            self.dock_side = None
+            return
+        self.dock_side = self._nearest_edge_side(56)
+        if self.dock_side is not None:
+            self.move(self._docked_position(self.dock_side, self._dock_visible_px_for_cursor()))
+            if self.dock_side in {"left", "right"}:
+                self.animation_manager.set_edge_peek(self.dock_side)
+
+    def _nearest_edge_side(self, threshold: int) -> str | None:
+        bounds = self._desktop_bounds()
+        distances = {
+            "left": abs(self.x() - bounds.left()),
+            "right": abs(bounds.right() - (self.x() + self.width())),
+            "top": abs(self.y() - bounds.top()),
+            "bottom": abs(bounds.bottom() - (self.y() + self.height())),
+        }
+        side, distance = min(distances.items(), key=lambda item: item[1])
+        return side if distance <= threshold else None
+
+    def _dock_visible_px_for_cursor(self) -> int:
+        pet_config = self.app_config.get("pet", {})
+        try:
+            normal_visible = int(pet_config.get("edge_dock_visible_px", 56))
+        except (TypeError, ValueError):
+            normal_visible = 56
+        try:
+            hover_visible = int(pet_config.get("edge_dock_hover_visible_px", 82))
+        except (TypeError, ValueError):
+            hover_visible = 82
+        cursor = QCursor.pos()
+        bounds = self._desktop_bounds()
+        near_edge = (
+            cursor.x() <= bounds.left() + 84
+            or cursor.x() >= bounds.right() - 84
+            or cursor.y() <= bounds.top() + 84
+            or cursor.y() >= bounds.bottom() - 84
+        )
+        return max(normal_visible, hover_visible) if near_edge else normal_visible
+
+    def _docked_position(self, side: str, visible: int | None = None) -> QPoint:
+        bounds = self._desktop_bounds()
+        if visible is None:
+            visible = self._dock_visible_px_for_cursor()
+        visible = max(16, min(80, int(visible)))
+        current = self.pos()
+        if side == "left":
+            return QPoint(bounds.left() - max(0, self.width() - visible), max(bounds.top(), min(bounds.bottom() - self.height(), current.y())))
+        if side == "right":
+            return QPoint(bounds.right() - visible, max(bounds.top(), min(bounds.bottom() - self.height(), current.y())))
+        if side == "top":
+            return QPoint(max(bounds.left(), min(bounds.right() - self.width(), current.x())), bounds.top() - max(0, self.height() - visible))
+        if side == "bottom":
+            return QPoint(max(bounds.left(), min(bounds.right() - self.width(), current.x())), bounds.bottom() - visible)
+        return self._clamped_position(current)
+
     def _show_context_menu(self, global_pos: QPoint) -> None:
         self.activity_detected.emit()
         if self.context_menu is not None:
@@ -304,7 +534,7 @@ class PetWindow(QWidget):
 
     def _clamped_position(self, position: QPoint) -> QPoint:
         bounds = self._desktop_bounds()
-        keep_visible = 56
+        keep_visible = 32
         min_x = bounds.left() - max(0, self.width() - keep_visible)
         max_x = bounds.right() - keep_visible
         min_y = bounds.top() - max(0, self.height() - keep_visible)
@@ -313,6 +543,31 @@ class PetWindow(QWidget):
             max(min_x, min(max_x, position.x())),
             max(min_y, min(max_y, position.y())),
         )
+
+    def _safe_start_position(self, requested: QPoint) -> QPoint:
+        clamped = self._clamped_position(requested)
+        if self._is_mostly_visible(clamped):
+            return clamped
+        return self._default_right_position()
+
+    def _default_right_position(self) -> QPoint:
+        bounds = self._desktop_bounds()
+        margin = 48
+        x = bounds.right() - self.width() - margin
+        y = bounds.center().y() - self.height() // 2
+        return self._clamped_position(QPoint(x, y))
+
+    def _is_mostly_visible(self, position: QPoint) -> bool:
+        bounds = self._desktop_bounds()
+        width = max(1, self.width())
+        height = max(1, self.height())
+        rect = QRect(position, self.size())
+        visible = rect.intersected(bounds)
+        if visible.isNull():
+            return False
+        visible_area = visible.width() * visible.height()
+        total_area = width * height
+        return visible_area >= int(total_area * 0.85)
 
     def _desktop_bounds(self) -> QRect:
         screens = QGuiApplication.screens()
@@ -373,3 +628,10 @@ class PetWindow(QWidget):
 
     def icon_path(self) -> Path:
         return self.asset_manager.icon_path()
+
+
+def _safe_int(value: object, fallback: int) -> int:
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return fallback
