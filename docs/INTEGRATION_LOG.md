@@ -85,3 +85,25 @@
 - **绝对不改动** `src/pet_window.py` 中的 `_print_render_debug` 和 `contextMenuEvent` 修复。
 - **绝对不改动** `core/` 目录下的任何引擎文件（它们已通过全部 73 个单元测试）。
 - 所有修改都遵循"加法优先"原则，不删除只新增或注释标记。
+
+---
+
+### [CHANGE-004] tests/test_integration_verify.py — 端到端集成验证测试
+
+**文件**：`tests/test_integration_verify.py`（新增）  
+**影响范围**：仅测试目录，不影响任何生产代码  
+**改动类型**：新增文件
+
+**改动说明**：
+- 5 个测试用例验证 `DaniyaEngineAdapter` 的端到端数据流：
+  - `test_special_response_updates_state`：`我不会先走` → 特殊回复 + state 更新
+  - `test_physical_click_updates_defense`：物理点击 → `defense_level` 增加
+  - `test_physical_drag_updates_defense`：物理拖拽 → `defense_level` 增加
+  - `test_hug_special_response`：`抱抱` → 拥抱特殊回复
+  - `test_engine_result_has_correct_fields`：`EngineResult` 字段完整性
+- 使用 `tmp_path` + `monkeypatch` 隔离测试数据，不影响用户真实的 `data/` 目录。
+
+**还原方法**：
+1. 删除 `tests/test_integration_verify.py` 文件。
+2. 无其他副作用。
+
