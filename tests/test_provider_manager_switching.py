@@ -65,7 +65,7 @@ def test_chat_error_fallback_handling(setup_provider_manager, monkeypatch):
 
     # Mock the deepseek_api boundary module's chat to raise an error
     import src.llm.boundaries.deepseek_api as ds_api
-    def mock_chat(messages, api_key, base_url="", model="", timeout=20):
+    def mock_chat(messages, api_key, base_url="", model="", max_tokens=360, timeout=20):
         raise RuntimeError("API Timeout")
 
     monkeypatch.setattr(ds_api, "chat", mock_chat)

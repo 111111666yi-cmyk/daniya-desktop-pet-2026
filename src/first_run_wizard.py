@@ -233,7 +233,7 @@ class FirstRunWizard(QDialog):
             model = self.model_input.text()
             api_key = self.api_key_input.text()
             
-            # 同时也将其作为默认记录写入 local_model_config.json，以备日后展示
+            # 同时也将其作为默认记录写入 model_catalog.json，以备日后展示
             try:
                 from .model_catalog import ModelCatalog
                 catalog = ModelCatalog(root=self.setup_manager.root)

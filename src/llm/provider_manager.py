@@ -19,6 +19,7 @@ from .boundaries import deepseek_api
 from .boundaries import ollama_api
 from .boundaries import openai_api
 from .boundaries import anthropic_api
+from .boundaries.ollama_api import ModelNotFoundError
 
 
 class ProviderManager:
@@ -112,6 +113,7 @@ class ProviderManager:
                     api_key=api_key,
                     base_url=base_url,
                     model=model,
+                    max_tokens=int(profile.get("max_tokens", 360)),
                     timeout=int(profile.get("timeout", 20)),
                 )
             else:
@@ -121,6 +123,7 @@ class ProviderManager:
                     api_key=api_key,
                     base_url=base_url,
                     model=model,
+                    max_tokens=int(profile.get("max_tokens", 360)),
                     timeout=int(profile.get("timeout", 20)),
                 )
 
@@ -139,6 +142,8 @@ class ProviderManager:
             self.last_error = f"network: {e}"
         except MalformedResponse as e:
             self.last_error = f"malformed: {e}"
+        except ModelNotFoundError as e:
+            self.last_error = f"model_not_found: {e}"
         except BoundaryError as e:
             self.last_error = f"boundary: {e}"
         except Exception as e:

@@ -56,6 +56,12 @@ def _retry_request(
                 raise AuthError("Authentication failed (401)")
             resp.raise_for_status()
             return resp
+        except requests.HTTPError as exc:
+            # 不可重试的 HTTP 错误 (400, 402, 403, 404, 500, 501, 505+, ...)
+            status = exc.response.status_code if exc.response is not None else 0
+            if 400 <= status < 500:
+                raise BoundaryError(f"Client error: HTTP {status}") from exc
+            raise ServerError(f"Server error: HTTP {status}") from exc
         except (requests.ConnectionError, requests.Timeout) as exc:
             last_exc = exc
             if attempt < max_retries:

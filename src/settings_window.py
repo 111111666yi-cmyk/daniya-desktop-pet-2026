@@ -213,8 +213,10 @@ class SettingsWindow(QDialog):
         btn_layout = QHBoxLayout()
         self.fetch_models_btn = QPushButton("拉取模型列表")
         self.test_local_btn = QPushButton("测试服务连接")
+        self.save_local_btn = QPushButton("保存本地模型")
         btn_layout.addWidget(self.fetch_models_btn)
         btn_layout.addWidget(self.test_local_btn)
+        btn_layout.addWidget(self.save_local_btn)
         btn_layout.addStretch(1)
         parent_layout.addLayout(btn_layout)
 
@@ -224,6 +226,7 @@ class SettingsWindow(QDialog):
 
         self.fetch_models_btn.clicked.connect(self._fetch_local_models)
         self.test_local_btn.clicked.connect(self._test_local_service)
+        self.save_local_btn.clicked.connect(self._save_local_model_settings)
 
         # 许可证占位区
         license_label = QLabel("⚠️ 本地模型下载器预留入口 (v0.47)\n您必须同意并遵守对应模型 (如 Llama 3 / Gemma / Qwen) 的开源许可证和商业使用条款，才能进行下载。目前此功能仅作为 UI 占位，无法下载模型。")
@@ -264,6 +267,36 @@ class SettingsWindow(QDialog):
             self.local_status.setStyleSheet("color: green;")
         else:
             self.local_status.setStyleSheet("color: red;")
+
+    def _save_local_model_settings(self) -> None:
+        service = self.local_service_combo.currentText()
+        url = self.local_base_url.text().strip()
+        model = self.local_model_list.currentText().strip()
+
+        if not url or not model:
+            self.local_status.setText("状态：请填写 Base URL 和模型名称")
+            self.local_status.setStyleSheet("color: red;")
+            return
+
+        provider = service.lower().replace(" ", "_")
+        if "openai-compatible" in provider:
+            provider = "local_openai_compatible"
+        elif "llama.cpp" in provider:
+            provider = "llama_cpp"
+        elif "lm studio" in provider:
+            provider = "lm_studio"
+        elif provider == "custom":
+            provider = "local_openai_compatible"
+
+        self.settings_manager.save_api_settings(
+            provider=provider,
+            base_url=url,
+            model=model,
+            api_key=None,
+            local_mode=False,
+        )
+        self.local_status.setText(f"状态：已保存 {provider} → {model}")
+        self.local_status.setStyleSheet("color: green;")
 
     def _build_pet_tab(self) -> None:
         tab = QWidget()

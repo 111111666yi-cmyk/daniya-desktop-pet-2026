@@ -10,10 +10,10 @@ from typing import Any
 
 import requests
 
-from . import MalformedResponse, NetworkError, _retry_request
+from . import BoundaryError, MalformedResponse, NetworkError, _retry_request
 
 
-class ModelNotFoundError(Exception):
+class ModelNotFoundError(BoundaryError):
     """Ollama 上未找到指定模型"""
 
 
