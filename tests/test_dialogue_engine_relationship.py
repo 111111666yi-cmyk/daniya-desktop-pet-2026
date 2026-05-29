@@ -61,7 +61,7 @@ def test_old_data_files_are_not_created_or_touched_in_relation_engine(tmp_path):
     DialogueEngine(pack, model_client=lambda prompt: "哦。").handle_user_message("普通聊天")
     relation_root = data_root()
     assert (relation_root / "relationship_state.json").exists()
-    assert (relation_root / "event_log.json").exists()
+    assert (relation_root / "event_log.jsonl").exists()
     assert (relation_root / "user_memory.json").exists()
     assert not (relation_root.parent / "affinity.json").exists()
     assert not (relation_root.parent / "chat_history.jsonl").exists()

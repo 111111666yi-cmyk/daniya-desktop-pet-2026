@@ -45,14 +45,22 @@ class DialogueEngine:
             memory=memory,
         )
         lore_fragment_ids = _lore_fragment_ids(lore_fragments)
-        prompt = build_prompt(
-            self.character_pack,
-            user_text,
-            relationship_state=state,
-            lore_fragments=lore_fragments,
-            recent_messages=context.get("recent_messages"),
-        )
-        raw_model_response, source, errors = self._call_model(prompt, user_text)
+
+        # [CHANGE-005-FIX] skip_model=True 时跳过 prompt 构建和 API 调用
+        if context.get("skip_model"):
+            raw_model_response = self._build_fallback_response(user_text)
+            source = "physical_event"
+            errors: list[str] = []
+            prompt = None
+        else:
+            prompt = build_prompt(
+                self.character_pack,
+                user_text,
+                relationship_state=state,
+                lore_fragments=lore_fragments,
+                recent_messages=context.get("recent_messages"),
+            )
+            raw_model_response, source, errors = self._call_model(prompt, user_text)
         filtered_response = apply_daniya_speech_filter(raw_model_response, self.character_pack.speech, state)
 
         stage_before = state.get("relationship_stage")

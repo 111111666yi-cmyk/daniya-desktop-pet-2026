@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from src.utils import runtime_root
+
+# [CHANGE-005-FIX] 文件写入锁，防止多线程同时写同一个文件导致 Windows 文件锁冲突
+_file_lock = threading.Lock()
 
 KEY_PHRASES = ["抱抱", "我不会先走", "我收着了", "我都懂", "归期到了", "那根弦松了一点"]
 LORE_KEYWORDS = {
@@ -87,24 +91,45 @@ def lore_ids_from_text(user_text: str) -> list[str]:
 
 
 def append_event_log(record: dict[str, Any]) -> None:
-    path = data_root() / "event_log.json"
-    events = _read_json(path, [])
-    if not isinstance(events, list):
-        events = []
+    # [CHANGE-005-FIX] 改为 JSONL 追加模式，不再每次读取+重写整个文件
+    path = data_root() / "event_log.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
     record = dict(record)
     record.setdefault("timestamp", datetime.now().isoformat(timespec="seconds"))
-    events.append(record)
-    _write_json(path, events)
+    line = json.dumps(record, ensure_ascii=False) + "\n"
+    with _file_lock:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(line)
 
 
 def load_event_log() -> list[dict[str, Any]]:
-    events = _read_json(data_root() / "event_log.json", [])
-    return events if isinstance(events, list) else []
+    # [CHANGE-005-FIX] 优先读 JSONL，兼容旧 JSON 格式
+    jsonl_path = data_root() / "event_log.jsonl"
+    json_path = data_root() / "event_log.json"
+    events: list[dict[str, Any]] = []
+    # 先读旧格式
+    if json_path.exists():
+        old = _read_json(json_path, [])
+        if isinstance(old, list):
+            events.extend(old)
+    # 再读新格式
+    if jsonl_path.exists():
+        try:
+            for line in jsonl_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line:
+                    try:
+                        events.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        except OSError:
+            pass
+    return events
 
 
 def ensure_relation_files() -> None:
-    _write_json(data_root() / "event_log.json", load_event_log())
-    save_user_memory(load_user_memory())
+    # [CHANGE-005-FIX] 只确保目录存在，不再无条件重写文件
+    data_root().mkdir(parents=True, exist_ok=True)
 
 
 def _normalize_memory(memory: dict[str, Any]) -> dict[str, Any]:
@@ -138,7 +163,8 @@ def _read_json(path: Path, fallback: Any) -> Any:
 
 def _write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+    with _file_lock:
+        path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _append_unique(items: list[Any], value: str) -> None:

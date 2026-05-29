@@ -38,6 +38,8 @@ class DaniyaEngineAdapter:
     def handle_physical_event(self, physical_event: str, context: dict[str, Any] | None = None) -> EngineResult:
         context = dict(context or {})
         context["physical_event"] = physical_event
+        # [CHANGE-005-FIX] 物理事件只更新关系数值，不调用模型 API
+        context["skip_model"] = True
         return self.handle_user_text(f"[{physical_event}]", context=context)
 
     def _load_pack(self, character_id: str) -> tuple[CharacterPack, list[str]]:

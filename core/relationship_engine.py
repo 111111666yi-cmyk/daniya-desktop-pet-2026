@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,8 @@ from typing import Any
 from core.schema import CharacterPack
 from src.utils import runtime_root
 
+# [CHANGE-005-FIX] 状态文件写入锁
+_state_lock = threading.Lock()
 
 METRIC_FIELDS = {
     "affection",
@@ -59,7 +62,8 @@ def load_state(character_id: str = "daniya", relationship_config: dict[str, Any]
 def save_state(state: dict[str, Any]) -> None:
     path = state_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(clamp_metrics(state), ensure_ascii=False, indent=2), encoding="utf-8")
+    with _state_lock:
+        path.write_text(json.dumps(clamp_metrics(state), ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def apply_effect(state: dict[str, Any], effect: dict[str, Any] | None, reason: str) -> dict[str, Any]:
