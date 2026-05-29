@@ -24,6 +24,43 @@ from .settings_window import SettingsWindow
 from .time_event_manager import TimeEventManager
 
 
+class ThreadSafeAnimationManager(QObject):
+    """
+    [CHANGE-005-FIX] 线程安全的动画管理器包装器。
+    将后台线程（ChatWorker / PhysicalEventWorker）中的动画调用
+    通过 Signal 安全地转发到主 GUI 线程，避免 Qt 的线程安全冲突导致的界面冻结。
+    """
+    state_requested = Signal(str)
+    click_requested = Signal()
+    happy_requested = Signal()
+    remind_requested = Signal()
+    sleep_requested = Signal()
+
+    def __init__(self, real_manager: Any) -> None:
+        super().__init__()
+        self.real_manager = real_manager
+        self.state_requested.connect(self.real_manager.set_state)
+        self.click_requested.connect(self.real_manager.trigger_clicked)
+        self.happy_requested.connect(self.real_manager.trigger_happy)
+        self.remind_requested.connect(self.real_manager.trigger_remind)
+        self.sleep_requested.connect(self.real_manager.trigger_sleeping)
+
+    def set_state(self, action: str) -> None:
+        self.state_requested.emit(action)
+
+    def trigger_clicked(self) -> None:
+        self.click_requested.emit()
+
+    def trigger_happy(self) -> None:
+        self.happy_requested.emit()
+
+    def trigger_remind(self) -> None:
+        self.remind_requested.emit()
+
+    def trigger_sleeping(self) -> None:
+        self.sleep_requested.emit()
+
+
 class ChatWorker(QThread):
     """后台线程：通过 DaniyaEngineAdapter 处理用户消息，避免阻塞 GUI。
 
@@ -107,7 +144,9 @@ class AppController(QObject):
         self.window.set_context_menu(self.menu_manager.create_menu())
 
         # [CHANGE-001] 延迟绑定适配器的 animation_manager（PetWindow 必须先创建）
-        self.daniya_adapter.animation_manager = self.window.animation_manager
+        # [CHANGE-005-FIX] 使用线程安全的动画管理器包装，防止后台线程崩溃 GUI
+        self.thread_safe_anim_manager = ThreadSafeAnimationManager(self.window.animation_manager)
+        self.daniya_adapter.animation_manager = self.thread_safe_anim_manager
         self.daniya_adapter.state_manager = self.window
 
         self.window.message_submitted.connect(self.send_message)
