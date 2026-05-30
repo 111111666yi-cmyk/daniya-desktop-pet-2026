@@ -241,7 +241,8 @@ class FirstRunWizard(QDialog):
             base_url=base_url,
             model=model,
             api_key=api_key if api_key else None,
-            local_mode=local_mode
+            local_mode=local_mode,
+            activate=True,
         )
         return run_mode
 

@@ -63,7 +63,7 @@ events:
       empathy_load: 5
       stay_tendency: 1
 
-  - id: birthday_orange_cake
+  - id: birthday_sovereignty
     name: 生日与橘子蛋糕
     type: lore_event
     trigger_keywords: ["生日", "橘子蛋糕", "跳跳糖", "彩虹豆", "咔啦咔啦"]
@@ -77,8 +77,8 @@ events:
       softness_leak: 1
     relationship_effect:
       softness_leak: 1
-    lore_fragment: birthday_orange_cake
-    unlock_lore: [birthday_orange_cake]
+    lore_fragment: birthday_sovereignty
+    unlock_lore: [birthday_sovereignty]
 
   - id: bubble_symbol
     name: 泡泡象征

@@ -28,4 +28,4 @@ class TimeEventManager(QObject):
         if key == self.last_chime_key:
             return
         self.last_chime_key = key
-        self.hourly_chime.emit(f"现在是 {now.hour} 点啦，御主还在努力吗？")
+        self.hourly_chime.emit(f"现在是 {now.hour} 点啦，主人还在努力吗？")

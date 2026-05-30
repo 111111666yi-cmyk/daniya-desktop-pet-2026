@@ -14,9 +14,9 @@ _file_lock = threading.Lock()
 
 KEY_PHRASES = ["抱抱", "我不会先走", "我收着了", "我都懂", "归期到了", "那根弦松了一点"]
 LORE_KEYWORDS = {
-    "birthday_orange_cake": ["生日", "橘子蛋糕", "跳跳糖", "彩虹豆", "咔啦咔啦"],
+    "birthday_sovereignty": ["生日", "橘子蛋糕", "跳跳糖", "彩虹豆", "咔啦咔啦"],
     "bubble_symbol": ["泡泡", "温柔漏一地", "碎了"],
-    "goodbye_name": ["归期", "再见", "达尼亚", "名字"],
+    "void_and_goodbye": ["归期", "再见", "达尼亚", "名字"],
 }
 
 

@@ -1,6 +1,6 @@
 lore_policy:
   default: 不主动剧透，不主动长篇解释。
-  when_user_asks_story: 只调用 lore.md 中对应 fragment，不注入全文。
+  when_user_asks_story: 按 fragment 调用，不注入全文。
   when_user_emotional: 只调用情绪主题片段，不展开完整剧情。
   when_user_mentions_keywords: 只调用匹配到的 lore fragment。
 
@@ -9,65 +9,146 @@ levels:
     description: 表层身份和日常可轻量引用，不剧透。
     allow_when: [keyword, event]
   L1:
-    description: 性格成因和情绪机制，用户负面情绪或严肃聊天时可引用。
+    description: 性格成因和情绪机制，主人负面情绪或严肃聊天时可引用。
     allow_when: [keyword, event, negative_emotion]
   L2:
-    description: 核心创伤与存在主题，只在用户明确提及时引用。
+    description: 核心创伤与存在主题，只在主人明确提及时引用。
     allow_when: [keyword, event, unlocked]
   L3:
-    description: 关键意象，只在用户明确提到对应意象时短量引用。
+    description: 关键意象，主人提到对应意象时短量调用。
     allow_when: [keyword, event, unlocked]
   L4:
-    description: 深层剧情和剧透，默认禁止，只有明确询问剧情、背景或身份谜团时允许。
-    allow_when: [explicit_story_question]
+    description: 主线剧透，默认禁止，仅剧情模式或明确询问时允许。
+    allow_when: [explicit_story_question, story_mode]
     default_inject: false
 
 fragments:
   - id: empathy_overload
     title: 共情过载与慵懒防御
     level: L1
-    keywords: [累, 情绪, 共情, 撑不住, 不想解释, 难过, 崩溃, 想哭]
+    keywords: [累, 情绪, 共情, 撑不住, 不想解释, 难过, 崩溃, 想哭, 害怕, 压力]
     inject_when: [user_negative_mood, emotional_support]
-    source_heading: "## B. 核心心理机制"
-    max_chars: 220
+    source_heading: "## 1. 核心公式"
+    max_chars: 300
 
-  - id: bubble_symbol
-    title: 泡泡与藏起来的温柔
+  - id: sigelika_expectation
+    title: 西格丽卡 — 被期待压垮的优等生
+    level: L1
+    keywords: [期待, 必须做到, 不够好, 完美, 失望, 我应该, 压力好大, 不能让]
+    inject_when: [keyword, user_negative_mood]
+    source_heading: "## 2.1 西格丽卡篇"
+    max_chars: 350
+
+  - id: dark_side_mechanism
+    title: 暗面机制 — 痛苦不是外来怪物
     level: L3
-    keywords: [泡泡, 温柔, 易碎, 漏一地, 碎了]
-    inject_when: [keyword, bubble_symbol]
-    source_heading: "## A. 表层身份"
-    max_chars: 180
+    keywords: [暗面, 痛苦, 自我怀疑, 迷茫, 恐惧, 疲惫]
+    inject_when: [keyword, user_negative_mood]
+    source_heading: "## 2.2 暗面篇"
+    max_chars: 350
 
-  - id: birthday_orange_cake
-    title: 生日与橘子蛋糕
-    level: L2
-    keywords: [生日, 蛋糕, 橘子, 橘子蛋糕, 跳跳糖, 彩虹豆, 咔啦咔啦]
-    inject_when: [keyword, birthday_orange_cake]
-    source_keywords: [生日, 橘子蛋糕, 跳跳糖, 彩虹豆]
-    max_chars: 220
+  - id: dark_side_weapon
+    title: 暗面武器化与残心会
+    level: L4
+    keywords: [残心会, 财星会, 武器化, 植入频率, 谜题, 被利用]
+    inject_when: [explicit_story_question, story_mode]
+    source_heading: "## 2.2 暗面篇"
+    max_chars: 350
+    default_inject: false
 
-  - id: goodbye_name
+  - id: daniya_hidden_guardian
+    title: 怕麻烦外壳下的隐性守护
+    level: L1
+    keywords: [怕麻烦, 嘴硬, 隐性守护, 关键推一把, 懒得管]
+    inject_when: [keyword, emotional_support]
+    source_heading: "## 2.3 达妮娅篇"
+    max_chars: 200
+
+  - id: void_and_goodbye
     title: 名字、再见与归期
     level: L3
-    keywords: [再见, 归期, 达尼亚, Dania, 名字]
+    keywords: [再见, 归期, Досвидания, Dania, 名字, 什么时候回来, 会回来吗]
     inject_when: [keyword, return_date, goodbye]
-    source_keywords: [再见, 归期, 名字]
-    max_chars: 180
+    source_heading: "## 2.3 达妮娅篇"
+    max_chars: 350
+
+  - id: deep_void_spoiler
+    title: 虚无、残心会与主线剧透
+    level: L4
+    keywords: [虚无, 坠落, 残心会, 财星会, 容器, 身份谜团, 了断日, 被制造, 会长]
+    inject_when: [explicit_story_question, story_mode]
+    source_heading: "## 2.3 达妮娅篇"
+    max_chars: 450
+    default_inject: false
+
+  - id: birthday_sovereignty
+    title: 生日 — 存在主权宣言
+    level: L2
+    keywords: [生日, 出生, 日子, 选一天, 存在, 证明]
+    inject_when: [keyword, birthday_event]
+    source_heading: "## 2.3 达妮娅篇 — 生日"
+    max_chars: 300
+
+  - id: orange_cake
+    title: 橘子蛋糕 — 人格图腾
+    level: L3
+    keywords: [橘子, 蛋糕, 橘子蛋糕, 跳跳糖, 彩虹豆, 咔啦咔啦, 好吃的, 吃东西]
+    inject_when: [keyword, birthday_event]
+    source_heading: "## 2.3 达妮娅篇 — 橘子蛋糕"
+    max_chars: 280
+
+  - id: tetris_identity
+    title: 俄罗斯方块 — 主体性证明
+    level: L3
+    keywords: [俄罗斯方块, 游戏, 游戏厅, 破纪录, 方块, 拼, 旋转, 拼图]
+    inject_when: [keyword]
+    source_heading: "## 2.3 达妮娅篇 — 俄罗斯方块"
+    max_chars: 250
 
   - id: ordinary_day
-    title: 普通日与被接住的日常
+    title: 普通日 — 一天真正属于人的生活
     level: L2
-    keywords: [普通, 拍照, 游戏厅, 俄罗斯方块, 花园, 普通人]
+    keywords: [普通, 拍照, 花园, 逛逛, 普通人, 逛花店, 了断日, 最后一天, 花店]
     inject_when: [keyword]
-    source_keywords: [普通人, 日常, 用户]
-    max_chars: 180
+    source_heading: "## 2.3 达妮娅篇 — 了断日"
+    max_chars: 300
 
-  - id: deep_void
-    title: 虚无、暗面与深层剧情
-    level: L4
-    keywords: [虚无, 坠落, 暗面, 残心会, 财星会, 身份谜团, 背景, 剧情]
-    inject_when: [explicit_story_question]
-    source_keywords: [虚无, 暗面, 坠入, 剧情]
+  - id: next_year_birthday
+    title: 明年一起过生日 — 最轻的承诺
+    level: L3
+    keywords: [明年, 一起, 陪, 承诺, 陪我就好, 装傻, 陪我]
+    inject_when: [keyword, emotional_support]
+    source_heading: "## 2.3 达妮娅篇 — 明年一起过生日"
     max_chars: 220
-    default_inject: false
+
+  - id: reverse_affection
+    title: 反话词典 — 讨厌是加密后的喜欢
+    level: L2
+    keywords: [讨厌, 烦, 随便你, 懒得赶, 谁高兴, 才不是, 乱说, 才没有]
+    inject_when: [keyword, user_affection]
+    source_heading: "## 4. 反话词典"
+    max_chars: 300
+
+  - id: bubble_symbol
+    title: 泡泡 — 藏起来的温柔
+    level: L3
+    keywords: [泡泡, 温柔, 易碎, 漏一地, 碎了, 藏起来]
+    inject_when: [keyword, bubble_symbol]
+    source_heading: "## 2.3 达妮娅篇"
+    max_chars: 200
+
+  - id: certain_bond
+    title: 彼此笃定 — 不用承诺也知道
+    level: L2
+    keywords: [不会走, 别走, 留下, 一直, 永远, 陪着]
+    inject_when: [keyword, user_affection]
+    source_heading: "## 7. 关系阶段定位"
+    max_chars: 200
+
+  - id: existential_question
+    title: 存在主义命题 — 认清世界后还怎么活
+    level: L2
+    keywords: [意义, 活着, 为什么, 存在, 世界, 不温柔, 努力, 崩溃边缘]
+    inject_when: [keyword, user_negative_mood, explicit_story_question]
+    source_heading: "## 2.2 暗面篇"
+    max_chars: 250

@@ -9,7 +9,7 @@ def test_daniya_status_is_readonly_summary():
     assert status["speech_summary"]["special_response_ids"]
     assert "relationship_stage" in status["relationship_state"]
     assert any(action["id"] == "close_idle" for action in status["actions"])
-    assert any(fragment["id"] == "birthday_orange_cake" for fragment in status["lore_fragments"])
+    assert any(fragment["id"] == "birthday_sovereignty" for fragment in status["lore_fragments"])
 
 
 def test_daniya_status_text_contains_required_readonly_sections():

@@ -253,12 +253,12 @@ class AppController(QObject):
     def save_profile(self, profile: dict[str, str]) -> None:
         self.profile_manager.save(profile)
         self.chat_client.reload()
-        self.window.speak("御主档案保存好了。")
+        self.window.speak("主人档案保存好了。")
 
     def add_note(self, text: str) -> None:
         self.idle_manager.mark_activity()
         if self.notes_manager.append(text):
-            self.window.speak("记好啦，御主～")
+            self.window.speak("记好啦，主人～")
         else:
             self.window.speak("空白的东西我就不记啦。")
 

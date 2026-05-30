@@ -9,8 +9,8 @@ def test_memory_records_key_phrase_and_unlocked_lore():
     memory = update_memory_from_interaction("抱抱，我不会先走，生日", event)
     assert "抱抱" in memory["important_user_phrases"]
     assert "我不会先走" in memory["important_user_phrases"]
-    assert "birthday_orange_cake" in memory["unlocked_lore"]
-    assert "birthday_orange_cake" in memory["last_events"]
+    assert "birthday_sovereignty" in memory["unlocked_lore"]
+    assert "birthday_sovereignty" in memory["last_events"]
 
 
 def test_bad_memory_json_is_rebuilt():

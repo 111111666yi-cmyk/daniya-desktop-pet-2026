@@ -53,17 +53,17 @@ def test_hug_negative_lore_and_physical_acceptance_paths():
     assert len(tired.response) <= 100
 
     birthday = engine.handle_user_message(zh(0x751f, 0x65e5))
-    assert "birthday_orange_cake" in birthday.lore_fragments_used
+    assert "birthday_sovereignty" in birthday.lore_fragments_used
     assert len(birthday.response) <= 100
 
     bubble = engine.handle_user_message(zh(0x6ce1, 0x6ce1, 0x788e, 0x4e86))
     assert "bubble_symbol" in bubble.lore_fragments_used
-    assert "deep_void" not in bubble.lore_fragments_used
+    assert "void_and_goodbye" not in bubble.lore_fragments_used
 
     return_date_model = RecordingModel()
     return_date = DialogueEngine(pack, model_client=return_date_model).handle_user_message(zh(0x5f52, 0x671f, 0x5230, 0x4e86))
     assert return_date.source == "special_response"
-    assert return_date.lore_fragments_used == ["goodbye_name"]
+    assert return_date.lore_fragments_used == ["void_and_goodbye"]
     assert return_date_model.calls == []
 
     clicked = engine.handle_user_message("[click]", context={"physical_event": "user_click"})

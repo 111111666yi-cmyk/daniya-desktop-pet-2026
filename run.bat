@@ -4,9 +4,9 @@ setlocal
 
 cd /d "%~dp0"
 
-if not exist ".venv\Scripts\python.exe" (
+if not exist ".venv\Scripts\pythonw.exe" (
     echo [Daniya] Virtual environment not found. Please run install.bat first.
     exit /b 1
 )
 
-".venv\Scripts\python.exe" main.py
+start "" ".venv\Scripts\pythonw.exe" main.py

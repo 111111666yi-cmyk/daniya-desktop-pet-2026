@@ -32,4 +32,22 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [Daniya] Install complete. You can run run.bat now.
+echo [Daniya] Creating desktop shortcut...
+powershell -Command ^
+    "$WshShell = New-Object -ComObject WScript.Shell; ^
+    $shortcut = $WshShell.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\达妮娅桌宠.lnk'); ^
+    $shortcut.TargetPath = '%~dp0run.bat'; ^
+    $shortcut.WorkingDirectory = '%~dp0'; ^
+    $shortcut.IconLocation = '%~dp0assets\placeholder\icon.ico,0'; ^
+    $shortcut.Save()"
+
+echo.
+echo [Daniya] ====================================
+echo [Daniya] Install complete!
+echo [Daniya] Desktop shortcut created: 达妮娅桌宠
+echo [Daniya] Double-click it anytime to start.
+echo [Daniya] ====================================
+
+echo.
+echo Starting Daniya for the first time...
+call run.bat

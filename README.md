@@ -1,132 +1,101 @@
-# Daniya Summer Desktop Pet
+# Daniya Summer Desktop Pet · 达妮娅夏日桌宠
 
-Daniya Summer Desktop Pet is a Python + PySide6 desktop pet application. It provides a transparent always-on-top pet window, drag movement, right-click menus, an optional input box, speech bubbles, typewriter text, API chat with local fallback, action animation fallback, the Daniya character pack and relationship engine, and a settings center.
+达妮娅是一款基于 Python + PySide6 的开源桌宠应用。提供透明置顶窗口、拖拽移动、右键菜单、输入框对话、气泡消息、打字机效果、云端/本地 AI 对话、角色关系引擎、设置中心等功能。
 
-This is an unofficial fan project. The repository does not distribute official game resources, private character assets, user relationship data, or API keys.
+这是一个非官方同人作品。本仓库不分发官方游戏资源、私有角色素材、用户关系数据或 API Key。
 
-## Version Status
+## 快速开始
 
-- v0.41 action resource system: integrated baseline with placeholder/private asset fallback.
-- v0.415 Daniya character pack and relationship engine: integrated.
-- v0.42 settings center: integrated.
-- v0.43 GitHub open source cleanup: completed.
-- v0.44 executable packaging test: completed.
-- v0.45 multi-model Provider support: integrated.
-- v0.46 local model connection fallback: integrated.
-- v0.47 action asset pack fallback: integrated.
-- v0.48 release candidate: accepted with no known blocking issues.
-- v0.49 official open source release: current stable version.
-
-The public release does not include official game resources, private character assets, model weights, user runtime data, or API keys.
-
-## Features
-
-- Transparent PySide6 desktop pet window with drag, right-click menu, input box, bubble, and typewriter effect.
-- API conversation through the existing chat client, with local fallback when no API key is configured or a request fails.
-- Action states and fallback paths for idle, talk, clicked, drag, sleep, happy, remind, and v0.415 extended actions.
-- Character pack structure under `characters/`, including `characters/template/` for new roles and `characters/daniya/` as the public example pack.
-- Relationship state, event log, and user memory runtime data under `data/daniya_relation/`, ignored by Git.
-- Settings center for API settings, pet settings, action resources, character pack status/editing, relationship status, data, and diagnostics.
-- Multi-model Provider configuration for DeepSeek, OpenAI-compatible, OpenAI, Claude, and local OpenAI-compatible endpoints.
-- Local fallback behavior when no API key is configured, an API key is invalid, or the local model service is unavailable.
-
-## Requirements
-
-- Python 3.10, 3.11, or 3.12.
-- Windows is the primary target for the current batch scripts.
-
-Install dependencies:
+### 1. 下载安装
 
 ```bat
-pip install -r requirements.txt
-```
+# 克隆仓库
+git clone https://github.com/<your-username>/daniya2026523.git
+cd daniya2026523
 
-Or use:
-
-```bat
+# 运行安装脚本（创建虚拟环境 + 安装依赖 + 创建桌面快捷方式）
 install.bat
 ```
 
-## Run
+安装完成后会自动启动达妮娅，并创建桌面快捷方式「达妮娅桌宠」，以后双击即可启动。
 
-For the official Windows build, download `DaniyaSummerPet-v0.49-win-x64.zip` from the GitHub Release, unzip it, and run `DaniyaSummerPet.exe`.
+### 2. 首次配置
 
-```bat
-run.bat
-```
+首次启动时会弹出**首次运行向导**，可选择：
+- **A. 快速体验模式** — 无需 API Key，本地假回复
+- **B. API 云模型模式** — 接入 DeepSeek/OpenAI/Claude
+- **C. 本地大模型模式** — 接入 Ollama/LM Studio 等本地服务
+- **D. 单机测试模式** — 断网开发测试
 
-Or:
+### 3. 日常使用
 
-```bat
-python main.py
-```
+- **对话**：右键输入框发送消息，达妮娅会通过 AI 回复
+- **设置中心**：右键菜单 → 对话 → 设置中心，管理 API、模型、桌宠行为、角色资源
+- **本地模型**：设置中心 → 模型与引擎 → 本地部署，可浏览推荐模型目录并一键拉取
 
-Without `.env` or without an API key, the app still starts and uses local fallback replies. API failures should not crash the desktop pet.
+## 系统要求
 
-## API Configuration
+- Python 3.10 / 3.11 / 3.12
+- Windows 10+（主要支持平台）
+- （可选）Ollama — 用于本地模型拉取和运行
 
-Copy the example environment file:
+## 项目结构
+
+| 目录 | 说明 |
+|---|---|
+| `src/` | 应用源码（GUI、API边界、Provider管理） |
+| `core/` | 对话引擎（角色系统、关系引擎、Speech Filter） |
+| `characters/` | 角色包（template 模板 + daniya 公开示例） |
+| `config/` | 配置文件（API、模型目录、系统提示词） |
+| `assets/icons/` | UI 图标（来自 Nieobie/Game-Icon-Pack） |
+| `data/` | 运行时数据（关系状态、事件日志，Git忽略） |
+| `docs/` | 项目文档 |
+| `tests/` | 测试用例（179 通过） |
+
+## API 配置
 
 ```bat
 copy .env.example .env
 ```
 
-Fill in your local key:
+编辑 `.env` 填入 API Key：
 
 ```text
-DEEPSEEK_API_KEY=your_api_key_here
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_API_KEY=your_key_here
+OPENAI_API_KEY=your_key_here
+ANTHROPIC_API_KEY=your_key_here
 ```
 
-`.env` is ignored by Git. Do not commit real API keys. v0.49 supports DeepSeek, OpenAI-compatible, OpenAI, Claude, and local OpenAI-compatible configuration, with local fallback when no usable key is available.
+也可在设置中心 → 模型与引擎 → 云端 API 配置中直接填写。
 
-Optional default config examples are provided:
-
-- `config/app_config.example.json`
-- `config/api_config.example.json`
-
-## Assets
-
-The public repository only includes placeholder assets under `assets/placeholder/`.
-
-Put your own authorized private assets under:
-
-```text
-assets/private/
-```
-
-`assets/private/` is ignored by Git and is not included in public release packages. The project does not distribute official game assets or unauthorized character material. See `docs/asset_policy.md`.
-
-Action images should usually be transparent PNGs. Keep canvas size and character center consistent within the same action group. Missing private action frames must fall back to placeholder or base idle/talk frames.
-
-## Character Packs
-
-- `characters/template/` is the public template for adding new characters.
-- `characters/daniya/` is the public example character pack used by the current integration tests.
-- Real user relationship data, chat history, reminders, notes, API keys, and private assets do not belong in character packs and are ignored separately under `data/` or `assets/private/`.
-
-Character packs should keep identity, speech style, lore index, relationship rules, events, and actions in YAML/Markdown files. Do not hard-code character lore or personality into Python.
-
-Validate a character pack:
+## 开发
 
 ```bat
-python tools\validate_character_pack.py characters\daniya
+# 安装依赖
+pip install -r requirements.txt
+
+# 运行
+python main.py
+
+# 测试
+pytest tests/ -q
 ```
 
-## Settings Center
+## 版本历史
 
-Open the right-click menu and choose the settings center entry. It includes:
+- v0.41 — 动作资源系统
+- v0.415 — 角色包 + 关系引擎
+- v0.42 — 设置中心
+- v0.43 — GitHub 开源整理
+- v0.44-v0.48 — 多轮迭代（多模型Provider、本地模型接入、打包测试）
+- v0.49 — Provider 架构重构（Boundary 模式 + ProviderRegistry）
+- **v0.50** — 首个正式开源发布版（推荐模型目录、内置下载器、许可证确认、图标系统、桌面快捷方式）
 
-- API settings and background connection test.
-- Pet size, opacity, always-on-top, idle chat, hourly chime, reminders, and day/night settings.
-- Action resource status, reload, and test controls.
-- Character pack status and safe YAML editing with backup and validation.
-- Relationship state view, export, and backup-protected reset.
-- Event log and data status pages.
-- Diagnostics for character pack validation, API config, manifest, fallback resources, writable data, and Git ignore safety.
+## 许可证
 
-Some timer-related settings may require restart to fully refresh runtime timers.
+本项目代码采用 MIT License。角色设定与行为脚本为同人创作。
+
+图标素材来自 [Nieobie/Game-Icon-Pack](https://github.com/Nieobie/Game-Icon-Pack)（B站创作者 UID:3493118095657529）。
 
 ## Data Directories
 

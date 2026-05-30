@@ -70,7 +70,7 @@ class TestProviderMetaGetters:
 
     def test_default_model(self) -> None:
         assert ProviderMeta.get_default_model(Provider.DEEPSEEK) == "deepseek-chat"
-        assert ProviderMeta.get_default_model(Provider.OPENAI) == "gpt-4o"
+        assert ProviderMeta.get_default_model(Provider.OPENAI) == "gpt-4.1-mini"
 
     def test_api_key_env(self) -> None:
         assert ProviderMeta.get_api_key_env(Provider.DEEPSEEK) == "DEEPSEEK_API_KEY"
@@ -86,13 +86,13 @@ class TestProviderMetaGetters:
         assert ProviderMeta.is_local(Provider.LM_STUDIO) is True
 
     def test_timeout(self) -> None:
-        assert ProviderMeta.get_timeout(Provider.DEEPSEEK) == 20
+        assert ProviderMeta.get_timeout(Provider.DEEPSEEK) == 30
         assert ProviderMeta.get_timeout(Provider.OPENAI) == 30
         assert ProviderMeta.get_timeout(Provider.LM_STUDIO) == 60
 
     def test_max_tokens(self) -> None:
-        assert ProviderMeta.get_max_tokens(Provider.CLAUDE) == 1024
-        assert ProviderMeta.get_max_tokens(Provider.DEEPSEEK) == 360
+        assert ProviderMeta.get_max_tokens(Provider.CLAUDE) == 4096
+        assert ProviderMeta.get_max_tokens(Provider.DEEPSEEK) == 4096
 
     def test_all_display_names(self) -> None:
         names = ProviderMeta.all_display_names()

@@ -6,7 +6,7 @@ from .config_manager import ConfigManager
 
 
 DEFAULT_PROFILE = {
-    "user_name": "御主",
+    "user_name": "主人",
     "relationship": "桌宠与主人",
     "style": "温柔、可爱、简短、陪伴感",
 }

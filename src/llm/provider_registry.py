@@ -33,12 +33,16 @@ from typing import Any
 # ── Provider Key Constants ────────────────────────────────────────
 
 class Provider:
-    """所有 Provider 的标准化键名常量。禁止在其他文件中写裸字符串。"""
+    """所有 Provider 的标准化键名常量。"""
 
     # 云端
     DEEPSEEK: str = "deepseek"
     OPENAI: str = "openai"
     CLAUDE: str = "claude"
+    GEMINI: str = "gemini"
+    MISTRAL: str = "mistral"
+    GROQ: str = "groq"
+    CUSTOM: str = "custom_cloud"
 
     # 本地
     OLLAMA: str = "ollama"
@@ -46,23 +50,27 @@ class Provider:
     LLAMA_CPP: str = "llama_cpp"
     LOCAL_OPENAI_COMPATIBLE: str = "local_openai_compatible"
 
-    # 通用兼容（用于 first_run_wizard 等模糊选择）
+    # 通用兼容
     OPENAI_COMPATIBLE: str = "openai_compatible"
 
-    # 别名映射（normalize 时使用）
     _ALIASES: dict[str, str] = {
         "anthropic": "claude",
+        "google": "gemini",
+        "gemini": "gemini",
+        "mistral": "mistral",
+        "groq": "groq",
         "openai-compatible local": "local_openai_compatible",
         "openai-compatible": "openai_compatible",
         "llama.cpp server": "llama_cpp",
         "llama.cpp": "llama_cpp",
         "lm studio": "lm_studio",
         "custom": "local_openai_compatible",
+        "custom_cloud": "custom_cloud",
     }
 
     @classmethod
     def all_cloud(cls) -> list[str]:
-        return [cls.DEEPSEEK, cls.OPENAI, cls.CLAUDE]
+        return [cls.DEEPSEEK, cls.OPENAI, cls.CLAUDE, cls.GEMINI, cls.MISTRAL, cls.GROQ, cls.CUSTOM]
 
     @classmethod
     def all_local(cls) -> list[str]:
@@ -85,32 +93,80 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "api_key_env": "DEEPSEEK_API_KEY",
         "api_style": "openai_compatible",
         "source": "cloud",
-        "timeout": 20,
-        "max_tokens": 360,
+        "timeout": 30,
+        "max_tokens": 4096,
         "capabilities": ["text"],
     },
     Provider.OPENAI: {
         "key": Provider.OPENAI,
         "display_name": "OpenAI",
         "base_url": "https://api.openai.com/v1",
-        "default_model": "gpt-4o",
+        "default_model": "gpt-4.1-mini",
         "api_key_env": "OPENAI_API_KEY",
         "api_style": "openai_compatible",
         "source": "cloud",
         "timeout": 30,
-        "max_tokens": 360,
+        "max_tokens": 4096,
         "capabilities": ["text"],
     },
     Provider.CLAUDE: {
         "key": Provider.CLAUDE,
         "display_name": "Claude (Anthropic)",
         "base_url": "https://api.anthropic.com/v1",
-        "default_model": "claude-3-5-sonnet-20240620",
+        "default_model": "claude-sonnet-4-6",
         "api_key_env": "ANTHROPIC_API_KEY",
         "api_style": "anthropic",
         "source": "cloud",
         "timeout": 30,
-        "max_tokens": 1024,
+        "max_tokens": 4096,
+        "capabilities": ["text"],
+    },
+    Provider.GEMINI: {
+        "key": Provider.GEMINI,
+        "display_name": "Google Gemini",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+        "default_model": "gemini-2.5-flash",
+        "api_key_env": "GEMINI_API_KEY",
+        "api_style": "openai_compatible",
+        "source": "cloud",
+        "timeout": 30,
+        "max_tokens": 4096,
+        "capabilities": ["text", "vision"],
+    },
+    Provider.MISTRAL: {
+        "key": Provider.MISTRAL,
+        "display_name": "Mistral AI",
+        "base_url": "https://api.mistral.ai/v1",
+        "default_model": "mistral-large-latest",
+        "api_key_env": "MISTRAL_API_KEY",
+        "api_style": "openai_compatible",
+        "source": "cloud",
+        "timeout": 30,
+        "max_tokens": 4096,
+        "capabilities": ["text"],
+    },
+    Provider.GROQ: {
+        "key": Provider.GROQ,
+        "display_name": "Groq",
+        "base_url": "https://api.groq.com/openai/v1",
+        "default_model": "llama-4-maverick-17b-128e-instruct",
+        "api_key_env": "GROQ_API_KEY",
+        "api_style": "openai_compatible",
+        "source": "cloud",
+        "timeout": 30,
+        "max_tokens": 4096,
+        "capabilities": ["text"],
+    },
+    Provider.CUSTOM: {
+        "key": Provider.CUSTOM,
+        "display_name": "自定义云端 (Custom)",
+        "base_url": "",
+        "default_model": "",
+        "api_key_env": "CUSTOM_API_KEY",
+        "api_style": "openai_compatible",
+        "source": "cloud",
+        "timeout": 30,
+        "max_tokens": 512,
         "capabilities": ["text"],
     },
     Provider.OLLAMA: {

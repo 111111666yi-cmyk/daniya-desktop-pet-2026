@@ -153,11 +153,12 @@ controller = AppController(app)
 controller.open_settings_center()
 app.processEvents()
 tabs = [controller.settings_window.tabs.tabText(i) for i in range(controller.settings_window.tabs.count())]
-assert len(tabs) == 4
+assert len(tabs) == 5
 assert tabs[0] == '\u6a21\u578b\u4e0e\u5f15\u64ce'
 assert tabs[1] == '\u684c\u5ba0'
 assert tabs[2] == '\u89d2\u8272\u4e0e\u8d44\u6e90'
-assert tabs[3] == '\u6570\u636e\u4e0e\u7cfb\u7edf'
+assert tabs[3] == '\u5173\u7cfb\u4e0e\u4e8b\u4ef6'
+assert tabs[4] == '\u7cfb\u7edf'
 assert controller.settings_window.pack_editor_text.isReadOnly() is False
 print('SETTINGS_WINDOW_OK', flush=True)
 os._exit(0)

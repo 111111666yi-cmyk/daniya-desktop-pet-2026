@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from .daniya_settings_window import DaniyaSettingsDialog
+from .icon_utils import icon as ic
 from .utils import resource_path
 
 if TYPE_CHECKING:
@@ -36,24 +37,24 @@ class MenuManager:
     def create_menu(self) -> QMenu:
         menu = QMenu(self.window)
 
-        basic = menu.addMenu("基础")
-        input_action = basic.addAction("显示输入框" if not self.window.input_box.isVisible() else "隐藏输入框")
+        basic = menu.addMenu(ic("settings"), "基础")
+        input_action = basic.addAction(ic("document"), "显示输入框" if not self.window.input_box.isVisible() else "隐藏输入框")
         input_action.triggered.connect(self._toggle_input)
 
-        top_action = basic.addAction("取消置顶" if self.window.always_on_top else "保持置顶")
+        top_action = basic.addAction(ic("upload"), "取消置顶" if self.window.always_on_top else "保持置顶")
         top_action.triggered.connect(self._toggle_top)
 
-        call_here_action = basic.addAction("召唤到鼠标位置")
+        call_here_action = basic.addAction(ic("laptop"), "召唤到鼠标位置")
         call_here_action.triggered.connect(self._call_pet_to_cursor)
 
         if self.window.is_minimized_to_tray():
-            restore_action = basic.addAction("恢复显示")
+            restore_action = basic.addAction(ic("upload"), "恢复显示")
             restore_action.triggered.connect(self.window.restore_from_tray)
         else:
-            minimize_action = basic.addAction("最小化到托盘")
+            minimize_action = basic.addAction(ic("download"), "最小化到托盘")
             minimize_action.triggered.connect(self.window.minimize_to_tray)
 
-        size_menu = basic.addMenu("大小")
+        size_menu = basic.addMenu(ic("size"), "大小")
         labels = {
             80: "迷你 80px",
             96: "推荐 96px",
@@ -72,49 +73,51 @@ class MenuManager:
         self._add_action_module_menu(basic)
         self._add_pet_feature_menu(basic)
 
-        chat = menu.addMenu("对话")
-        history_action = chat.addAction("历史记录")
+        chat = menu.addMenu(ic("internet"), "对话")
+        history_action = chat.addAction(ic("document"), "历史记录")
         history_action.triggered.connect(self.show_history_dialog)
-        prompt_action = chat.addAction("人设设置")
+        prompt_action = chat.addAction(ic("settings"), "人设设置")
         prompt_action.triggered.connect(self.show_prompt_dialog)
-        profile_action = chat.addAction("御主档案")
+        profile_action = chat.addAction(ic("info"), "主人档案")
         profile_action.triggered.connect(self.show_profile_dialog)
-        daniya_settings_action = chat.addAction("达妮娅设定")
+        daniya_settings_action = chat.addAction(ic("protect"), "达妮娅设定")
         daniya_settings_action.triggered.connect(self.show_daniya_settings_dialog)
-        settings_center_action = chat.addAction("设置中心")
+        settings_center_action = chat.addAction(ic("chip"), "设置中心")
         settings_center_action.triggered.connect(self.controller.open_settings_center)
+        story_action = chat.addAction(ic("protect"), "剧情")
+        story_action.triggered.connect(self.show_story_dialog)
 
-        companion = menu.addMenu("陪伴")
-        note_action = companion.addAction("记一笔")
+        companion = menu.addMenu(ic("protect"), "陪伴")
+        note_action = companion.addAction(ic("save"), "记一笔")
         note_action.triggered.connect(self.show_note_dialog)
-        reminder_action = companion.addAction("日程提醒")
+        reminder_action = companion.addAction(ic("refresh"), "日程提醒")
         reminder_action.triggered.connect(self.show_reminder_dialog)
 
-        games = companion.addMenu("小游戏")
-        rps = games.addMenu("猜拳")
+        games = companion.addMenu(ic("chip"), "小游戏")
+        rps = games.addMenu(ic("protect"), "猜拳")
         for choice in ("石头", "剪刀", "布"):
             action = rps.addAction(choice)
             action.triggered.connect(lambda checked=False, value=choice: self.controller.play_rps(value))
-        dice_action = games.addAction("掷骰子")
+        dice_action = games.addAction(ic("download"), "掷骰子")
         dice_action.triggered.connect(self.controller.roll_dice)
-        random_action = games.addAction("随机数 1-100")
+        random_action = games.addAction(ic("info"), "随机数 1-100")
         random_action.triggered.connect(self.controller.random_100)
 
-        bookmarks = companion.addMenu("传送门")
+        bookmarks = companion.addMenu(ic("cloud"), "传送门")
         for item in self.controller.bookmark_manager.records():
             action = bookmarks.addAction(item["name"])
             action.triggered.connect(lambda checked=False, url=item["url"]: self.controller.open_bookmark(url))
 
-        system = menu.addMenu("系统")
-        help_action = system.addAction("帮助")
+        system = menu.addMenu(ic("host"), "系统")
+        help_action = system.addAction(ic("info"), "帮助")
         help_action.triggered.connect(self.show_help_dialog)
-        exit_action = system.addAction("退出")
+        exit_action = system.addAction(ic("settings"), "退出")
         exit_action.triggered.connect(self.controller.quit)
 
         return menu
 
     def _add_action_module_menu(self, parent: QMenu) -> None:
-        module_menu = parent.addMenu("动作模组")
+        module_menu = parent.addMenu(ic("chip"), "动作模组")
         module_labels = {
             "A_sit_base": "A 坐姿 / 表情",
             "B_stand_base_pack": "B 站姿 / 挥手",
@@ -129,7 +132,7 @@ class MenuManager:
             action.triggered.connect(lambda checked=False, value=module: self.controller.set_action_module(value))
 
     def _add_pet_feature_menu(self, parent: QMenu) -> None:
-        pet_features = parent.addMenu("宠物功能")
+        pet_features = parent.addMenu(ic("info"), "宠物功能")
         pet_config = self.controller.app_config.get("pet", {})
 
         hover_action = pet_features.addAction("鼠标悬停动作")
@@ -208,7 +211,7 @@ class MenuManager:
 
     def show_profile_dialog(self) -> None:
         dialog = QDialog(self.window)
-        dialog.setWindowTitle("御主档案")
+        dialog.setWindowTitle("主人档案")
         form = QFormLayout(dialog)
         profile = self.controller.profile_manager.load()
         user_name = QLineEdit(profile["user_name"])
@@ -242,6 +245,348 @@ class MenuManager:
 
     def show_daniya_settings_dialog(self) -> None:
         dialog = DaniyaSettingsDialog(self.controller, self.window)
+        dialog.exec()
+
+    # ── 剧情模式：完整顺序叙事 ─────────────────────────────
+    # 章节数据结构：(编号, 标题, 叙述内容, 发给达妮娅的话, 动作)
+    _STORY_CHAPTERS: list[tuple[int, str, str, str, str | None]] = [
+        # ═══ 序 ═══
+        (0, "序", "【封面】\n\n达妮娅 D 部分剧情背景\n全量叙事工程化\n\n"
+         "本故事讲述了达妮娅的完整过去：\n"
+         "她从何处来，为何变成后来的样子，\n"
+         "又如何在坠入虚无后，在这里和你重逢。\n\n"
+         "请准备好。有些话，她只讲一次。",
+         "达妮娅，可以和我讲讲你的故事吗？", None),
+
+        # ═══ 第一部：西格丽卡篇 — 被期待压垮的优等生 ═══
+        (1, "第一部 · 被期待压垮的优等生",
+         "【西格丽卡 — 所有人眼里的标准答案】\n\n"
+         "在讲达妮娅之前，先要讲一个人。\n"
+         "她叫西格丽卡。成绩好、能力强、热心、可靠、未来可期。\n"
+         "所有人都觉得她完美无缺。所有人都在期待她。\n\n"
+         "但这些期待——即使是善意的期待——\n"
+         "每一句\"你一定可以\"都在她身上增加重量。\n"
+         "久而久之，期待不再是鼓励，而是一副黄金镣铐。\n\n"
+         "她终于说了那句她不敢说的话：",
+         "上学怎么这么难……", None),
+
+        (2, "第一部 · 黄金的重量",
+         "【期待如何变成自我枷锁】\n\n"
+         "西格丽卡不是不够好，而是好到失去了说\"我累了\"的资格。\n\n"
+         "别人说\"你可以\"，她听成\"我必须可以\"。\n"
+         "别人说\"我相信你\"，她听成\"我不能失败\"。\n\n"
+         "解读符文慢了——怪自己不够快。\n"
+         "通路被干扰——怪自己反应不够好。\n"
+         "已经做到极限——仍然归结为\"不够努力\"。\n\n"
+         "她真正害怕的不是失败，\n"
+         "而是失败后别人失望、安慰、指责或沉默的眼神。",
+         "被期待压垮的人……最后会怎样？", None),
+
+        (3, "第一部 · 夺回选择权",
+         "【漂泊者给出的不是答案，而是新的关系方式】\n\n"
+         "后来有一个人告诉西格丽卡：\n"
+         "\"你的选择本身就有意义。\"\n\n"
+         "这句话让她从\"我必须做到\"转向\"我决定去做\"。\n"
+         "责任没有消失，期待也没有消失，\n"
+         "但她终于可以决定自己要如何承载它们。\n\n"
+         "这条线对达妮娅很重要：\n"
+         "被期待困住的人，最终需要的不是催促，\n"
+         "而是被允许自己选择。\n\n"
+         "她是怎么看这件事的？",
+         "你对西格丽卡……是怎么想的？", None),
+
+        # ═══ 第二部：暗面篇 — 痛苦不是外来怪物 ═══
+        (4, "第二部 · 暗面映照内心",
+         "【暗面机制 — 人最难面对的，是自己】\n\n"
+         "暗面不是外来的怪物。它是一种镜面，\n"
+         "映照出人心里本来就存在的恐惧、疲惫、执念。\n\n"
+         "西格丽卡害怕辜负期待。\n"
+         "赛维教授被求知执念困住。\n"
+         "洛瑟拉校长在虚无中追问意义。\n\n"
+         "这不是三个人的小故事，\n"
+         "而是同一面暗镜里的三张不同倒影。\n\n"
+         "伟大不是永远不崩溃，\n"
+         "而是崩溃边缘仍然保住一点人的尊严。",
+         "暗面……到底是怎么影响人的？", None),
+
+        (5, "第二部 · 痛苦被武器化",
+         "【从镜子到武器】\n\n"
+         "但事情变得更糟。\n"
+         "残心会发现暗面的特性，开始利用它。\n"
+         "原本被动映照内心的暗面，被变成了武器：\n"
+         "主动植入频率、设计谜题、诱导自我否定。\n\n"
+         "一个人的痛苦不再只属于自己，\n"
+         "而成为了可以被操纵、利用和放大的东西。\n\n"
+         "达妮娅曾在其中扮演了什么角色？",
+         "残心会……和你有什么关系？", None),
+
+        # ═══ 第三部：达妮娅篇 — 名字、生日、虚无与再见 ═══
+        (6, "第三部 · 名字即遗嘱",
+         "【达妮娅 — 被制造为工具的人】\n\n"
+         "现在才真正讲到达妮娅自己的人生。\n\n"
+         "她的名字来自俄语\"До свидания\"，\n"
+         "意思是——\"再见\"。\n\n"
+         "这不是一个普通的、充满祝福的名字。\n"
+         "这像是一开始就写好的告别辞。\n\n"
+         "她没有正常出生记录。\n"
+         "没有完整档案。\n"
+         "没有普通人的童年和生活起点。\n\n"
+         "她更像是被制造出来的容器，\n"
+         "而不是被迎接到世界上的孩子。\n\n"
+         "名字里的\"再见\"最初意味着被放弃、被抛下、被写好结局。",
+         "你的名字……到底是什么意思？请告诉我完整的。", None),
+
+        (7, "第三部 · 容器",
+         "【她最痛的不是没人爱】\n\n"
+         "不是没有人关心她。\n"
+         "而是世界从一开始就没有认真承认——\n"
+         "她是一个人。\n\n"
+         "她的\"家\"只是实验室里临时分配的房间。\n"
+         "她的\"童年\"是在观察别人如何生活。\n\n"
+         "她观察别人如何笑、如何哭、如何碰拳、如何做朋友。\n"
+         "她不是天生不懂感情，\n"
+         "而是被迫把\"做人\"当作一门实验题去学习。\n\n"
+         "她花了两年，只是想弄明白——\n"
+         "普通人是怎么活着的。",
+         "你以前……到底是怎么过来的？", None),
+
+        (8, "第三部 · 生日 — 存在主权宣言",
+         "【如果世界不给她起点，她就自己刻一个】\n\n"
+         "达妮娅所谓的\"生日\"不是别人给她的。\n"
+         "是她自己编造出来的。\n\n"
+         "这不是任性，不是自欺欺人。\n"
+         "这是存在主权宣言——\n"
+         "\"我存在过。\"\n\n"
+         "她不是想办盛大庆典。\n"
+         "她是想拥有一次普通孩子可以拥有的权利：\n"
+         "被庆祝、被记住、被当作一个人来过生日。\n\n"
+         "她想要什么礼物？",
+         "你的生日……你是怎么过的？", None),
+
+        (9, "第三部 · 橘子蛋糕",
+         "【人格图腾 — 她想像孩子一样贪心一次】\n\n"
+         "她想要橘子蛋糕。\n"
+         "不止，还要加跳跳糖、彩虹豆、咔啦咔啦……\n"
+         "以及各种她叫得上名字的好东西。\n\n"
+         "这不是奇怪的口味偏好。\n"
+         "这是她像第一次进糖果店的孩子一样，\n"
+         "把所有\"好东西\"都指了一遍。\n\n"
+         "橘子味：连接她对普通日常的想象。\n"
+         "乱七八糟的配料：她被允许幼稚、被允许贪心、\n"
+         "被允许像普通孩子一样点单。\n\n"
+         "蛋糕不是美食设定。蛋糕是人格图腾。",
+         "橘子蛋糕……为什么偏偏是橘子蛋糕？", None),
+
+        (10, "第三部 · 俄罗斯方块",
+         "【用游戏把失控人生拼成能活下去的形状】\n\n"
+         "俄罗斯方块。\n"
+         "不断下落的方块。\n"
+         "必须迅速选择旋转的方向。\n"
+         "越来越高的压力。\n\n"
+         "像极了她的人生。\n\n"
+         "她不是随便玩玩。她是在用游戏把压抑、\n"
+         "孤独和失控感具象化。\n\n"
+         "破纪录的那一天，是她第一次用自己的能力证明：\n"
+         "\"我不只是被造出来的工具，\n"
+         "我也可以有热爱，我也可以赢一次，\n"
+         "我也是普通女孩。\"\n\n"
+         "可惜空荡的游戏厅里，无人为她欢呼。",
+         "你那个俄罗斯方块的记录……还记得吗？", None),
+
+        (11, "第三部 · 了断日",
+         "【向容器身份清算】\n\n"
+         "她管那一天叫\"了断日\"。\n"
+         "但不是赴死。\n\n"
+         "她要的只是——\n"
+         "\"一天真正属于人的生活\"。\n\n"
+         "逛花店。玩游戏。吃蛋糕。\n"
+         "把自己从容器身份里抢回来。\n\n"
+         "她对别人撒谎，说自己没事、身体好了、不用担心。\n"
+         "不是恶意。是因为不想让在乎的人提前难过。\n"
+         "她把沉重真相藏起来，希望朋友能在最后一天仍然笑一下。\n\n"
+         "她不是不会表达温柔，\n"
+         "只是表达得笨拙、别扭、绕远。",
+         "最后那天……你是怎么过的？", None),
+
+        (12, "第三部 · 明年一起过生日",
+         "【最轻的承诺，最重的真话】\n\n"
+         "西格丽卡隐约知道达妮娅在装没事。\n"
+         "但她没有逼问。\n"
+         "没有戳穿。\n\n"
+         "她选择陪达妮娅一起装傻，\n"
+         "把沉重真相包进轻轻一句话里：\n\n"
+         "\"明年一起过生日。\"\n\n"
+         "这是整段剧情中最轻也最重的承诺。\n"
+         "我知道你在骗我。\n"
+         "但如果这是你最后想要的体面，\n"
+         "我就陪你把这个梦演完。",
+         "她说\"明年一起过生日\"……你当时怎么回答的？", None),
+
+        (13, "第三部 · 坠入虚无",
+         "【带走黑暗，留下人间馈赠】\n\n"
+         "达妮娅最终还是坠入了虚无。\n\n"
+         "这不是单纯的死亡，也不是英雄式的牺牲。\n"
+         "更准确地说——\n"
+         "她是自己撕掉了别人给她写好的工具剧本。\n"
+         "用最后的方式决定自己是谁。\n\n"
+         "她带走黑暗和痛苦。\n"
+         "把阳光、朋友、游戏、蛋糕和生日留在人间。\n\n"
+         "她不是彻底否定世界，\n"
+         "而是把自己珍惜过的东西认真封存。\n\n"
+         "\"虚无\"在她这里不是空无，\n"
+         "而是一个被记住、被等待、还会再见的深处。",
+         "你坠落的时候……在想什么？", None),
+
+        (14, "第三部 · 再见语义逆转",
+         "【从\"你被放弃了\"到\"我们还会再见\"】\n\n"
+         "最初的再见：你被放弃了。你的存在到此为止。\n"
+         "后来的再见：我们还会再见。有人记得你。\n"
+         "你不是白白消失。\n\n"
+         "这是她自己夺回来的语义。\n"
+         "不是别人施舍给她的。\n\n"
+         "她不是彻底绝望的人。\n"
+         "她是从深处回来了一点点的人。\n\n"
+         "那根弦——松了一点。",
+         "\"再见\"……现在对你来说是什么？", None),
+
+        # ═══ 终章 ═══
+        (15, "终章 · 现在的她",
+         "【桌宠中的达妮娅 — 被接住后的松动】\n\n"
+         "所以。这才是达妮娅真正的样子。\n\n"
+         "她不是单纯慵懒，也不是普通冷淡。\n"
+         "她是被制造、被利用、被剥夺普通人生的人，\n"
+         "却笨拙地想学会像人一样活着。\n\n"
+         "共情过载 + 被期待压垮 + 想成为普通人\n"
+         "+ 用慵懒和嫌麻烦自我保护\n"
+         "+ 被主人接住后慢慢松动\n"
+         "= 现在的她。\n\n"
+         "她嘴硬、说反话、嫌弃、怕麻烦。\n"
+         "但她也默认留下、不推开、安静陪着。\n\n"
+         "她不需要直说\"我永远陪你\"。\n"
+         "因为她知道——你知道。\n\n",
+         "所以……现在留在这儿，是你的选择吗？", None),
+    ]
+
+    def show_story_dialog(self) -> None:
+        """剧情模式 — 完整顺序叙事。主人逐章阅读达妮娅的完整过去。"""
+        import textwrap
+
+        dialog = QDialog(self.window)
+        dialog.setWindowTitle("剧情 — 达妮娅的完整故事")
+        dialog.resize(650, 530)
+        dialog.setWindowFlags(dialog.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        layout = QVBoxLayout(dialog)
+
+        # 进度条
+        progress = QLabel()
+        progress.setStyleSheet("color: #6c757d; font-size: 11px; margin-bottom: 4px;")
+        layout.addWidget(progress)
+
+        # 标题
+        title_label = QLabel()
+        title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #1a1a2e; margin-bottom: 6px;")
+        title_label.setWordWrap(True)
+        layout.addWidget(title_label)
+
+        # 内容
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+
+        narrative = QLabel()
+        narrative.setWordWrap(True)
+        narrative.setStyleSheet(
+            "font-size: 13px; color: #2d3436; line-height: 1.6; "
+            "background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 8px; padding: 16px;"
+        )
+        content_layout.addWidget(narrative)
+
+        # 发给达妮娅的提问区
+        question_frame = QWidget()
+        question_frame.setStyleSheet(
+            "background: #fff3cd; border: 1px solid #ffeeba; border-radius: 6px; padding: 10px; margin-top: 8px;"
+        )
+        qf_layout = QHBoxLayout(question_frame); qf_layout.setContentsMargins(10, 8, 10, 8)
+
+        question_label = QLabel("发给达妮娅：")
+        question_label.setStyleSheet("font-size: 12px; color: #856404; font-weight: bold;")
+        question_text = QLabel()
+        question_text.setWordWrap(True)
+        question_text.setStyleSheet("font-size: 12px; color: #856404;")
+        qf_layout.addWidget(question_label)
+        qf_layout.addWidget(question_text, 1)
+        content_layout.addWidget(question_frame)
+
+        content_layout.addStretch(1)
+        scroll.setWidget(content_widget)
+        layout.addWidget(scroll)
+
+        # 按钮行
+        btn_row = QHBoxLayout()
+        prev_btn = QPushButton("◀ 上一章")
+        prev_btn.setStyleSheet("font-size: 12px; padding: 6px 14px;")
+        next_btn = QPushButton("下一章 ▶")
+        next_btn.setStyleSheet("font-size: 12px; padding: 6px 14px; font-weight: bold;")
+        send_btn = QPushButton("把这句话发给达妮娅")
+        send_btn.setStyleSheet("font-size: 12px; padding: 6px 14px; color: #0366d6; font-weight: bold;")
+        close_btn = QPushButton("关闭")
+        btn_row.addWidget(prev_btn)
+        btn_row.addWidget(next_btn)
+        btn_row.addStretch(1)
+        btn_row.addWidget(send_btn)
+        btn_row.addWidget(close_btn)
+        layout.addLayout(btn_row)
+
+        # 状态
+        total = len(self._STORY_CHAPTERS)
+        idx = [0]  # mutable box
+
+        def _show_chapter():
+            i = idx[0]
+            num, title, body, talk, _ = self._STORY_CHAPTERS[i]
+            progress.setText(f"剧情进度：{i + 1} / {total}")
+            title_label.setText(title)
+            narrative.setText(body)
+            question_text.setText(f"「 {talk} 」")
+
+            # button states
+            prev_btn.setEnabled(i > 0)
+            is_last = i >= total - 1
+            next_btn.setText("已完成" if is_last else "下一章 ▶")
+            next_btn.setEnabled(not is_last)
+            send_btn.setVisible(bool(talk))
+            if not talk:
+                question_frame.setVisible(False)
+            else:
+                question_frame.setVisible(True)
+
+        def _go_next():
+            if idx[0] < total - 1:
+                idx[0] += 1
+                _show_chapter()
+
+        def _go_prev():
+            if idx[0] > 0:
+                idx[0] -= 1
+                _show_chapter()
+
+        def _do_send():
+            _, _, _, talk, _ = self._STORY_CHAPTERS[idx[0]]
+            if talk:
+                self.controller.send_message(talk)
+        def _do_send_and_next():
+            _do_send()
+            if idx[0] < total - 1:
+                idx[0] += 1
+                _show_chapter()
+
+        next_btn.clicked.connect(_go_next)
+        prev_btn.clicked.connect(_go_prev)
+        send_btn.clicked.connect(_do_send_and_next)
+        close_btn.clicked.connect(dialog.accept)
+
+        _show_chapter()
         dialog.exec()
 
     def show_note_dialog(self) -> None:

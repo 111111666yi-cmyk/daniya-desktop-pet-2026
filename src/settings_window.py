@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import QThread, Qt, Signal, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -27,6 +28,7 @@ from PySide6.QtWidgets import (
 
 from .character_pack_editor import EDITABLE_FILES, CharacterPackEditor
 from .diagnostics_panel import format_diagnostics, run_diagnostics
+from .icon_utils import icon as get_icon
 from .relationship_state_viewer import RelationshipStateViewer
 from .settings_manager import SettingsManager
 from .llm.provider_registry import Provider, ProviderMeta
@@ -148,7 +150,8 @@ class SettingsWindow(QDialog):
         self._build_model_tab()
         self._build_pet_tab()
         self._build_character_resources_tab()
-        self._build_data_system_tab()
+        self._build_relationship_events_tab()
+        self._build_system_tab()
 
         close = QPushButton("关闭")
         close.clicked.connect(self.accept)
@@ -181,16 +184,12 @@ class SettingsWindow(QDialog):
         self._build_local_model_section(local_group_layout)
         scroll_layout.addWidget(local_group)
 
-        # 多模态配置（预留，折叠）
-        multi_group = QGroupBox("多模态配置 (v0.46+ 预留)")
-        multi_group.setStyleSheet("QGroupBox { color: gray; }")
-        multi_layout = QVBoxLayout(multi_group)
-        self._build_multimodal_section(multi_layout)
-        scroll_layout.addWidget(multi_group)
+        # 多模态配置
+        self._build_multimodal_section(scroll_layout)
 
         scroll.setWidget(scroll_content)
         main_layout.addWidget(scroll)
-        self.tabs.addTab(tab, "模型与引擎")
+        self.tabs.addTab(tab, get_icon("chip"), "模型与引擎")
 
     def _build_api_section(self, parent_layout: Any) -> None:
         form = QFormLayout()
@@ -199,17 +198,37 @@ class SettingsWindow(QDialog):
         providers = self.api.get("providers", {})
         prov_conf = providers.get(active, {})
 
+        # 全部云端 Provider（显示名 → key）
+        all_cloud = Provider.all_cloud() + [Provider.OPENAI_COMPATIBLE]
+        self._provider_display_map: dict[str, str] = {}
+        display_items: list[str] = []
+        for k in all_cloud:
+            display = f"{ProviderMeta.get_display_name(k)}"
+            self._provider_display_map[display] = k
+            display_items.append(display)
+
         self.provider_input = QComboBox()
-        self.provider_input.addItems(Provider.all_cloud() + [Provider.OPENAI_COMPATIBLE, Provider.LOCAL_OPENAI_COMPATIBLE])
-        self.provider_input.setCurrentText(str(active))
+        self.provider_input.addItems(display_items)
+        # 反查当前 active 对应的显示名
+        active_display = next((d for d, k in self._provider_display_map.items() if k == active), display_items[0])
+        self.provider_input.setCurrentText(active_display)
         self.base_url_input = QLineEdit(str(prov_conf.get("base_url", "")))
         self.model_input = QLineEdit(str(prov_conf.get("model", "")))
         self.api_key_input = QLineEdit()
         self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.api_key_input.setPlaceholderText(str(prov_conf.get("api_key_masked", "<empty>")))
+
+        # 小眼睛切换明文/密码
+        self.api_key_toggle_btn = QPushButton("显"); self.api_key_toggle_btn.setFixedWidth(32)
+        self.api_key_toggle_btn.setCheckable(True)
+        self.api_key_toggle_btn.toggled.connect(
+            lambda checked: self.api_key_input.setEchoMode(
+                QLineEdit.EchoMode.Normal if checked else QLineEdit.EchoMode.Password))
+        key_row = QHBoxLayout(); key_row.addWidget(self.api_key_input); key_row.addWidget(self.api_key_toggle_btn)
+
         self.local_mode_input = QCheckBox("启用本地 fallback 模式")
         self.local_mode_input.setChecked(bool(self.api.get("local_mode", False)))
-        self.api_result = QLabel("API Key 不会完整写入日志；留空保存则不改当前 key。")
+        self.api_result = QLabel("选择 Provider → 填写 API Key → 测试连接 → 保存后点击「设为当前模型」生效。\n留空 API Key 保存则不改当前 key。")
         self.api_result.setWordWrap(True)
 
         self.provider_input.currentTextChanged.connect(self._on_provider_changed)
@@ -217,52 +236,106 @@ class SettingsWindow(QDialog):
         form.addRow("Provider", self.provider_input)
         form.addRow("Base URL", self.base_url_input)
         form.addRow("Model", self.model_input)
-        form.addRow("API Key", self.api_key_input)
+        form.addRow("API Key", key_row)
         form.addRow("本地模式", self.local_mode_input)
         parent_layout.addLayout(form)
 
-        buttons = QHBoxLayout()
-        save = QPushButton("保存 API 设置")
-        test = QPushButton("测试连接")
-        activate = QPushButton("设为当前模型")
+        # 按钮行 1：保存 / 测试 / 激活
+        btn1 = QHBoxLayout()
+        save = QPushButton("保存 API 设置"); save.setIcon(get_icon("save"))
+        test = QPushButton("测试连接"); test.setIcon(get_icon("refresh"))
+        activate = QPushButton("设为当前模型"); activate.setIcon(get_icon("chip"))
         save.clicked.connect(self._save_api_settings)
         test.clicked.connect(self._test_api_connection)
         activate.clicked.connect(self._activate_cloud_profile)
-        buttons.addWidget(save)
-        buttons.addWidget(test)
-        buttons.addWidget(activate)
-        buttons.addStretch(1)
-        parent_layout.addLayout(buttons)
+        btn1.addWidget(save); btn1.addWidget(test); btn1.addWidget(activate); btn1.addStretch(1)
+        parent_layout.addLayout(btn1)
+
+        # 按钮行 2：清除 / 重置
+        btn2 = QHBoxLayout()
+        clear_key = QPushButton("清除当前 Key"); clear_key.setIcon(get_icon("settings"))
+        clear_key.clicked.connect(self._clear_api_key)
+        reset_prov = QPushButton("重置此 Provider"); reset_prov.setIcon(get_icon("refresh"))
+        reset_prov.clicked.connect(self._reset_current_provider)
+        btn2.addWidget(clear_key); btn2.addWidget(reset_prov); btn2.addStretch(1)
+        parent_layout.addLayout(btn2)
+
+        # "有问题？" 帮助入口
+        help_btn = QPushButton("有问题？"); help_btn.setIcon(get_icon("info"))
+        help_btn.setStyleSheet("QPushButton { color: #0366d6; border: 1px solid #0366d6; border-radius: 4px; padding: 4px 12px; } QPushButton:hover { background: #f0f7ff; }")
+        help_btn.clicked.connect(self._show_api_help)
+        parent_layout.addWidget(help_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+
         parent_layout.addWidget(self.api_result)
         parent_layout.addStretch(1)
 
     def _build_multimodal_section(self, parent_layout: Any) -> None:
+        """多模态配置 — 分为 TTS / 图像 / 视频三个独立功能组，均可保存。"""
         from .provider_capability_schema import ProviderCapabilitySchema
         schema = ProviderCapabilitySchema(root=self.settings_manager.root)
+        mm_config = self.settings_manager.load_multimodal_config()
 
-        form = QFormLayout()
-
+        # ── TTS 语音 ──
+        tts_group = QGroupBox("TTS 语音播报")
+        tts_layout = QFormLayout(tts_group)
         self.tts_combo = QComboBox()
-        self.tts_combo.addItems(schema.get_tts_providers())
-        self.tts_combo.setCurrentText("none")
+        self.tts_combo.addItems(["none", "cloud_tts (OpenAI TTS)", "edge_tts (本地)", "system_tts (系统内置)"])
+        self.tts_combo.setCurrentText(mm_config.get("tts", "none"))
+        self.tts_lang = QComboBox()
+        self.tts_lang.addItems(["zh-CN", "zh-TW", "en-US", "ja-JP"])
+        self.tts_lang.setCurrentText(mm_config.get("tts_lang", "zh-CN"))
+        tts_layout.addRow("引擎", self.tts_combo)
+        tts_layout.addRow("语言", self.tts_lang)
+        tts_save = QPushButton("保存 TTS 设置"); tts_save.setIcon(get_icon("save"))
+        tts_save.clicked.connect(lambda: self._save_multimodal("tts"))
+        tts_reset = QPushButton("重置 TTS"); tts_reset.setIcon(get_icon("refresh"))
+        tts_reset.clicked.connect(lambda: self._reset_multimodal("tts"))
+        tts_btns = QWidget()
+        tts_btn_row = QHBoxLayout(tts_btns); tts_btn_row.setContentsMargins(0,0,0,0)
+        tts_btn_row.addWidget(tts_save); tts_btn_row.addWidget(tts_reset); tts_btn_row.addStretch(1)
+        tts_layout.addRow(tts_btns)
+        parent_layout.addWidget(tts_group)
 
+        # ── 图像生成 ──
+        img_group = QGroupBox("文生图 / 图生图")
+        img_layout = QFormLayout(img_group)
         self.t2i_combo = QComboBox()
-        self.t2i_combo.addItems(schema.get_image_providers())
-        self.t2i_combo.setCurrentText("none")
+        self.t2i_combo.addItems(["none", "openai_dalle", "stable_diffusion_local", "comfyui_local", "custom_api"])
+        self.t2i_combo.setCurrentText(mm_config.get("image", "none"))
+        self.i2i_combo = QComboBox()
+        self.i2i_combo.addItems(["none", "stable_diffusion_local", "comfyui_local", "custom_api"])
+        self.i2i_combo.setCurrentText(mm_config.get("image_to_image", "none"))
+        img_layout.addRow("文生图引擎", self.t2i_combo)
+        img_layout.addRow("图生图引擎", self.i2i_combo)
+        img_save = QPushButton("保存图像设置"); img_save.setIcon(get_icon("save"))
+        img_save.clicked.connect(lambda: self._save_multimodal("image"))
+        img_reset = QPushButton("重置图像"); img_reset.setIcon(get_icon("refresh"))
+        img_reset.clicked.connect(lambda: self._reset_multimodal("image"))
+        img_btns = QWidget()
+        img_btn_row = QHBoxLayout(img_btns); img_btn_row.setContentsMargins(0,0,0,0)
+        img_btn_row.addWidget(img_save); img_btn_row.addWidget(img_reset); img_btn_row.addStretch(1)
+        img_layout.addRow(img_btns)
+        parent_layout.addWidget(img_group)
 
+        # ── 视频生成 ──
+        vid_group = QGroupBox("视频生成")
+        vid_layout = QFormLayout(vid_group)
         self.video_combo = QComboBox()
-        self.video_combo.addItems(schema.get_video_providers())
-        self.video_combo.setCurrentText("none")
+        self.video_combo.addItems(["none", "stable_video_diffusion_local", "runway_api", "custom_api"])
+        self.video_combo.setCurrentText(mm_config.get("video", "none"))
+        vid_layout.addRow("视频引擎", self.video_combo)
+        vid_save = QPushButton("保存视频设置"); vid_save.setIcon(get_icon("save"))
+        vid_save.clicked.connect(lambda: self._save_multimodal("video"))
+        vid_reset = QPushButton("重置视频"); vid_reset.setIcon(get_icon("refresh"))
+        vid_reset.clicked.connect(lambda: self._reset_multimodal("video"))
+        vid_btns = QWidget()
+        vid_btn_row = QHBoxLayout(vid_btns); vid_btn_row.setContentsMargins(0,0,0,0)
+        vid_btn_row.addWidget(vid_save); vid_btn_row.addWidget(vid_reset); vid_btn_row.addStretch(1)
+        vid_layout.addRow(vid_btns)
+        parent_layout.addWidget(vid_group)
 
-        form.addRow("TTS 语音引擎", self.tts_combo)
-        form.addRow("文生图/图生图引擎", self.t2i_combo)
-        form.addRow("视频引擎", self.video_combo)
-
-        parent_layout.addLayout(form)
-
-        hint = QLabel("当前版本这些选项仅作为架构占位，修改不产生实际效果。")
-        hint.setWordWrap(True)
-        hint.setStyleSheet("color: gray; margin-top: 10px;")
+        hint = QLabel("多模态功能需要对应服务运行中。留空或选 none 则不启用。")
+        hint.setWordWrap(True); hint.setStyleSheet("color: gray; margin-top: 8px;")
         parent_layout.addWidget(hint)
         parent_layout.addStretch(1)
 
@@ -287,10 +360,10 @@ class SettingsWindow(QDialog):
         parent_layout.addLayout(form)
 
         btn_layout = QHBoxLayout()
-        self.fetch_models_btn = QPushButton("拉取模型列表")
-        self.test_local_btn = QPushButton("测试服务连接")
-        self.save_local_btn = QPushButton("保存本地模型")
-        self.activate_local_btn = QPushButton("设为当前模型")
+        self.fetch_models_btn = QPushButton("拉取模型列表"); self.fetch_models_btn.setIcon(get_icon("download"))
+        self.test_local_btn = QPushButton("测试服务连接"); self.test_local_btn.setIcon(get_icon("refresh"))
+        self.save_local_btn = QPushButton("保存本地模型"); self.save_local_btn.setIcon(get_icon("save"))
+        self.activate_local_btn = QPushButton("设为当前模型"); self.activate_local_btn.setIcon(get_icon("chip"))
         btn_layout.addWidget(self.fetch_models_btn)
         btn_layout.addWidget(self.test_local_btn)
         btn_layout.addWidget(self.save_local_btn)
@@ -306,6 +379,11 @@ class SettingsWindow(QDialog):
         self.test_local_btn.clicked.connect(self._test_local_service)
         self.save_local_btn.clicked.connect(self._save_local_model_settings)
         self.activate_local_btn.clicked.connect(self._activate_local_profile)
+
+        # 本地模型重置按钮
+        local_reset_btn = QPushButton("清空本地配置"); local_reset_btn.setIcon(get_icon("refresh"))
+        local_reset_btn.clicked.connect(self._clear_local_config)
+        parent_layout.addWidget(local_reset_btn, alignment=Qt.AlignmentFlag.AlignLeft)
 
         # ── 推荐模型目录 ──
         catalog = ModelCatalog(root=self.settings_manager.root)
@@ -343,9 +421,14 @@ class SettingsWindow(QDialog):
         )
         parent_layout.addWidget(lic_label)
 
-        self.downloader_btn = QPushButton("打开内置下载器")
+        self.downloader_btn = QPushButton("打开内置下载器"); self.downloader_btn.setIcon(get_icon("download"))
         self.downloader_btn.clicked.connect(self._open_model_downloader)
         parent_layout.addWidget(self.downloader_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # 导入自定义模型
+        import_model_btn = QPushButton("导入自定义模型"); import_model_btn.setIcon(get_icon("upload"))
+        import_model_btn.clicked.connect(self._import_custom_model)
+        parent_layout.addWidget(import_model_btn, alignment=Qt.AlignmentFlag.AlignLeft)
 
         parent_layout.addStretch(1)
 
@@ -400,7 +483,7 @@ class SettingsWindow(QDialog):
         select_btn.setFixedWidth(100)
         select_btn.clicked.connect(lambda: self._on_select_recommended_model(m))
 
-        pull_btn = QPushButton("Ollama 拉取")
+        pull_btn = QPushButton("Ollama 拉取"); pull_btn.setIcon(get_icon("download"))
         pull_btn.setFixedWidth(100)
         pull_btn.clicked.connect(lambda: self._on_ollama_pull_model(m))
 
@@ -618,10 +701,10 @@ class SettingsWindow(QDialog):
 
         # 按钮行
         btn_row = QHBoxLayout()
-        pull_btn = QPushButton("Ollama 拉取")
+        pull_btn = QPushButton("Ollama 拉取"); pull_btn.setIcon(get_icon("download"))
         pull_btn.setEnabled(False)
-        select_btn = QPushButton("选择并填入配置")
-        cancel_btn = QPushButton("取消")
+        select_btn = QPushButton("选择并填入配置"); select_btn.setIcon(get_icon("chip"))
+        cancel_btn = QPushButton("取消"); cancel_btn.setIcon(get_icon("settings"))
 
         def _on_check_changed():
             all_checked = cb1.isChecked() and cb2.isChecked() and cb3.isChecked()
@@ -736,7 +819,7 @@ class SettingsWindow(QDialog):
     def _activate_cloud_profile(self) -> None:
         """保存云端 API 设置并切换为当前生效模型。"""
         self._save_api_settings()
-        provider = self.provider_input.currentText()
+        provider = self._current_provider_key()
         target_id = ProviderMeta.make_profile_id(provider)
         self._do_switch_profile(target_id, f"云端 {provider}")
 
@@ -805,7 +888,7 @@ class SettingsWindow(QDialog):
         form.addRow("提醒", self.reminder_enabled)
         form.addRow("昼夜作息", self.day_night)
         layout.addLayout(form)
-        save = QPushButton("保存并尽量即时生效")
+        save = QPushButton("保存并尽量即时生效"); save.setIcon(get_icon("save"))
         save.clicked.connect(self._save_pet_settings)
         self.pet_timer_hint = QLabel("提示：闲聊、整点报时、提醒、昼夜作息等定时器配置保存后，可能需要重启后完全生效。")
         self.pet_timer_hint.setWordWrap(True)
@@ -815,7 +898,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.pet_timer_hint)
         layout.addWidget(self.pet_result)
         layout.addStretch(1)
-        self.tabs.addTab(tab, "桌宠")
+        self.tabs.addTab(tab, get_icon("internet"), "桌宠")
 
     def _build_actions_tab(self) -> None:
         """已合并到 _build_character_resources_tab"""
@@ -837,8 +920,8 @@ class SettingsWindow(QDialog):
         self.action_combo = QComboBox()
         self.action_combo.addItems(["idle", "talk", "clicked", "drag", "sleep", "happy", "remind", "soft_idle", "close_idle", "bubble", "look_away"])
         btn_row = QHBoxLayout()
-        reload_btn = QPushButton("重载动作资源")
-        test_btn = QPushButton("测试动作")
+        reload_btn = QPushButton("重载动作资源"); reload_btn.setIcon(get_icon("refresh"))
+        test_btn = QPushButton("测试动作"); test_btn.setIcon(get_icon("chip"))
         reload_btn.clicked.connect(self._reload_actions)
         test_btn.clicked.connect(self._test_action)
         btn_row.addWidget(self.action_combo)
@@ -859,9 +942,9 @@ class SettingsWindow(QDialog):
         self.pack_file_combo.currentTextChanged.connect(self._load_pack_file)
         self.pack_editor_text = QTextEdit()
         pack_btn_row = QHBoxLayout()
-        save = QPushButton("备份并保存 YAML")
-        validate = QPushButton("重新校验")
-        open_file = QPushButton("打开文件")
+        save = QPushButton("备份并保存 YAML"); save.setIcon(get_icon("save"))
+        validate = QPushButton("重新校验"); validate.setIcon(get_icon("info"))
+        open_file = QPushButton("打开文件"); open_file.setIcon(get_icon("document"))
         save.clicked.connect(self._save_pack_file)
         validate.clicked.connect(self._refresh_character_status)
         open_file.clicked.connect(self._open_pack_file)
@@ -875,7 +958,7 @@ class SettingsWindow(QDialog):
         pack_layout.addWidget(self.pack_editor_text)
         layout.addWidget(pack_group)
 
-        self.tabs.addTab(tab, "角色与资源")
+        self.tabs.addTab(tab, get_icon("document"), "角色与资源")
         self._refresh_action_status()
         self._refresh_character_status()
         self._load_pack_file(self.pack_file_combo.currentText())
@@ -888,24 +971,18 @@ class SettingsWindow(QDialog):
         """已合并到 _build_relationship_events_tab"""
         pass
 
-    def _build_data_system_tab(self) -> None:
+    def _build_relationship_events_tab(self) -> None:
         tab = QWidget()
-        main_layout = QVBoxLayout(tab)
+        layout = QVBoxLayout(tab)
 
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll_content = QWidget()
-        scroll_layout = QVBoxLayout(scroll_content)
-
-        # 1. 关系状态
         rel_group = QGroupBox("关系状态")
         rel_layout = QVBoxLayout(rel_group)
         self.relationship_text = QTextEdit()
         self.relationship_text.setReadOnly(True)
         rel_buttons = QHBoxLayout()
-        refresh = QPushButton("刷新")
-        export = QPushButton("导出关系状态")
-        reset = QPushButton("备份后重置")
+        refresh = QPushButton("刷新"); refresh.setIcon(get_icon("refresh"))
+        export = QPushButton("导出关系状态"); export.setIcon(get_icon("upload"))
+        reset = QPushButton("备份后重置"); reset.setIcon(get_icon("protect"))
         refresh.clicked.connect(self._refresh_relationship)
         export.clicked.connect(self._export_relationship)
         reset.clicked.connect(self._reset_relationship)
@@ -915,28 +992,34 @@ class SettingsWindow(QDialog):
         rel_buttons.addStretch(1)
         rel_layout.addLayout(rel_buttons)
         rel_layout.addWidget(self.relationship_text)
-        scroll_layout.addWidget(rel_group)
+        layout.addWidget(rel_group)
 
-        # 2. 事件日志
         evt_group = QGroupBox("事件日志")
         evt_layout = QVBoxLayout(evt_group)
         self.events_text = QTextEdit()
         self.events_text.setReadOnly(True)
-        evt_refresh = QPushButton("刷新事件")
+        evt_refresh = QPushButton("刷新事件"); evt_refresh.setIcon(get_icon("refresh"))
         evt_refresh.clicked.connect(self._refresh_events)
         evt_layout.addWidget(evt_refresh, alignment=Qt.AlignmentFlag.AlignLeft)
         evt_layout.addWidget(self.events_text)
-        scroll_layout.addWidget(evt_group)
+        layout.addWidget(evt_group)
 
-        # 3. 数据管理
+        self.tabs.addTab(tab, get_icon("download"), "关系与事件")
+        self._refresh_relationship()
+        self._refresh_events()
+
+    def _build_system_tab(self) -> None:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
         data_group = QGroupBox("数据管理")
         data_layout = QVBoxLayout(data_group)
         self.data_text = QTextEdit()
         self.data_text.setReadOnly(True)
         data_buttons = QHBoxLayout()
-        refresh_data = QPushButton("刷新数据状态")
-        backup = QPushButton("导出备份")
-        open_dir = QPushButton("打开数据目录")
+        refresh_data = QPushButton("刷新数据状态"); refresh_data.setIcon(get_icon("refresh"))
+        backup = QPushButton("导出备份"); backup.setIcon(get_icon("save"))
+        open_dir = QPushButton("打开数据目录"); open_dir.setIcon(get_icon("laptop"))
         refresh_data.clicked.connect(self._refresh_data)
         backup.clicked.connect(self._backup_data)
         open_dir.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.relationship_viewer.data_dir))))
@@ -946,38 +1029,67 @@ class SettingsWindow(QDialog):
         data_buttons.addStretch(1)
         data_layout.addLayout(data_buttons)
         data_layout.addWidget(self.data_text)
-        scroll_layout.addWidget(data_group)
+        layout.addWidget(data_group)
 
-        # 4. 系统诊断
+        # 使用帮助（可折叠）
+        help_group = QGroupBox("使用帮助")
+        help_layout = QVBoxLayout(help_group)
+        self.help_toggle_btn = QPushButton("展开使用帮助 ▼"); self.help_toggle_btn.setIcon(get_icon("info"))
+        self.help_toggle_btn.setStyleSheet("QPushButton { text-align: left; font-size: 12px; color: #0366d6; border: none; }")
+        self.help_toggle_btn.clicked.connect(self._toggle_help)
+        help_layout.addWidget(self.help_toggle_btn)
+
+        self.help_content = QWidget()
+        self.help_content.setVisible(False)
+        help_content_layout = QVBoxLayout(self.help_content)
+        guide_text = QTextEdit()
+        guide_text.setReadOnly(True)
+        guide_text.setMaximumHeight(200)
+        guide_text.setPlainText(
+            "【模型与引擎】\n"
+            "1. 在云端 API 配置中选择 Provider，填写 API Key，测试连接后点「设为当前模型」。\n"
+            "2. 本地模型：选择服务类型，拉取模型列表或手动输入，保存后点「设为当前模型」。\n"
+            "3. 云端/本地 Provider 独立存储，切换不冲突。绿色状态栏显示当前生效模型。\n"
+            "4. 切换失败自动回退上一个可用模型。\n\n"
+            "【多模态】\n"
+            "5. TTS/图像/视频独立选择。none 则不启用。保存写入 multimodal_config.json。\n\n"
+            "【常见操作】\n"
+            "6. 清除当前 Key → 从 .env 删除。重置 Provider → 恢复默认值。\n"
+            "7. 自定义云端可接入任意 OpenAI 兼容 API（智谱/Kimi/豆包等 16+）。\n"
+            "8. 所有危险操作均有确认弹窗。"
+        )
+        help_content_layout.addWidget(guide_text)
+        help_layout.addWidget(self.help_content)
+        layout.addWidget(help_group)
+
         diag_group = QGroupBox("系统诊断")
         diag_layout = QVBoxLayout(diag_group)
         self.diagnostics_text = QTextEdit()
         self.diagnostics_text.setReadOnly(True)
-        run = QPushButton("运行诊断")
+        run = QPushButton("运行诊断"); run.setIcon(get_icon("settings"))
         run.clicked.connect(self._run_diagnostics)
         diag_layout.addWidget(run, alignment=Qt.AlignmentFlag.AlignLeft)
         diag_layout.addWidget(self.diagnostics_text)
-        scroll_layout.addWidget(diag_group)
+        layout.addWidget(diag_group)
 
-        scroll.setWidget(scroll_content)
-        main_layout.addWidget(scroll)
-        self.tabs.addTab(tab, "数据与系统")
-
-        self._refresh_relationship()
-        self._refresh_events()
-        self._refresh_data()
+        self.tabs.addTab(tab, get_icon("settings"), "系统")
         self._refresh_data()
 
-    def _on_provider_changed(self, provider_id: str) -> None:
-        prov_conf = self.api.get("providers", {}).get(provider_id, {})
-        self.base_url_input.setText(str(prov_conf.get("base_url", "")))
-        self.model_input.setText(str(prov_conf.get("model", "")))
+    def _current_provider_key(self) -> str:
+        return self._provider_display_map.get(self.provider_input.currentText(), "deepseek")
+
+    def _on_provider_changed(self, display_or_id: str) -> None:
+        key = self._provider_display_map.get(display_or_id, display_or_id)
+        prov_conf = self.api.get("providers", {}).get(key, {})
+        meta = ProviderMeta.get(key)
+        self.base_url_input.setText(str(prov_conf.get("base_url") or meta.get("base_url", "")))
+        self.model_input.setText(str(prov_conf.get("model") or meta.get("default_model", "")))
         self.api_key_input.setPlaceholderText(str(prov_conf.get("api_key_masked", "<empty>")))
 
     def _save_api_settings(self) -> None:
         api_key = self.api_key_input.text()
         self.settings_manager.save_api_settings(
-            provider=self.provider_input.currentText(),
+            provider=self._current_provider_key(),
             base_url=self.base_url_input.text(),
             model=self.model_input.text(),
             api_key=api_key if api_key else None,
@@ -1113,6 +1225,14 @@ class SettingsWindow(QDialog):
         QMessageBox.information(self, "数据备份", f"已备份到：{path}")
         self._refresh_data()
 
+    def _toggle_help(self) -> None:
+        if self.help_content.isVisible():
+            self.help_content.setVisible(False)
+            self.help_toggle_btn.setText("展开使用帮助 ▼")
+        else:
+            self.help_content.setVisible(True)
+            self.help_toggle_btn.setText("收起使用帮助 ▲")
+
     def _run_diagnostics(self) -> None:
         if self.diagnostics_worker is not None and self.diagnostics_worker.isRunning():
             return
@@ -1121,3 +1241,457 @@ class SettingsWindow(QDialog):
         self.diagnostics_worker.finished_with_text.connect(self.diagnostics_text.setPlainText)
         self.diagnostics_worker.finished.connect(self.diagnostics_worker.deleteLater)
         self.diagnostics_worker.start()
+
+    def _show_api_help(self) -> None:
+        """弹出云端 API 配置帮助窗口。分三区：预设 Provider / CC Switch / 自部署代理。"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("云端 API 帮助 — 去哪获取 Key 和 Base URL")
+        dialog.setMinimumSize(680, 560)
+        layout = QVBoxLayout(dialog)
+
+        tabs = QTabWidget()
+
+        # ── Tab 1: 云端 API 厂商 ──
+        cloud_tab = QWidget()
+        cloud_layout = QVBoxLayout(cloud_tab)
+        cloud_intro = QLabel(
+            "<b>预设 Provider</b> — 直接在下方选择，或点「填入配置」一键填入<br>"
+            "<b>第三方/国产 API</b> — 选「自定义云端 (Custom)」后填入对应 URL"
+        )
+        cloud_intro.setWordWrap(True)
+        cloud_layout.addWidget(cloud_intro)
+
+        cloud_scroll = QScrollArea()
+        cloud_scroll.setWidgetResizable(True)
+        cloud_content = QWidget()
+        cloud_content_layout = QVBoxLayout(cloud_content)
+        cloud_content_layout.setSpacing(6)
+
+        providers_help = [
+            ("DeepSeek", "deepseek", "https://api.deepseek.com", "deepseek-chat",
+             "https://platform.deepseek.com/api_keys", "国内性价比最高，中文能力极强，2026年新款 V3"),
+            ("OpenAI", "openai", "https://api.openai.com/v1", "gpt-4.1-mini",
+             "https://platform.openai.com/api-keys", "GPT-4.1系列，性价比极高的默认模型"),
+            ("Claude (Anthropic)", "claude", "https://api.anthropic.com/v1", "claude-sonnet-4-6",
+             "https://console.anthropic.com/keys", "2026年最新 Sonnet 4.6，多文件编码王者"),
+            ("Google Gemini", "gemini", "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.5-flash",
+             "https://aistudio.google.com/apikey", "2026年 Gemini 2.5 Flash，多模态 + 超长上下文"),
+            ("Mistral AI", "mistral", "https://api.mistral.ai/v1", "mistral-large-latest",
+             "https://console.mistral.ai/api-keys", "欧洲领先 AI，开源友好"),
+            ("Groq", "groq", "https://api.groq.com/openai/v1", "llama-4-maverick-17b-128e-instruct",
+             "https://console.groq.com/keys", "Llama 4 Maverick，开源旗舰级推理速度"),
+            ("智谱 GLM", "custom_cloud", "https://open.bigmodel.cn/api/paas/v4", "glm-4.5-flash",
+             "https://open.bigmodel.cn/", "2026年 GLM-4.5，清华系中文能力最强"),
+            ("硅基流动 (SiliconFlow)", "custom_cloud", "https://api.siliconflow.cn/v1", "Qwen/Qwen3-235B-A22B",
+             "https://siliconflow.cn/", "Qwen3-235B，国产开源最强旗舰"),
+            ("月之暗面 Kimi", "custom_cloud", "https://api.moonshot.cn/v1", "kimi-k2.5",
+             "https://platform.moonshot.cn/", "Kimi K2.5，超长上下文+深度推理"),
+            ("零一万物", "custom_cloud", "https://api.lingyiwanwu.com/v1", "yi-lightning",
+             "https://platform.lingyiwanwu.com/", "Yi Lightning，速度极快，开源可商用"),
+            ("字节豆包", "custom_cloud", "https://ark.cn-beijing.volces.com/api/v3", "需在控制台创建 endpoint",
+             "https://console.volcengine.com/ark", "火山引擎 Ark，超低延迟企业级"),
+            ("腾讯混元", "custom_cloud", "https://api.hunyuan.cloud.tencent.com/v1", "hunyuan-lite",
+             "https://cloud.tencent.com/product/hunyuan", "腾讯出品，企业级稳定"),
+            ("OpenRouter", "custom_cloud", "https://openrouter.ai/api/v1", "openai/gpt-4o",
+             "https://openrouter.ai/keys", "聚合 200+ 模型，统一 API 访问"),
+            ("Together AI", "custom_cloud", "https://api.together.xyz/v1", "mistralai/Mixtral-8x7B",
+             "https://api.together.xyz/", "开源模型推理平台"),
+        ]
+
+        for name, provider_key, url, model, reg_url, desc in providers_help:
+            card = self._build_help_card(name, provider_key, url, model, reg_url, desc, dialog)
+            cloud_content_layout.addWidget(card)
+        cloud_content_layout.addStretch(1)
+        cloud_scroll.setWidget(cloud_content)
+        cloud_layout.addWidget(cloud_scroll)
+        tabs.addTab(cloud_tab, get_icon("cloud"), "云端 API 厂商")
+
+        # ── Tab 2: CC Switch 本地代理 ──
+        cc_tab = QWidget()
+        cc_layout = QVBoxLayout(cc_tab)
+        cc_scroll = QScrollArea()
+        cc_scroll.setWidgetResizable(True)
+        cc_content = QWidget()
+        cc_content_layout = QVBoxLayout(cc_content)
+        cc_content_layout.setSpacing(10)
+
+        cc_title = QLabel(
+            "<b>CC Switch — 本地 AI API 代理</b><br>"
+            "免费开源跨平台桌面应用，启动本地 HTTP 代理统一管理和转发 AI API 请求。"
+        )
+        cc_title.setWordWrap(True)
+        cc_content_layout.addWidget(cc_title)
+
+        cc_what = QLabel(
+            "<b>是什么</b><br>"
+            "CC Switch 在你的电脑上启动一个本地代理服务器（默认 127.0.0.1:15721），"
+            "所有 AI 工具的 API 请求先发到代理，代理再转发到你选择的供应商。"
+            "支持 50+ 预设供应商，一键切换，无需改任何代码。"
+        )
+        cc_what.setWordWrap(True)
+        cc_what.setStyleSheet("background:#f0f7ff; border:1px solid #b6d4fe; border-radius:6px; padding:10px;")
+        cc_content_layout.addWidget(cc_what)
+
+        cc_why = QLabel(
+            "<b>为什么用</b>"
+            "<table cellspacing='4'>"
+            "<tr><td>✓</td><td>图形界面一键切换模型，告别手动改 JSON</td></tr>"
+            "<tr><td>✓</td><td>统一代理入口，一个地址覆盖 Claude Code / Codex / Gemini CLI / 达妮娅</td></tr>"
+            "<tr><td>✓</td><td>自动故障转移 + 熔断，主供应商挂了自动切备用</td></tr>"
+            "<tr><td>✓</td><td>Anthropic ↔ OpenAI ↔ Gemini 协议自动转换</td></tr>"
+            "<tr><td>✓</td><td>实时请求日志 + Token 用量统计</td></tr>"
+            "</table>"
+        )
+        cc_why.setWordWrap(True)
+        cc_content_layout.addWidget(cc_why)
+
+        cc_how = QLabel(
+            "<b>工作原理</b><br>"
+            "<code>达妮娅 → 127.0.0.1:15721 (CC Switch) → GLM / DeepSeek / Kimi / Claude / ...</code>"
+        )
+        cc_how.setWordWrap(True)
+        cc_how.setStyleSheet("background:#f8f9fa; border:1px solid #e1e4e8; border-radius:6px; padding:10px;")
+        cc_content_layout.addWidget(cc_how)
+
+        cc_setup = QLabel(
+            "<b>在达妮娅中接入 CC Switch</b><br>"
+            "1. 下载安装 CC Switch（GitHub: "
+            "<a href='https://github.com/farion1231/cc-switch'>farion1231/cc-switch</a>，官网: cswitch.io）<br>"
+            "2. 启动 CC Switch，在界面中选择要用的模型供应商<br>"
+            "3. 在达妮娅设置中心填入：<br>"
+            "&nbsp;&nbsp;&nbsp;Provider: <b>自定义云端 (Custom)</b><br>"
+            "&nbsp;&nbsp;&nbsp;Base URL: <code>http://127.0.0.1:15721/v1</code><br>"
+            "&nbsp;&nbsp;&nbsp;Model: 与 CC Switch 中显示的模型名一致<br>"
+            "&nbsp;&nbsp;&nbsp;API Key: 任意非空字符串（如 cc-switch）<br>"
+            "4. 点「测试连接」→「设为当前模型」<br><br>"
+            "<b>之后在 CC Switch 界面切换模型，达妮娅无需任何改动，立即生效。</b>"
+        )
+        cc_setup.setWordWrap(True)
+        cc_setup.setStyleSheet("background:#fff3cd; border:1px solid #ffeeba; border-radius:6px; padding:10px;")
+        cc_content_layout.addWidget(cc_setup)
+
+        cc_protocol = QLabel(
+            "<b>协议转换能力</b><br>"
+            "CC Switch 自动完成 Anthropic Messages ↔ OpenAI Chat/Responses ↔ Gemini Native 格式互转。"
+            "达妮娅发出的是 OpenAI 格式请求，CC Switch 可将其转发到任何供应商。"
+        )
+        cc_protocol.setWordWrap(True)
+        cc_content_layout.addWidget(cc_protocol)
+
+        cc_links = QHBoxLayout()
+        cc_gh_btn = QPushButton(" GitHub 仓库"); cc_gh_btn.setIcon(get_icon("internet"))
+        cc_gh_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/farion1231/cc-switch")))
+        cc_dl_btn = QPushButton(" 下载 CC Switch"); cc_dl_btn.setIcon(get_icon("download"))
+        cc_dl_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/farion1231/cc-switch/releases")))
+        cc_fill_btn = QPushButton(" 填入达妮娅配置")
+        cc_fill_btn.setIcon(get_icon("chip"))
+        def _fill_cc():
+            display = next((d for d, v in self._provider_display_map.items() if v == "custom_cloud"), None)
+            if display:
+                self.provider_input.setCurrentText(display)
+            self.base_url_input.setText("http://127.0.0.1:15721/v1")
+            dialog.accept()
+        cc_fill_btn.clicked.connect(_fill_cc)
+        cc_links.addWidget(cc_gh_btn); cc_links.addWidget(cc_dl_btn); cc_links.addWidget(cc_fill_btn); cc_links.addStretch(1)
+        cc_content_layout.addLayout(cc_links)
+
+        cc_content_layout.addStretch(1)
+        cc_scroll.setWidget(cc_content)
+        cc_layout.addWidget(cc_scroll)
+        tabs.addTab(cc_tab, get_icon("download"), "CC Switch 代理")
+
+        # ── Tab 3: 自部署代理 ──
+        custom_tab = QWidget()
+        custom_layout = QVBoxLayout(custom_tab)
+        custom_scroll = QScrollArea()
+        custom_scroll.setWidgetResizable(True)
+        custom_content = QWidget()
+        custom_content_layout = QVBoxLayout(custom_content)
+        custom_content_layout.setSpacing(10)
+
+        custom_title = QLabel(
+            "<b>自部署 API 代理 / 中转</b><br>"
+            "如果你不想用 CC Switch，也可以自己搭建代理服务。以下方案均可提供 OpenAI 兼容端点，"
+            "填入达妮娅的「自定义云端 (Custom)」即可使用。"
+        )
+        custom_title.setWordWrap(True)
+        custom_content_layout.addWidget(custom_title)
+
+        # one-api
+        oa_card = QWidget()
+        oa_card.setStyleSheet("QWidget#proxyCard { background:#f8f9fa; border:1px solid #e1e4e8; border-radius:6px; }")
+        oa_card.setObjectName("proxyCard")
+        oa_inner = QVBoxLayout(oa_card)
+        oa_inner.addWidget(QLabel("<b>one-api</b> — 最成熟的中文社区 OpenAI 代理管理面板"))
+        oa_inner.addWidget(QLabel(
+            "• GitHub: <a href='https://github.com/songquanpeng/one-api'>songquanpeng/one-api</a><br>"
+            "• 部署: <code>docker run -d -p 3000:3000 justsong/one-api</code><br>"
+            "• 功能: 多供应商管理、Key 池、额度控制、用量统计、Web 管理面板<br>"
+            "• 支持 30+ 供应商: OpenAI / Claude / Gemini / DeepSeek / 智谱 / 讯飞 / 百度 / 阿里 / 腾讯 / 字节<br>"
+            "• 接入达妮娅: 自定义云端 → <code>http://你的服务器:3000/v1</code> → 在面板中选的模型名"
+        ))
+        oa_btn_row = QHBoxLayout()
+        oa_gh = QPushButton(" GitHub"); oa_gh.setIcon(get_icon("internet"))
+        oa_gh.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/songquanpeng/one-api")))
+        oa_btn_row.addWidget(oa_gh); oa_btn_row.addStretch(1)
+        oa_inner.addLayout(oa_btn_row)
+        custom_content_layout.addWidget(oa_card)
+
+        # new-api
+        na_card = QWidget()
+        na_card.setStyleSheet("QWidget#proxyCard { background:#f8f9fa; border:1px solid #e1e4e8; border-radius:6px; }")
+        na_card.setObjectName("proxyCard")
+        na_inner = QVBoxLayout(na_card)
+        na_inner.addWidget(QLabel("<b>new-api</b> — one-api 增强分支，界面更现代"))
+        na_inner.addWidget(QLabel(
+            "• GitHub: <a href='https://github.com/Calcium-Ion/new-api'>Calcium-Ion/new-api</a><br>"
+            "• 部署: <code>docker run -d -p 3000:3000 calciumion/new-api</code><br>"
+            "• 额外功能: 马甲包、RPM/TPM 精细化控制、数据看板<br>"
+            "• 接入达妮娅: 同 one-api，自定义云端 → <code>http://你的服务器:3000/v1</code>"
+        ))
+        na_btn_row = QHBoxLayout()
+        na_gh = QPushButton(" GitHub"); na_gh.setIcon(get_icon("internet"))
+        na_gh.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/Calcium-Ion/new-api")))
+        na_btn_row.addWidget(na_gh); na_btn_row.addStretch(1)
+        na_inner.addLayout(na_btn_row)
+        custom_content_layout.addWidget(na_card)
+
+        # AI Worker Proxy
+        aw_card = QWidget()
+        aw_card.setStyleSheet("QWidget#proxyCard { background:#f8f9fa; border:1px solid #e1e4e8; border-radius:6px; }")
+        aw_card.setObjectName("proxyCard")
+        aw_inner = QVBoxLayout(aw_card)
+        aw_inner.addWidget(QLabel("<b>AI Worker Proxy</b> — Cloudflare Workers 免费方案，零服务器成本"))
+        aw_inner.addWidget(QLabel(
+            "• GitHub: <a href='https://github.com/zxcloli666/AI-Worker-Proxy'>zxcloli666/AI-Worker-Proxy</a><br>"
+            "• 部署: 复制代码到 Cloudflare Workers → 1 分钟上线<br>"
+            "• 功能: 自动故障转移、Token 轮换、免费托管<br>"
+            "• 注意: Cloudflare 在国内部分网络可能较慢<br>"
+            "• 接入达妮娅: 自定义云端 → <code>https://你的worker名.workers.dev/v1</code>"
+        ))
+        aw_btn_row = QHBoxLayout()
+        aw_gh = QPushButton(" GitHub"); aw_gh.setIcon(get_icon("internet"))
+        aw_gh.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/zxcloli666/AI-Worker-Proxy")))
+        aw_btn_row.addWidget(aw_gh); aw_btn_row.addStretch(1)
+        aw_inner.addLayout(aw_btn_row)
+        custom_content_layout.addWidget(aw_card)
+
+        # Proxify
+        px_card = QWidget()
+        px_card.setStyleSheet("QWidget#proxyCard { background:#f8f9fa; border:1px solid #e1e4e8; border-radius:6px; }")
+        px_card.setObjectName("proxyCard")
+        px_inner = QVBoxLayout(px_card)
+        px_inner.addWidget(QLabel("<b>Proxify</b> — 轻量级 Go 实现，适合低配 VPS"))
+        px_inner.addWidget(QLabel(
+            "• GitHub: <a href='https://github.com/poixeai/proxify'>poixeai/proxify</a><br>"
+            "• 部署: 单二进制文件，10MB 以内，一行命令启动<br>"
+            "• 接入达妮娅: 自定义云端 → <code>http://你的VPS:端口/v1</code>"
+        ))
+        px_btn_row = QHBoxLayout()
+        px_gh = QPushButton(" GitHub"); px_gh.setIcon(get_icon("internet"))
+        px_gh.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/poixeai/proxify")))
+        px_btn_row.addWidget(px_gh); px_btn_row.addStretch(1)
+        px_inner.addLayout(px_btn_row)
+        custom_content_layout.addWidget(px_card)
+
+        # 通用接入公式
+        formula = QLabel(
+            "<b>接入达妮娅的通用公式</b><br>"
+            "无论用哪种代理方案，在达妮娅中只需填 3 个字段：<br><br>"
+            "&nbsp;&nbsp;Base URL = <code>&lt;你的代理地址&gt;/v1</code><br>"
+            "&nbsp;&nbsp;Model = 代理转发的模型名<br>"
+            "&nbsp;&nbsp;API Key = 代理要求的 Key（没有就任意填）<br><br>"
+            "达妮娅只做 <code>POST {Base URL}/chat/completions</code> + Bearer Auth，<b>不区分厂商、不校验来源、不做白名单</b>。"
+        )
+        formula.setWordWrap(True)
+        formula.setStyleSheet("background:#f0f7ff; border:1px solid #b6d4fe; border-radius:6px; padding:10px;")
+        custom_content_layout.addWidget(formula)
+
+        custom_content_layout.addStretch(1)
+        custom_scroll.setWidget(custom_content)
+        custom_layout.addWidget(custom_scroll)
+        tabs.addTab(custom_tab, get_icon("host"), "自部署代理")
+
+        layout.addWidget(tabs)
+
+        close_btn = QPushButton("关闭"); close_btn.setIcon(get_icon("settings"))
+        close_btn.clicked.connect(dialog.accept)
+        layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignRight)
+        dialog.exec()
+
+    def _build_help_card(self, name: str, provider_key: str, url: str, model: str,
+                         reg_url: str, desc: str, dialog: QDialog) -> QWidget:
+        card = QWidget()
+        card.setStyleSheet(
+            "QWidget#apiHelpCard { background: #f8f9fa; border: 1px solid #e1e4e8; "
+            "border-radius: 6px; } QWidget#apiHelpCard:hover { border-color: #0366d6; }"
+        )
+        card.setObjectName("apiHelpCard")
+        cl = QVBoxLayout(card)
+        cl.setContentsMargins(10, 6, 10, 6)
+
+        tr = QHBoxLayout()
+        tr.addWidget(QLabel(f"<b>{name}</b>")); tr.addStretch(1)
+        if provider_key in Provider.all_cloud():
+            tag = QLabel("预设"); tag.setStyleSheet("color:#22863a;font-size:10px;border:1px solid #22863a;border-radius:3px;padding:0 4px;")
+        else:
+            tag = QLabel("自定义"); tag.setStyleSheet("color:#6f42c1;font-size:10px;border:1px solid #6f42c1;border-radius:3px;padding:0 4px;")
+        tr.addWidget(tag); cl.addLayout(tr)
+
+        info = QLabel(desc); info.setWordWrap(True); info.setStyleSheet("color:#586069;font-size:11px;"); cl.addWidget(info)
+        cl.addWidget(QLabel(f"<span style='color:#586069;font-size:11px;'>URL:</span> <code style='font-size:11px;'>{url}</code>"))
+        cl.addWidget(QLabel(f"<span style='color:#586069;font-size:11px;'>Model:</span> <code style='font-size:11px;'>{model}</code>"))
+
+        br = QHBoxLayout()
+        reg_btn = QPushButton(" 注册获取 Key"); reg_btn.setIcon(get_icon("internet"))
+        reg_btn.setFixedHeight(26); reg_btn.setStyleSheet("font-size:11px;")
+        reg_btn.clicked.connect(lambda _, u=reg_url: QDesktopServices.openUrl(QUrl(u)))
+        br.addWidget(reg_btn)
+
+        copy_btn = QPushButton(" 复制 URL"); copy_btn.setFixedHeight(26); copy_btn.setStyleSheet("font-size:11px;")
+        def _mkcopy(_u, _b):
+            def _h(): QApplication.clipboard().setText(_u); _b.setText(" 已复制!")
+            return _h
+        copy_btn.clicked.connect(_mkcopy(url, copy_btn))
+        br.addWidget(copy_btn)
+
+        def _mkfill(_k, _u, _m):
+            def _h():
+                d = next((x for x, v in self._provider_display_map.items() if v == _k), None)
+                if d: self.provider_input.setCurrentText(d)
+                self.base_url_input.setText(_u); self.model_input.setText(_m); dialog.accept()
+            return _h
+        fill_btn = QPushButton(" 填入配置"); fill_btn.setFixedHeight(26); fill_btn.setStyleSheet("font-size:11px;")
+        fill_btn.clicked.connect(_mkfill(provider_key, url, model))
+        br.addWidget(fill_btn); br.addStretch(1); cl.addLayout(br)
+        return card
+
+    def _clear_api_key(self) -> None:
+        """清除当前选中 Provider 的 API Key。"""
+        provider = self._current_provider_key()
+        env_key = ProviderMeta.get_api_key_env(provider)
+        if not env_key:
+            QMessageBox.information(self, "提示", f"{provider} 不需要 API Key（通过本地服务连接）。")
+            return
+        reply = QMessageBox.question(
+            self, "确认清除",
+            f"确定要从 .env 中删除 {env_key} 吗？\n此操作不可恢复，之后需要重新填写。",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.settings_manager.clear_api_key(env_key)
+            self.api_key_input.clear()
+            self.api_key_input.setPlaceholderText("<empty>")
+            self.api_result.setText(f"已清除 {env_key}。")
+
+    def _reset_current_provider(self) -> None:
+        """将当前 Provider 恢复到默认 Base URL 和 Model。"""
+        provider = self._current_provider_key()
+        meta = ProviderMeta.get(provider)
+        reply = QMessageBox.question(
+            self, "确认重置",
+            f"将 {provider} 的 Base URL 和 Model 恢复为默认值：\n\n"
+            f"URL: {meta['base_url']}\nModel: {meta['default_model']}\n\n继续？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.base_url_input.setText(meta["base_url"])
+            self.model_input.setText(meta["default_model"])
+            self.api_result.setText(f"{provider} 已重置为默认值（需点击保存和设为当前模型生效）。")
+
+    def _clear_local_config(self) -> None:
+        """清空本地模型配置。"""
+        reply = QMessageBox.question(
+            self, "确认清空",
+            "确定要清空本地模型配置吗？\n这将清空服务类型、Base URL 和模型名称。",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.local_service_combo.setCurrentIndex(0)
+            self.local_base_url.clear()
+            self.local_model_list.clear()
+            self.local_status.setText("状态：已清空本地配置")
+            self.local_status.setStyleSheet("color: #6c757d;")
+
+    def _reset_multimodal(self, section: str) -> None:
+        """重置多模态配置为 none。"""
+        config = self.settings_manager.load_multimodal_config()
+        if section == "tts":
+            config["tts"] = "none"
+            config["tts_lang"] = "zh-CN"
+            self.tts_combo.setCurrentText("none")
+            self.tts_lang.setCurrentText("zh-CN")
+        elif section == "image":
+            config["image"] = "none"
+            config["image_to_image"] = "none"
+            self.t2i_combo.setCurrentText("none")
+            self.i2i_combo.setCurrentText("none")
+        elif section == "video":
+            config["video"] = "none"
+            self.video_combo.setCurrentText("none")
+        self.settings_manager.save_multimodal_config(config)
+        QMessageBox.information(self, "已重置", f"多模态 {section} 已重置为 none。")
+
+    def _save_multimodal(self, section: str) -> None:
+        """保存多模态配置。"""
+        config = self.settings_manager.load_multimodal_config()
+        if section == "tts":
+            config["tts"] = self.tts_combo.currentText()
+            config["tts_lang"] = self.tts_lang.currentText()
+        elif section == "image":
+            config["image"] = self.t2i_combo.currentText()
+            config["image_to_image"] = self.i2i_combo.currentText()
+        elif section == "video":
+            config["video"] = self.video_combo.currentText()
+        self.settings_manager.save_multimodal_config(config)
+        QMessageBox.information(self, "已保存", f"多模态 {section} 配置已保存。")
+
+    def _import_custom_model(self) -> None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("导入自定义模型")
+        dialog.setMinimumWidth(500)
+        form = QFormLayout(dialog)
+
+        name_input = QLineEdit(); name_input.setPlaceholderText("my-custom-model")
+        provider_combo = QComboBox()
+        provider_combo.addItems([Provider.LOCAL_OPENAI_COMPATIBLE, Provider.LLAMA_CPP, Provider.LM_STUDIO, Provider.CUSTOM])
+        url_input = QLineEdit(); url_input.setPlaceholderText("http://localhost:8080/v1")
+        model_input = QLineEdit(); model_input.setPlaceholderText(" custom-model-name")
+        desc_input = QLineEdit(); desc_input.setPlaceholderText("我的魔改模型 · 0.5B · ~500MB")
+
+        form.addRow("模型名称", name_input)
+        form.addRow("Provider 类型", provider_combo)
+        form.addRow("Base URL", url_input)
+        form.addRow("模型 ID (API 用)", model_input)
+        form.addRow("描述 (厂商 · 大小 · 磁盘)", desc_input)
+
+        btn_row = QHBoxLayout()
+        ok = QPushButton("导入"); ok.setIcon(get_icon("save"))
+        cancel = QPushButton("取消"); cancel.setIcon(get_icon("settings"))
+        btn_row.addStretch(1); btn_row.addWidget(ok); btn_row.addWidget(cancel)
+        form.addRow(btn_row)
+
+        def do_import():
+            name = name_input.text().strip()
+            url = url_input.text().strip()
+            model = model_input.text().strip()
+            if not name or not url or not model:
+                QMessageBox.warning(dialog, "错误", "请填写模型名称、Base URL 和模型 ID。")
+                return
+            provider = provider_combo.currentText()
+            self.settings_manager.save_local_model_profile(
+                provider=provider, base_url=url, model=model, service_label=name,
+            )
+            self.local_model_list.addItem(model)
+            self.local_model_list.setCurrentText(model)
+            self.local_service_combo.setCurrentText(
+                next((s for s in [self.local_service_combo.itemText(i) for i in range(self.local_service_combo.count())]
+                      if provider in s.lower().replace(" ", "_") or s.lower().startswith(provider[:4])),
+                     self.local_service_combo.currentText()))
+            self.local_base_url.setText(url)
+            self.local_status.setText(f"状态：已导入 {name} ({model})")
+            dialog.accept()
+
+        ok.clicked.connect(do_import)
+        cancel.clicked.connect(dialog.reject)
+        dialog.exec()

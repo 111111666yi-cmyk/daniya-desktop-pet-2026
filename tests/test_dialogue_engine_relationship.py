@@ -41,9 +41,9 @@ def test_negative_mood_event_updates_state_and_short_response():
 def test_birthday_event_records_unlocked_lore_without_full_lore_injection():
     pack = load_character("daniya")
     result = DialogueEngine(pack, model_client=lambda prompt: "蛋糕而已。").handle_user_message("生日")
-    assert result.event_id == "birthday_orange_cake"
+    assert result.event_id == "birthday_sovereignty"
     assert result.state["softness_leak"] == 19
-    assert "birthday_orange_cake" in load_user_memory()["unlocked_lore"]
+    assert "birthday_sovereignty" in load_user_memory()["unlocked_lore"]
     assert "生日是存在主权，不只是庆祝" not in (result.prompt or "")
 
 

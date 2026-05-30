@@ -8,7 +8,7 @@ def test_event_engine_matches_required_events():
         "抱抱": "user_hug_request",
         "我不会先走": "user_says_wont_leave",
         "我好累": "user_negative_mood",
-        "生日": "birthday_orange_cake",
+        "生日": "birthday_sovereignty",
         "[click]": "user_click",
         "[drag]": "user_drag",
         "[reminder]": "reminder_due",

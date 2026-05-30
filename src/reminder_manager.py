@@ -52,7 +52,7 @@ class ReminderManager(QObject):
             }
         )
         self._save(records)
-        return True, "日程记好啦，御主～"
+        return True, "日程记好啦，主人～"
 
     def mark_done(self, reminder_id: str) -> None:
         records = self.records()

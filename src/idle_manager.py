@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, QTimer, Signal
 
 
 IDLE_LINES = [
-    "御主还在吗？",
+    "主人还在吗？",
     "休息一下也没关系哦。",
     "我在这里陪你呢。",
 ]
