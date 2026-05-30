@@ -1,51 +1,41 @@
-# LLM Providers Configuration
+# LLM Provider 架构
 
-在 v0.45 架构中，达妮娅正式支持了多模型接入。目前内置以下大模型提供商（Provider）：
+v0.49.1 架构 — 边界模块 + ProviderRegistry + ProviderManager 路由。
 
-## 支持的 Provider
+## Provider 列表
 
-| Provider ID | 显示名称 | 描述 | API Key 环境变量 | 默认 Base URL |
-|------------|---------|------|------------------|--------------|
-| `deepseek` | DeepSeek | 原生 DeepSeek API，推荐作为主模型 | `DEEPSEEK_API_KEY` | `https://api.deepseek.com` |
-| `openai` | OpenAI | 官方 OpenAI 接口 | `OPENAI_API_KEY` | `https://api.openai.com/v1` |
-| `claude` | Claude | Anthropic Messages API，支持其特有的 system prompt 逻辑 | `ANTHROPIC_API_KEY` | `https://api.anthropic.com/v1` |
-| `openai_compatible` | OpenAI-Compatible | 其他通用第三方 OpenAI 兼容 API | `OPENAI_COMPATIBLE_API_KEY` | 需手动填写 |
-| `local_openai_compatible` | Local OpenAI-Compatible | 本地托管的兼容大模型（如 LM Studio, Ollama），不需要真实 Key | `OPENAI_COMPATIBLE_API_KEY` (非必须) | `http://localhost:1234/v1` 等 |
+| Key | 类型 | 端点 | 边界模块 |
+|---|---|---|---|
+| `deepseek` | 云端 | `/chat/completions` | `openai_api.py` |
+| `openai` | 云端 | `/chat/completions` | `openai_api.py` |
+| `claude` | 云端 | `/messages` | `anthropic_api.py` |
+| `ollama` | 本地 | `/api/chat` | `ollama_api.py` |
+| `lm_studio` | 本地 | `/chat/completions` | `openai_api.py` |
+| `llama_cpp` | 本地 | `/chat/completions` | `openai_api.py` |
+| `local_openai_compatible` | 本地 | `/chat/completions` | `openai_api.py` |
 
-## 配置文件 (api_config.json)
+全部 Provider 字符串从 `src/llm/provider_registry.py` 导入，禁止硬编码。
 
-`api_config.json` 现支持存储所有 Provider 的状态，并由 `active_provider` 控制当前激活的模型：
+## 调用链
 
-```json
-{
-  "active_provider": "claude",
-  "providers": {
-    "deepseek": {
-      "base_url": "https://api.deepseek.com",
-      "model": "deepseek-chat",
-      "timeout": 20,
-      "max_tokens": 360,
-      "temperature": 0.8
-    },
-    "claude": {
-      "base_url": "https://api.anthropic.com/v1",
-      "model": "claude-3-5-sonnet-20240620",
-      "timeout": 30,
-      "max_tokens": 1024,
-      "temperature": 0.8
-    }
-  },
-  "local_mode": false,
-  "chat": {
-    "fallback_reply": "达妮娅现在还没有连上大脑，但我已经在这里啦！",
-    "api_error_fallback_reply": "达妮娅刚刚走神了一下……但我还在哦。"
-  }
-}
-```
+`ChatClient.reply()` → `ProviderManager.chat()` → 读 `model_profiles.json` `active_text_profile_id` → dispatch 对应 `boundary.chat()`
 
-## 安全性声明
+## 配置文件
 
-达妮娅绝对不会在代码仓库和日志中记录明文的 API Key。
-1. 您在设置中心填写的 API Key 会立刻写入 `.env` 文件，该文件已被加入 `.gitignore`。
-2. UI 上只会显示脱敏后的 Key，如 `sk-****1234` 或 `<empty>`。
-3. 若您不在此处输入 Key，达妮娅将尊重您的操作，并回退到“达妮娅刚刚走神了一下……”模式。
+- `config/api_config.json` — 用户可见 API 设置（兼容层）
+- `config/model_profiles.json` — ProviderManager 真实读取的 profile 配置
+- `.env` — API Key 存储，不进 Git
+- `config/model_catalog.json` — 推荐本地模型目录（元数据，不含权重）
+
+## 错误处理
+
+所有边界异常继承 `BoundaryError`（`boundaries/__init__.py`）：
+`AuthError` | `RateLimitError` | `ServerError` | `NetworkError` | `MalformedResponse` | `ModelNotFoundError`
+
+`_retry_request()` 对 429/502/503/504/连接错误 自动指数退避重试（最多 3 次）。
+
+## 安全
+
+- API Key 只存 `.env`，不入 JSON，不进 Git
+- UI 只显示脱敏 Key（`sk-****1234`）
+- 下载模型前必须确认许可证（3 个勾选框）

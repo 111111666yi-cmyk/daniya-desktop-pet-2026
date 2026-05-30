@@ -29,6 +29,7 @@ from .character_pack_editor import EDITABLE_FILES, CharacterPackEditor
 from .diagnostics_panel import format_diagnostics, run_diagnostics
 from .relationship_state_viewer import RelationshipStateViewer
 from .settings_manager import SettingsManager
+from .llm.provider_registry import Provider, ProviderMeta
 
 if TYPE_CHECKING:
     from .app import AppController
@@ -199,7 +200,7 @@ class SettingsWindow(QDialog):
         prov_conf = providers.get(active, {})
 
         self.provider_input = QComboBox()
-        self.provider_input.addItems(["deepseek", "openai", "claude", "openai_compatible", "local_openai_compatible"])
+        self.provider_input.addItems(Provider.all_cloud() + [Provider.OPENAI_COMPATIBLE, Provider.LOCAL_OPENAI_COMPATIBLE])
         self.provider_input.setCurrentText(str(active))
         self.base_url_input = QLineEdit(str(prov_conf.get("base_url", "")))
         self.model_input = QLineEdit(str(prov_conf.get("model", "")))
@@ -692,15 +693,7 @@ class SettingsWindow(QDialog):
             self.local_status.setStyleSheet("color: red;")
             return
 
-        provider = service.lower().replace(" ", "_")
-        if "openai-compatible" in provider:
-            provider = "local_openai_compatible"
-        elif "llama.cpp" in provider:
-            provider = "llama_cpp"
-        elif "lm studio" in provider:
-            provider = "lm_studio"
-        elif provider == "custom":
-            provider = "local_openai_compatible"
+        provider = ProviderMeta.service_label_to_key(service)
 
         # 保存并激活为本地 profile
         self.settings_manager.save_and_activate_local_model_profile(
@@ -744,7 +737,7 @@ class SettingsWindow(QDialog):
         """保存云端 API 设置并切换为当前生效模型。"""
         self._save_api_settings()
         provider = self.provider_input.currentText()
-        target_id = f"{provider}_default"
+        target_id = ProviderMeta.make_profile_id(provider)
         self._do_switch_profile(target_id, f"云端 {provider}")
 
     def _activate_local_profile(self) -> None:
@@ -753,17 +746,9 @@ class SettingsWindow(QDialog):
 
         service = self.local_service_combo.currentText()
         model = self.local_model_list.currentText().strip()
-        provider = service.lower().replace(" ", "_")
-        if "openai-compatible" in provider:
-            provider = "local_openai_compatible"
-        elif "llama.cpp" in provider:
-            provider = "llama_cpp"
-        elif "lm studio" in provider:
-            provider = "lm_studio"
-        elif provider == "custom":
-            provider = "local_openai_compatible"
+        provider = ProviderMeta.service_label_to_key(service)
 
-        target_id = f"{provider}_{model.replace(':', '_').replace('.', '_')}"
+        target_id = ProviderMeta.make_profile_id(provider, model)
         self._do_switch_profile(target_id, f"本地 {service} → {model}")
 
     def _do_switch_profile(self, target_id: str, label: str) -> None:

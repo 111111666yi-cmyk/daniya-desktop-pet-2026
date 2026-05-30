@@ -201,7 +201,7 @@ class ProviderManager:
         if not ok:
             return False, f"模型测试未通过: {msg}"
 
-        old_id = self.profiles_data.get("active_text_profile_id", "deepseek_default")
+        old_id = self.profiles_data.get("active_text_profile_id", ProviderMeta.make_profile_id(Provider.DEEPSEEK))
         self.profiles_data["active_text_profile_id"] = new_profile_id
 
         try:
@@ -235,21 +235,22 @@ class ProviderManager:
 
 
 def _default_profiles() -> dict[str, Any]:
+    meta = ProviderMeta.get(Provider.DEEPSEEK)
     return {
-        "active_text_profile_id": "deepseek_default",
+        "active_text_profile_id": ProviderMeta.make_profile_id(Provider.DEEPSEEK),
         "active_vision_profile_id": "",
         "active_tts_profile_id": "",
         "active_image_profile_id": "",
         "profiles": [
             {
-                "id": "deepseek_default",
-                "name": "DeepSeek 默认",
+                "id": ProviderMeta.make_profile_id(Provider.DEEPSEEK),
+                "name": f"{meta['display_name']} 默认",
                 "type": "text",
-                "provider": "deepseek",
-                "api_style": "openai_compatible",
-                "base_url": "https://api.deepseek.com",
-                "model": "deepseek-chat",
-                "api_key_env": "DEEPSEEK_API_KEY",
+                "provider": Provider.DEEPSEEK,
+                "api_style": meta["api_style"],
+                "base_url": meta["base_url"],
+                "model": meta["default_model"],
+                "api_key_env": meta["api_key_env"],
                 "enabled": True,
                 "capabilities": ["text"],
                 "source": "cloud",

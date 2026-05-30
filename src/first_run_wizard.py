@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 from .provider_capability_schema import ProviderCapabilitySchema
 from .settings_manager import SettingsManager
 from .setup_state_manager import SetupStateManager
+from .llm.provider_registry import Provider, ProviderMeta
 
 
 class FirstRunWizard(QDialog):
@@ -89,7 +90,7 @@ class FirstRunWizard(QDialog):
         config_form = QFormLayout(self.config_widget)
         
         self.api_provider_combo = QComboBox()
-        self.api_provider_combo.addItems(["deepseek", "openai", "claude", "openai_compatible"])
+        self.api_provider_combo.addItems(Provider.all_cloud() + [Provider.OPENAI_COMPATIBLE])
         
         self.local_provider_combo = QComboBox()
         self.local_provider_combo.addItems(self.schema.get_local_model_providers())
@@ -183,18 +184,9 @@ class FirstRunWizard(QDialog):
         if not self.radio_api.isChecked():
             return
         provider = self.api_provider_combo.currentText()
-        if provider == "deepseek":
-            self.base_url_input.setText("https://api.deepseek.com")
-            self.model_input.setText("deepseek-chat")
-        elif provider == "openai":
-            self.base_url_input.setText("https://api.openai.com/v1")
-            self.model_input.setText("gpt-4o")
-        elif provider == "claude":
-            self.base_url_input.setText("https://api.anthropic.com/v1")
-            self.model_input.setText("claude-3-5-sonnet-20240620")
-        elif provider == "openai_compatible":
-            self.base_url_input.setText("https://...")
-            self.model_input.setText("")
+        meta = ProviderMeta.get(provider)
+        self.base_url_input.setText(meta["base_url"])
+        self.model_input.setText(meta["default_model"] if meta["default_model"] else "")
 
     def _test_connection(self) -> None:
         # 临时保存配置以测试
@@ -228,7 +220,7 @@ class FirstRunWizard(QDialog):
             api_key = self.api_key_input.text()
         elif self.radio_local.isChecked():
             run_mode = "local_model"
-            provider = "local_openai_compatible"
+            provider = Provider.LOCAL_OPENAI_COMPATIBLE
             base_url = self.base_url_input.text()
             model = self.model_input.text()
             api_key = self.api_key_input.text()
