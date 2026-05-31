@@ -105,3 +105,20 @@ characters/*/assets/
 
 ### 提示：
 在创建新角色包时，只要图片保存在 `characters/{character_id}/assets/` 下，它们就会被 Git 自动忽略，无需手动修改 `.gitignore`。
+
+---
+
+## 7. 本地测试包策略
+
+`characters/test_dummy/` 是本地占位测试包，只用于开发机上临时验证角色加载、fallback、动作 manifest 兼容性。
+
+仓库正式回归测试不依赖 `test_dummy`，clean clone 不要求它存在，发布包也不包含它。公开示例角色请使用 `characters/daniya/`，正式 fallback 与新角色起点请依赖 `characters/template/`。
+
+如果开发者需要本地 dummy 角色，可以复制 `characters/template/` 到 `characters/test_dummy/` 后自行改名测试；该目录默认仍保持 ignored/local-only。
+
+如果未来需要把 `test_dummy` 作为公开 fixture，需要单独确认：
+
+- 只提交非私有人设 metadata。
+- assets 必须使用公开 placeholder。
+- 不得包含私有素材、用户数据或真实项目 lore。
+- 同步更新 `.gitignore` 例外规则和回归测试说明。

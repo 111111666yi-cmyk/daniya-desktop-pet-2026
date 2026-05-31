@@ -8,6 +8,9 @@ set "APP_NAME=DaniyaSummerPet"
 set "VERSION=v0.55.2"
 set "PACKAGE_NAME=DaniyaSummerPet-v0.55.2-win-x64"
 set "PYTHON_EXE=python"
+set "PKG_STAGING=%TEMP%\%APP_NAME%_package_%RANDOM%_%RANDOM%"
+set "SAFE_CONFIG=%PKG_STAGING%\config"
+set "SAFE_DOCS=%PKG_STAGING%\docs"
 
 if exist ".venv\Scripts\python.exe" (
     set "PYTHON_EXE=.venv\Scripts\python.exe"
@@ -53,6 +56,43 @@ if exist "release\%PACKAGE_NAME%" rmdir /s /q "release\%PACKAGE_NAME%"
 if exist "release\test_run_v0.49" rmdir /s /q "release\test_run_v0.49"
 if exist "release\%PACKAGE_NAME%.zip" del /q "release\%PACKAGE_NAME%.zip"
 if not exist "release" mkdir "release"
+if exist "%PKG_STAGING%" rmdir /s /q "%PKG_STAGING%"
+
+echo [Daniya] Preparing public package input...
+mkdir "%SAFE_CONFIG%"
+mkdir "%SAFE_DOCS%"
+
+if not exist "config\app_config.example.json" (
+    echo [Daniya] Missing config\app_config.example.json. Cannot package safely.
+    pause
+    exit /b 1
+)
+copy /Y "config\app_config.example.json" "%SAFE_CONFIG%\app_config.json" >nul
+
+if not exist "config\api_config.example.json" (
+    echo [Daniya] Missing config\api_config.example.json. Cannot package safely.
+    pause
+    exit /b 1
+)
+copy /Y "config\api_config.example.json" "%SAFE_CONFIG%\api_config.example.json" >nul
+
+if not exist "config\model_profiles.json" (
+    echo [Daniya] Missing config\model_profiles.json. Cannot package safely.
+    pause
+    exit /b 1
+)
+copy /Y "config\model_profiles.json" "%SAFE_CONFIG%\model_profiles.json" >nul
+
+for %%F in (bookmarks.json model_catalog.json profile.json provider_capabilities.json setup_config.json system_prompt.txt) do (
+    if exist "config\%%F" copy /Y "config\%%F" "%SAFE_CONFIG%\%%F" >nul
+)
+
+robocopy "docs" "%SAFE_DOCS%" /E /XD "v0.51_patch_audit" "screenshots" "debug" "debug_logs" "tmp" "__pycache__" /XF "*.tmp" "*.log" "debug_*" >nul
+if %ERRORLEVEL% GEQ 8 (
+    echo [Daniya] Failed to prepare public docs.
+    pause
+    exit /b 1
+)
 
 echo [Daniya] Running PyInstaller...
 "%PYTHON_EXE%" -m PyInstaller ^
@@ -63,7 +103,7 @@ echo [Daniya] Running PyInstaller...
   %ICON_ARGS% ^
   --add-data "assets\placeholder;assets\placeholder" ^
   --add-data "assets\icons;assets\icons" ^
-  --add-data "config;config" ^
+  --add-data "%SAFE_CONFIG%;config" ^
   --add-data "characters\daniya\actions.yaml;characters\daniya" ^
   --add-data "characters\daniya\character.yaml;characters\daniya" ^
   --add-data "characters\daniya\events.yaml;characters\daniya" ^
@@ -72,7 +112,7 @@ echo [Daniya] Running PyInstaller...
   --add-data "characters\daniya\relationship.yaml;characters\daniya" ^
   --add-data "characters\daniya\speech.yaml;characters\daniya" ^
   --add-data "characters\template;characters\template" ^
-  --add-data "docs;docs" ^
+  --add-data "%SAFE_DOCS%;docs" ^
   --add-data "README.md;." ^
   --add-data "LICENSE;." ^
   --add-data "CHANGELOG.md;." ^
@@ -105,23 +145,36 @@ if not exist "release\%PACKAGE_NAME%\assets\placeholder" robocopy "assets\placeh
 if not exist "release\%PACKAGE_NAME%\assets\icons" robocopy "assets\icons" "release\%PACKAGE_NAME%\assets\icons" /E >nul
 if not exist "release\%PACKAGE_NAME%\characters\daniya" robocopy "characters\daniya" "release\%PACKAGE_NAME%\characters\daniya" /E /XD "assets" >nul
 if not exist "release\%PACKAGE_NAME%\characters\template" robocopy "characters\template" "release\%PACKAGE_NAME%\characters\template" /E >nul
-if not exist "release\%PACKAGE_NAME%\config" robocopy "config" "release\%PACKAGE_NAME%\config" /E >nul
-if not exist "release\%PACKAGE_NAME%\docs" robocopy "docs" "release\%PACKAGE_NAME%\docs" /E >nul
+if exist "release\%PACKAGE_NAME%\config" rmdir /s /q "release\%PACKAGE_NAME%\config"
+robocopy "%SAFE_CONFIG%" "release\%PACKAGE_NAME%\config" /E >nul
+if %ERRORLEVEL% GEQ 8 (
+    echo [Daniya] Failed to copy public config files.
+    pause
+    exit /b 1
+)
+if exist "release\%PACKAGE_NAME%\docs" rmdir /s /q "release\%PACKAGE_NAME%\docs"
+robocopy "%SAFE_DOCS%" "release\%PACKAGE_NAME%\docs" /E /XD "v0.51_patch_audit" "screenshots" "debug" "debug_logs" "tmp" "__pycache__" /XF "*.tmp" "*.log" "debug_*" >nul
+if %ERRORLEVEL% GEQ 8 (
+    echo [Daniya] Failed to copy public docs.
+    pause
+    exit /b 1
+)
 copy /Y "README.md" "release\%PACKAGE_NAME%\README.md" >nul
 copy /Y "LICENSE" "release\%PACKAGE_NAME%\LICENSE" >nul
 copy /Y "CHANGELOG.md" "release\%PACKAGE_NAME%\CHANGELOG.md" >nul
 copy /Y ".env.example" "release\%PACKAGE_NAME%\.env.example" >nul
 copy /Y "create_shortcut.bat" "release\%PACKAGE_NAME%\create_shortcut.bat" >nul
-if exist "config\app_config.example.json" copy /Y "config\app_config.example.json" "release\%PACKAGE_NAME%\config\app_config.json" >nul
-
-if exist "config\api_config.example.json" copy /Y "config\api_config.example.json" "release\%PACKAGE_NAME%\config\api_config.json" >nul
 
 echo [Daniya] Removing forbidden package content if present...
 if exist "release\%PACKAGE_NAME%\.env" del /q "release\%PACKAGE_NAME%\.env"
+if exist "release\%PACKAGE_NAME%\config\api_config.json" del /q "release\%PACKAGE_NAME%\config\api_config.json"
+if exist "release\%PACKAGE_NAME%\config\multimodal_config.json" del /q "release\%PACKAGE_NAME%\config\multimodal_config.json"
 if exist "release\%PACKAGE_NAME%\assets\private" rmdir /s /q "release\%PACKAGE_NAME%\assets\private"
 if exist "release\%PACKAGE_NAME%\data" rmdir /s /q "release\%PACKAGE_NAME%\data"
 if exist "release\%PACKAGE_NAME%\models" rmdir /s /q "release\%PACKAGE_NAME%\models"
 if exist "release\%PACKAGE_NAME%\backups" rmdir /s /q "release\%PACKAGE_NAME%\backups"
+if exist "release\%PACKAGE_NAME%\docs\v0.51_patch_audit" rmdir /s /q "release\%PACKAGE_NAME%\docs\v0.51_patch_audit"
+if exist "release\%PACKAGE_NAME%\docs\screenshots" rmdir /s /q "release\%PACKAGE_NAME%\docs\screenshots"
 for /r "release\%PACKAGE_NAME%" %%F in (*.log *.spec *.broken-*) do del /q "%%F"
 for /d /r "release\%PACKAGE_NAME%" %%D in (__pycache__) do rmdir /s /q "%%D" 2>nul
 
@@ -137,3 +190,4 @@ echo [Daniya] Package complete:
 echo [Daniya] release\%PACKAGE_NAME%\%APP_NAME%.exe
 echo [Daniya] release\%PACKAGE_NAME%.zip
 echo [Daniya] Private assets, .env, data, models, backups, build, and dist work directories are not included in the zip.
+if exist "%PKG_STAGING%" rmdir /s /q "%PKG_STAGING%"

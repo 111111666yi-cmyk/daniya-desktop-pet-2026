@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased - Second Phase Dynamic Audit
+
+- Hardened `pack.bat` packaging safety by replacing whole-directory `config/` and `docs/` copying with temporary public whitelist package inputs.
+- Verified the v0.55.2 release package, dist folder, and zip do not contain `.env`, ignored local config, runtime `data/`, private assets, local models, or local audit screenshots.
+- Ran second-stage dynamic startup, API fallback/API source, GUI, role-routing, hidden-command, behavior, state, timer, character-pack, pytest, and release exe smoke checks.
+- Confirmed FA-PKG-001 and FA-PKG-002 are fixed; FA-STATE-001 and FA-TIMER-001 remain watch items because no stable conflict was reproduced.
+- Confirmed `characters/test_dummy/` is local-only, ignored, not required by clean clone, and not included in formal regression or release packages.
+- Added v0.56 destructive-test guardrails with runtime-state backup/restore tooling and a documented policy for future missing-file/fallback tests.
+
 ## v0.55.2 (2026-05-31) - Engineering Audit Patch
 
 - Fixed `reminder_due` event routing so ordinary user requests such as “晚安，顺便提醒我明天喝水” are no longer treated as an already-due reminder event.
