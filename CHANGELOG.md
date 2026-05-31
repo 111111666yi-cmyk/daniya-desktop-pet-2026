@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.55.3 (2026-05-31) - AppData Runtime Patch
+
+- Packaged Windows exe now stores runtime state in `%APPDATA%\DaniyaSummerPet\` instead of the exe directory.
+- First-run files such as `config/app_config.json`, `config/api_config.json`, `.env`, `data/`, `data/window_state.json`, relationship state, notes, reminders, and backups no longer require write permission in the install/extract directory.
+- Resource loading still reads bundled `config/`, `characters/`, `assets/`, and docs from the release package, with AppData overrides supported when present.
+- Added runtime path regression tests that simulate frozen PyInstaller execution and verify no `config/` or `data/` directories are created beside the exe.
+
 ## Unreleased - Second Phase Dynamic Audit
 
 - Hardened `pack.bat` packaging safety by replacing whole-directory `config/` and `docs/` copying with temporary public whitelist package inputs.

@@ -68,6 +68,16 @@ ANTHROPIC_API_KEY=your_key_here
 
 也可在设置中心 → 模型与引擎 → 云端 API 配置中直接填写。
 
+## Windows 发布包运行态
+
+从 v0.55.3 开始，下载版 exe 会把运行态写入：
+
+```text
+%APPDATA%\DaniyaSummerPet\
+```
+
+这里会保存 `.env`、`config/api_config.json`、聊天历史、关系状态、提醒、便签和窗口位置。程序文件本身可以放在桌面、下载目录、D 盘或 `Program Files` 等位置；运行态不再依赖 exe 所在目录可写。
+
 ## 开发
 
 ```bat
@@ -96,6 +106,7 @@ pytest tests/ -q
 - v0.54 — 对话路由与剧情事件分流系统
 - v0.55 — 桌宠行为引擎（屏幕边缘吸附、防止移出屏幕、点击分流检测、空闲小动作）
 - **v0.55.2** — 工程审计补丁（提醒事件误触发、隐藏命令回应、发布包角色素材隔离）
+- **v0.55.3** — AppData 运行态补丁（下载版配置和数据写入 `%APPDATA%\DaniyaSummerPet\`）
 
 ## 许可证
 
@@ -105,7 +116,7 @@ pytest tests/ -q
 
 ## Data Directories
 
-Runtime data is stored under `data/`, including:
+Source/development mode stores runtime data under `data/`. Packaged Windows releases store runtime data under `%APPDATA%\DaniyaSummerPet\`. Runtime data includes:
 
 - `data/chat_history.jsonl`
 - `data/affinity.json`
@@ -115,7 +126,7 @@ Runtime data is stored under `data/`, including:
 - `data/daniya_relation/event_log.json`
 - `data/daniya_relation/user_memory.json`
 
-`data/` and `data/daniya_relation/` are ignored by Git. Do not commit real user relationship state or chat history.
+`data/` and `data/daniya_relation/` are ignored by Git. Do not commit real user relationship state or chat history. Packaged release runtime data under `%APPDATA%\DaniyaSummerPet\` is outside the repository.
 
 ## Development
 
@@ -146,7 +157,7 @@ Read:
 - v0.49: official open source release.
 - v0.54: dialogue router and lore triggers.
 - v0.55: behavior engine (dragging, snapping, idle behavior).
-- v0.55.2: current engineering-audit patch.
+- v0.55.3: current AppData runtime patch.
 
 ## License
 
