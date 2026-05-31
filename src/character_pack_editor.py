@@ -6,7 +6,7 @@ from typing import Any
 
 import yaml
 
-from core.character_loader import safe_load_character, validate_character_pack
+from core.character_loader import safe_load_character, validate_character_pack, character_pack_path
 
 from .backup_manager import BackupManager
 from .utils import runtime_root
@@ -23,16 +23,13 @@ REQUIRED_FILES = {
     "events.yaml",
     "actions.yaml",
 }
-
-
 class CharacterPackEditor:
     def __init__(self, character_id: str = "daniya", root: Path | None = None, backup_manager: BackupManager | None = None) -> None:
         self.character_id = character_id
         self.root = root or runtime_root()
         self.character_root = self.root / "characters"
-        self.pack_path = self.root / "characters" / character_id
+        self.pack_path = character_pack_path(character_id, root=self.character_root)
         self.backup_manager = backup_manager or BackupManager(self.root)
-
     def status(self) -> dict[str, Any]:
         pack, result = safe_load_character(self.character_id, root=self.character_root)
         files: dict[str, dict[str, Any]] = {}
@@ -54,27 +51,40 @@ class CharacterPackEditor:
 
     def read_file(self, name: str) -> str:
         self._assert_known_file(name)
-        return (self.pack_path / name).read_text(encoding="utf-8")
+        path = self.pack_path / name
+        if not path.exists() and self.character_id != "template":
+            template_path = self.character_root / "template" / name
+            if template_path.exists():
+                return template_path.read_text(encoding="utf-8")
+        return path.read_text(encoding="utf-8")
 
     def save_yaml_safely(self, name: str, text: str) -> tuple[bool, str, Path | None]:
         if name not in EDITABLE_FILES:
             return False, f"{name} 不允许在设置中心编辑。", None
         path = self.pack_path / name
-        if not path.exists():
-            return False, f"{name} 不存在。", None
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        backup = None
+        original = ""
+        if path.exists():
+            backup = self.backup_manager.backup_file(path, f"character_pack_{self.character_id}")
+            original = path.read_text(encoding="utf-8")
+
         try:
             yaml.safe_load(text)
         except yaml.YAMLError as exc:
             return False, f"YAML 解析失败：{exc.__class__.__name__}", None
 
-        backup = self.backup_manager.backup_file(path, f"character_pack_{self.character_id}")
-        original = path.read_text(encoding="utf-8")
         path.write_text(text, encoding="utf-8")
         result = validate_character_pack(self.character_id, root=self.character_root)
         if result.ok:
             return True, "保存并校验通过。", backup
-        path.write_text(original, encoding="utf-8")
-        return False, "校验失败，已回滚当前文件。\n" + result.error_summary(), backup
+
+        if original:
+            path.write_text(original, encoding="utf-8")
+        else:
+            path.unlink(missing_ok=True)
+        return False, "校验失败，已回滚/取消创建当前文件。\n" + result.error_summary(), backup
 
     def restore_backup(self, backup_path: Path, target_name: str) -> tuple[bool, str]:
         if target_name not in EDITABLE_FILES:

@@ -15,6 +15,9 @@ def apply_daniya_speech_filter(
     text = str(raw_text or "").strip()
     if not text:
         return "......"
+    if "```" in text:
+        return text
+
 
     config = speech_config if isinstance(speech_config, dict) else {}
     text = remove_customer_service_tone(text, config)
@@ -113,11 +116,12 @@ def add_ellipsis_if_needed(text: str) -> str:
     clean = text.strip()
     if not clean:
         return "......"
-    if clean.startswith("......") or clean in {"嗯。", "哦。", "......烦。", "......"}:
+    if clean.startswith(("......", "……", "...", "…", ".")):
         return clean
     if clean.startswith(("嗯", "哦")):
         return clean
     return "......" + clean
+
 
 
 def remove_unrelated_topic_expansion(text: str) -> str:

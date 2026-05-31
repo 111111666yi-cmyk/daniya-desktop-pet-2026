@@ -133,7 +133,12 @@ class SettingsWindow(QDialog):
         super().__init__(parent)
         self.controller = controller
         self.settings_manager = SettingsManager(controller.config_manager)
-        self.character_editor = CharacterPackEditor()
+        char_id = "daniya"
+        if hasattr(controller, "daniya_adapter") and hasattr(controller.daniya_adapter, "character_pack"):
+            pack = controller.daniya_adapter.character_pack
+            if hasattr(pack, "character_id") and isinstance(pack.character_id, str):
+                char_id = pack.character_id
+        self.character_editor = CharacterPackEditor(character_id=char_id)
         self.relationship_viewer = RelationshipStateViewer()
         self.api_worker: _ApiTestWorker | None = None
         self.diagnostics_worker: _DiagnosticsWorker | None = None
@@ -912,6 +917,35 @@ class SettingsWindow(QDialog):
         tab = QWidget()
         layout = QVBoxLayout(tab)
 
+        # 最顶部的角色信息区域
+        char_group = QGroupBox("当前角色信息")
+        char_layout = QFormLayout(char_group)
+
+        self.char_id_label = QLabel()
+        self.char_path_label = QLabel()
+        self.char_status_label = QLabel()
+        self.char_status_label.setWordWrap(True)
+
+        # 角色选择下拉框
+        self.char_selector = QComboBox()
+
+        btn_char_row = QHBoxLayout()
+        switch_char_btn = QPushButton("切换并加载角色")
+        switch_char_btn.clicked.connect(self._switch_character)
+        reload_char_btn = QPushButton("重新加载当前角色")
+        reload_char_btn.clicked.connect(self._reload_character)
+        btn_char_row.addWidget(switch_char_btn)
+        btn_char_row.addWidget(reload_char_btn)
+        btn_char_row.addStretch(1)
+
+        char_layout.addRow("当前角色 ID:", self.char_id_label)
+        char_layout.addRow("角色包路径:", self.char_path_label)
+        char_layout.addRow("加载/校验状态:", self.char_status_label)
+        char_layout.addRow("切换角色 (本地):", self.char_selector)
+        char_layout.addRow("", btn_char_row)
+
+        layout.addWidget(char_group)
+
         # 上半部分：动作资源
         actions_group = QGroupBox("动作资源")
         actions_layout = QVBoxLayout(actions_group)
@@ -962,6 +996,66 @@ class SettingsWindow(QDialog):
         self._refresh_action_status()
         self._refresh_character_status()
         self._load_pack_file(self.pack_file_combo.currentText())
+        self._refresh_character_list()
+        self._refresh_char_info()
+
+    def _refresh_character_list(self) -> None:
+        self.char_selector.clear()
+        import os
+        from core.character_loader import default_character_root
+        root_path = default_character_root()
+        if root_path.exists():
+            for name in sorted(os.listdir(root_path)):
+                if (root_path / name).is_dir():
+                    self.char_selector.addItem(name)
+        curr = self.controller.app_config.get("current_character", "daniya")
+        index = self.char_selector.findText(curr)
+        if index >= 0:
+            self.char_selector.setCurrentIndex(index)
+
+    def _refresh_char_info(self) -> None:
+        adapter = self.controller.daniya_adapter
+        char_pack = adapter.character_pack
+        self.char_id_label.setText(char_pack.character_id)
+        self.char_path_label.setText(str(char_pack.root))
+
+        if adapter.load_errors:
+            self.char_status_label.setText("异常 (已回退)\n" + "\n".join(adapter.load_errors))
+            self.char_status_label.setStyleSheet("color: red;")
+        else:
+            self.char_status_label.setText("正常")
+            self.char_status_label.setStyleSheet("color: green;")
+
+    def _switch_character(self) -> None:
+        target = self.char_selector.currentText()
+        if not target:
+            return
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            self.controller.reload_character(target)
+            self._refresh_char_info()
+            self._refresh_character_status()
+            self._refresh_action_status()
+            self._load_pack_file(self.pack_file_combo.currentText())
+            index = self.char_selector.findText(self.controller.daniya_adapter.character_pack.character_id)
+            if index >= 0:
+                self.char_selector.setCurrentIndex(index)
+        finally:
+            QApplication.restoreOverrideCursor()
+
+    def _reload_character(self) -> None:
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            self.controller.reload_character()
+            self._refresh_char_info()
+            self._refresh_character_status()
+            self._refresh_action_status()
+            self._load_pack_file(self.pack_file_combo.currentText())
+            index = self.char_selector.findText(self.controller.daniya_adapter.character_pack.character_id)
+            if index >= 0:
+                self.char_selector.setCurrentIndex(index)
+        finally:
+            QApplication.restoreOverrideCursor()
 
     def _build_relationship_tab(self) -> None:
         """已合并到 _build_relationship_events_tab"""
@@ -1098,6 +1192,8 @@ class SettingsWindow(QDialog):
         self.controller.chat_client.reload()
         self.api_key_input.clear()
         self.api_result.setText("API 设置已保存；API Key 已写入 .env 或保持原值。")
+        self.controller.window.speak("……API 设置保存好了。希望你没填错。")
+        self.controller.window.animation_manager.trigger_happy()
         self._refresh_active_status()
 
     def _test_api_connection(self) -> None:
@@ -1126,6 +1222,8 @@ class SettingsWindow(QDialog):
         self.controller.window.set_always_on_top(self.always_on_top.isChecked())
         self.controller.window.setWindowOpacity(self.opacity.value() / 100)
         self.pet_result.setText("已保存。大小、置顶、透明度已即时生效；部分定时器配置重启后完全生效。")
+        self.controller.window.speak("……保存好啦。别又忘了哦。")
+        self.controller.window.animation_manager.trigger_happy()
 
     def _refresh_action_status(self) -> None:
         asset_manager = self.controller.asset_manager
@@ -1645,6 +1743,8 @@ class SettingsWindow(QDialog):
             config["video"] = self.video_combo.currentText()
         self.settings_manager.save_multimodal_config(config)
         QMessageBox.information(self, "已保存", f"多模态 {section} 配置已保存。")
+        self.controller.window.speak(f"……多模态{section}配置保存好啦。别又忘了哦。")
+        self.controller.window.animation_manager.trigger_happy()
 
     def _import_custom_model(self) -> None:
         dialog = QDialog(self)

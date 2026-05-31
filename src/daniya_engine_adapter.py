@@ -43,11 +43,46 @@ class DaniyaEngineAdapter:
         return self.handle_user_text(f"[{physical_event}]", context=context)
 
     def _load_pack(self, character_id: str) -> tuple[CharacterPack, list[str]]:
+        from pathlib import Path
+        from core.schema import CharacterPack
+
+        errors = []
+        # 1. Try loading specified character_id
         pack, result = safe_load_character(character_id)
         if pack is not None:
             return pack, []
-        fallback = load_character("template")
-        return fallback, [result.error_summary() or f"Character pack failed to load: {character_id}"]
+        errors.append(result.error_summary() or f"Character pack failed to load: {character_id}")
+
+        # 2. Try loading daniya fallback
+        if character_id != "daniya":
+            pack, result = safe_load_character("daniya")
+            if pack is not None:
+                errors.append("Fell back to 'daniya'.")
+                return pack, errors
+            errors.append(result.error_summary() or "Fallback to 'daniya' failed.")
+
+        # 3. Try loading template fallback
+        if character_id != "template":
+            pack, result = safe_load_character("template")
+            if pack is not None:
+                errors.append("Fell back to 'template'.")
+                return pack, errors
+            errors.append(result.error_summary() or "Fallback to 'template' failed.")
+
+        # 4. Emergency in-memory fallback
+        dummy_pack = CharacterPack(
+            character_id="template",
+            root=Path(),
+            character={"id": "template", "display_name": "Emergency Fallback Template", "core_identity": [], "forbidden_behavior": []},
+            speech={"speech_style": {"base": []}, "forbidden_style": [], "special_responses": []},
+            relationship={"metrics": {}, "initial_state": {}, "relationship_stages": []},
+            events={"events": []},
+            actions={"action_mapping": {}},
+            lore="",
+            lore_index={"fragments": []}
+        )
+        errors.append("Fallback to emergency in-memory template.")
+        return dummy_pack, errors
 
     def _dispatch_action(self, result: EngineResult) -> None:
         # Ignore drag actions visually since dragging is managed directly in GUI mouse events

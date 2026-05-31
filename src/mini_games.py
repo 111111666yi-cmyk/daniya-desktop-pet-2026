@@ -9,7 +9,7 @@ class MiniGames:
     def play_rps(self, user_choice: str) -> tuple[str, bool]:
         pet_choice = random.choice(self.RPS_CHOICES)
         if user_choice == pet_choice:
-            return f"我们都出了{pet_choice}，平局啦。", False
+            return f"……都是{pet_choice}。平局，再来？", False
 
         user_wins = (
             (user_choice == "石头" and pet_choice == "剪刀")
@@ -17,11 +17,11 @@ class MiniGames:
             or (user_choice == "布" and pet_choice == "石头")
         )
         if user_wins:
-            return f"达妮娅出了{pet_choice}，主人赢啦！", True
-        return f"达妮娅出了{pet_choice}，这次是我赢啦～", False
+            return f"……出了{pet_choice}。啧，你赢了。好感度上升了哦。", True
+        return f"……出了{pet_choice}。是我赢了。哼，承让啦。", False
 
     def roll_dice(self) -> str:
-        return f"达妮娅掷出了 {random.randint(1, 6)} 点！"
+        return f"……掷出了 {random.randint(1, 6)} 点。该你了。"
 
     def random_100(self) -> str:
-        return f"这次的随机数是 {random.randint(1, 100)}。"
+        return f"……随机数是 {random.randint(1, 100)}。你抽到多少？"

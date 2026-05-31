@@ -101,7 +101,7 @@ special_responses:
     trigger:
       - "我不会先走"
     response: "......随便你。反正我也懒得赶。"
-    action: soft_idle
+    action: talk
     relationship_effect:
       trust: 2
       softness_leak: 3
@@ -140,10 +140,47 @@ special_responses:
       - "抱抱"
       - "抱一下"
     response: "......烦死了。过来。"
-    action: close_idle
+    action: happy
     relationship_effect:
       softness_leak: 2
       heartbeat: 1
+
+  - id: tired_remind
+    trigger:
+      - "我好累"
+      - "好累啊"
+      - "累死了"
+    response: "......坐会儿吧。别硬撑。"
+    action: remind
+    relationship_effect:
+      empathy_load: 5
+      stay_tendency: 1
+
+  - id: welcome_back
+    trigger:
+      - "我回来了"
+      - "我回来啦"
+    response: "......噢。欢迎回来。"
+    action: happy
+    relationship_effect:
+      affection: 1
+      trust: 1
+
+  - id: good_night
+    trigger:
+      - "晚安"
+      - "去睡觉了"
+      - "睡了"
+    response: "......晚安。少熬夜。"
+    action: sleep
+
+  - id: good_morning
+    trigger:
+      - "早安"
+      - "早"
+      - "早上好"
+    response: "......早。今天也别太拼。"
+    action: happy
 
   - id: birthday_trigger
     trigger:

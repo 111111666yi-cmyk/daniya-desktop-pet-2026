@@ -138,6 +138,36 @@ def test_diagnostics_do_not_expose_full_api_key(tmp_path):
     assert any(item["name"] == "角色包校验" and item["status"] == "pass" for item in results)
 
 
+def test_open_settings_center_warning_includes_attribute_detail(monkeypatch):
+    from src import app as app_module
+
+    warnings = []
+    tracebacks = []
+
+    class BrokenSettingsWindow:
+        def __init__(self, *_args, **_kwargs):
+            raise AttributeError("missing relation_tab")
+
+    def fake_warning(_parent, title, text):
+        warnings.append((title, text))
+
+    monkeypatch.setattr(app_module, "SettingsWindow", BrokenSettingsWindow)
+    monkeypatch.setattr(app_module.QMessageBox, "warning", fake_warning)
+    monkeypatch.setattr(app_module.traceback, "print_exc", lambda: tracebacks.append(True))
+
+    controller = SimpleNamespace(settings_window=None, window=object())
+    app_module.AppController.open_settings_center(controller)
+
+    assert controller.settings_window is None
+    assert tracebacks == [True]
+    assert warnings == [
+        (
+            "\u8bbe\u7f6e\u4e2d\u5fc3",
+            "\u8bbe\u7f6e\u4e2d\u5fc3\u6253\u5f00\u5931\u8d25\uff1aAttributeError: missing relation_tab",
+        )
+    ]
+
+
 def test_settings_window_opens_with_expected_tabs_in_subprocess(tmp_path):
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"

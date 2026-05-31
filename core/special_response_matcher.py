@@ -57,6 +57,12 @@ def match_special_response(
         for item in responses:
             if not isinstance(item, dict):
                 continue
+
+            # FIX: 'call_name' (达妮娅/娅娅) should only match exactly or normalized,
+            # NOT when the user writes a full sentence containing her name (contains/fuzzy).
+            if item.get("id") == "call_name" and match_type in ("contains", "fuzzy"):
+                continue
+
             triggers = _trigger_list(item.get("trigger"))
             if not triggers:
                 continue

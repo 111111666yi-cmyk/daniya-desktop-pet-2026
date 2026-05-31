@@ -1,0 +1,77 @@
+{
+  "pet_name": "Public Placeholder",
+  "default_scale": 1.0,
+  "anchor": "bottom_center",
+  "actions": {
+    "idle": {
+      "frames": ["normal1.png"],
+      "loop": true,
+      "duration_ms": 700,
+      "fallback": ["normal1.png"]
+    },
+    "talk": {
+      "frames": ["normal1.png", "normal2.png"],
+      "loop": true,
+      "duration_ms": 180,
+      "fallback": ["normal1.png", "normal2.png"]
+    },
+    "clicked": {
+      "frames": ["normal2.png"],
+      "loop": false,
+      "duration_ms": 250,
+      "fallback": ["normal2.png", "normal1.png"]
+    },
+    "drag": {
+      "frames": ["normal2.png"],
+      "loop": true,
+      "duration_ms": 250,
+      "fallback": ["normal2.png", "normal1.png"]
+    },
+    "sleep": {
+      "frames": ["normal1.png"],
+      "loop": true,
+      "duration_ms": 900,
+      "fallback": ["normal1.png"]
+    },
+    "happy": {
+      "frames": ["normal2.png"],
+      "loop": false,
+      "duration_ms": 350,
+      "fallback": ["normal2.png", "normal1.png"]
+    },
+    "remind": {
+      "frames": ["normal2.png"],
+      "loop": false,
+      "duration_ms": 350,
+      "fallback": ["normal2.png", "normal1.png"]
+    },
+    "soft_idle": {
+      "_comment": "v0.415 ActionRouter low-energy fallback",
+      "frames": ["normal1.png"],
+      "loop": true,
+      "duration_ms": 900,
+      "fallback": ["normal1.png"]
+    },
+    "close_idle": {
+      "_comment": "v0.415 ActionRouter trust-high / hug fallback",
+      "frames": ["normal2.png"],
+      "loop": false,
+      "duration_ms": 350,
+      "fallback": ["normal2.png", "normal1.png"]
+    },
+    "bubble": {
+      "_comment": "v0.415 ActionRouter lore bubble / softness leak fallback",
+      "frames": ["normal2.png"],
+      "loop": false,
+      "duration_ms": 350,
+      "fallback": ["normal2.png", "normal1.png"]
+    },
+    "look_away": {
+      "_comment": "v0.415 ActionRouter defense-high fallback",
+      "frames": ["normal1.png"],
+      "loop": true,
+      "duration_ms": 700,
+      "fallback": ["normal1.png"]
+    }
+  }
+}

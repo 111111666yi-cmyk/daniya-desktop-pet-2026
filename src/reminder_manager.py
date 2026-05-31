@@ -36,11 +36,11 @@ class ReminderManager(QObject):
     def add(self, time_text: str, text: str) -> tuple[bool, str]:
         clean_text = text.strip()
         if not clean_text:
-            return False, "提醒内容不能为空。"
+            return False, "……提醒内容是空的，你想让我提醒什么？"
         try:
             reminder_time = datetime.strptime(time_text.strip(), TIME_FORMAT)
         except ValueError:
-            return False, "时间格式不对，请使用 2026-05-24 21:30。"
+            return False, "……时间格式写错了。用类似 2026-05-24 21:30 这种格式。"
 
         records = self.records()
         records.append(
@@ -52,7 +52,7 @@ class ReminderManager(QObject):
             }
         )
         self._save(records)
-        return True, "日程记好啦，主人～"
+        return True, "……记下了。到时候别装作看不见。"
 
     def mark_done(self, reminder_id: str) -> None:
         records = self.records()

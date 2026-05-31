@@ -1,5 +1,49 @@
 # Changelog
 
+## v0.55.2 (2026-05-31) - Engineering Audit Patch
+
+- Fixed `reminder_due` event routing so ordinary user requests such as “晚安，顺便提醒我明天喝水” are no longer treated as an already-due reminder event.
+- Added local `/pet ...` command handling for status, reload, event, sleep, and wake commands so hidden commands do not fall through to the misleading weekly-advance response.
+- Tightened `pack.bat` character packaging to include only public Daniya YAML/lore files and the public template pack, preventing ignored character asset folders from entering release builds.
+- Synchronized version metadata and package naming to `v0.55.2`.
+
+## v0.55.1 (2026-05-31) - Drag and Snap Bugfix Patch
+
+- **Fixed Edge-Lock Bug**: Resolved a critical issue where the pet would snap to the screen edges and get locked, refusing to be dragged back to the center of the screen.
+- **Removed Polling Timer Release Checks**: Eliminated the redundant win32 `GetAsyncKeyState` polling inside the 80ms `_tick_global_click` timer, which prematurely aborted active drags in laggy or high-DPI environments.
+- **Enhanced Safe Interacting Check**: Added `is_pressed` flags to track raw mouse click states. Upgraded `_tick_edge_peek` to intercept snapping when the user is actively dragging, pressing, context-menu viewing, or when the `SnapController` animation is running.
+- **Fixed Activity Detected Signal Crash**: Resolved a `TypeError: native Qt signal instance 'activity_detected' is not callable` bug in `behavior_engine.py` when executing native PySide6 signals.
+- **Verified with Automated OS Simulation**: Added `scratch/physical_mouse_simulation.py` to simulate actual Windows mouse events and verify correct docking and pull-away behavior.
+
+## v0.55 - Behavior Engine & Advanced Interaction Layer
+
+- **Added Behavior Engine (PetBehaviorEngine)**: Introduced a coordinator engine for desktop pet physics and high-level interaction tracking.
+- **Improved Interaction Classification**: Handled single click ("clicked"), double click ("happy"), and dragging ("drag") via `InteractionDetector` to prevent conflicts between movement and clicking.
+- **Implemented Edge Snapping & Screen Boundaries**: Snaps the pet window to left, right, and bottom screen boundaries when released within a 24px range. Ensures at least 32px of the pet remains on-screen.
+- **Implemented Elastic Bounce Animation**: Smoothly bounces the window to boundaries or safe limits using `QPropertyAnimation`.
+- **Added Position Persistence**: Saves positions and snapping states to `data/window_state.json` on drag completion and application shutdown, and restores it on startup.
+- **Lightweight Idle Behavior**: Triggers small movements or dialogue bubbles if the user is inactive for 90s, with cooling periods to avoid spamming.
+
+## v0.54 - Dialogue Router & Lore Triggers
+
+- **Implemented Dialogue Router**: Categorized user inputs into Command, Emotion, Task, Story, and Chat to handle different routing pathways.
+- **Prevented Keyword Interception**: Normal conversational inputs containing emotional keywords (e.g. "累", "抱抱") are now routed to the LLM instead of being intercepted by static response matchers.
+- **Story Trigger Divergence**: Lore queries related to Daniya's backstory bypass static responses and invoke the LLM with relevant lore fragments.
+
+## v0.51 - Post-Release Patches
+
+- **Fixed Packaging Resource Path (Issue #2 & #10)**: Bundled and copied `assets/icons/` SVG files in `pack.bat`, ensuring that SettingsWindow icons are displayed correctly in the packaged standalone executable.
+- **Fixed Packaged Startup Crash (Issue #1 & #2)**: Improved `character_pack_path()` in `core/character_loader.py` to check for specific subfolders (like `characters/daniya`) instead of only checking the root directory, preventing startup failures if an empty external `characters/` folder is present.
+- **Improved Settings Saving Resilience (Issue #3)**: Wrapped atomic file replacements with try-except blocks in `ConfigManager.save_json()` and `SettingsManager._save_json_atomic()`, falling back to direct file writing to prevent GUI crashes due to Windows file locking.
+- **Fixed API Key Retrieval Safety (Issue #4)**: Added empty/falsy check for `env_key_name` in `SettingsManager.current_api_key()` to prevent potential OS-specific errors.
+- **Fixed Local Fallback Message (Issue #5)**: Corrected `missing_key` flag passing in `ChatClient.reply()` when `local_mode` is enabled, so it displays the friendly offline prompt rather than connection failure error message.
+- **Fixed Action Manifest Fallback (Issue #6)**: Enhanced `ActionManifest._verify_frames()` to automatically fall back to public placeholder assets via `resource_path` if custom/private frames are missing, avoiding broken image rendering issues.
+- **Fixed Settings Event Log Loading (Issue #8)**: Updated `RelationshipStateViewer.status()` to load event records using `load_event_log()`, enabling compatibility with the new JSONL event logging format (`event_log.jsonl`).
+
+## v0.50 - Official Open Source Release (Stable)
+
+- **Completed v0.50 Release**: Confirmed stable release status, containing all features from v0.49.1 settings layout updates and UI dialog improvements.
+
 ## v0.49.1 - Settings Optimization & Window Controls Patch
 
 - **Window Control Enhancement**: Added window minimize/maximize flags (`Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint`) to SettingsWindow, DaniyaSettingsDialog, HistoryDialog, FirstRunWizard, and the model downloader dialog.

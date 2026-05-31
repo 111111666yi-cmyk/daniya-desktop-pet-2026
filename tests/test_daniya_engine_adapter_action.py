@@ -15,17 +15,17 @@ class RecordingAnimationManager:
 def test_adapter_returns_action_without_animation_manager():
     adapter = DaniyaEngineAdapter(model_client=lambda prompt: "哦。")
     result = adapter.handle_user_text("抱抱")
-    assert result.action == "close_idle"
-    assert result.fallback_chain[:3] == ["close_idle", "happy", "idle"]
+    assert result.action == "happy"
+    assert result.fallback_chain[:3] == ["happy", "normal2", "idle"]
 
 
 def test_adapter_dispatches_fallback_chain_to_animation_manager():
-    manager = RecordingAnimationManager(fail_actions={"close_idle"})
+    manager = RecordingAnimationManager(fail_actions={"happy"})
     adapter = DaniyaEngineAdapter(model_client=lambda prompt: "哦。", animation_manager=manager)
     result = adapter.handle_user_text("抱抱")
-    assert result.action == "close_idle"
-    assert manager.calls[0] == ("set_state", "close_idle")
-    assert manager.calls[1] == ("set_state", "happy")
+    assert result.action == "happy"
+    assert manager.calls[0] == ("set_state", "happy")
+    assert manager.calls[1] == ("set_state", "normal2")
 
 
 def test_adapter_physical_event_helper_routes_click():

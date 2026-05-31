@@ -2,7 +2,7 @@ from core.character_loader import load_character
 from core.dialogue_engine import DialogueEngine
 
 
-def test_hug_special_response_routes_close_idle_without_model_call():
+def test_hug_special_response_routes_happy_without_model_call():
     pack = load_character("daniya")
     calls = []
 
@@ -12,15 +12,15 @@ def test_hug_special_response_routes_close_idle_without_model_call():
 
     result = DialogueEngine(pack, model_client=model).handle_user_message("抱抱")
     assert result.response == "......烦死了。过来。"
-    assert result.action == "close_idle"
-    assert result.fallback_chain[:3] == ["close_idle", "happy", "idle"]
+    assert result.action == "happy"
+    assert result.fallback_chain[:3] == ["happy", "normal2", "idle"]
     assert calls == []
 
 
-def test_negative_emotion_routes_soft_idle_or_idle():
+def test_negative_emotion_routes_remind():
     pack = load_character("daniya")
     result = DialogueEngine(pack, model_client=lambda prompt: "你一定很难过吧，我理解你。").handle_user_message("我好累")
-    assert result.action in {"soft_idle", "idle"}
+    assert result.action == "remind"
     assert "idle" in result.fallback_chain
     assert len(result.response) <= 100
 

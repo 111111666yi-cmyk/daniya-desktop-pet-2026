@@ -9,8 +9,15 @@ from PySide6.QtGui import QIcon
 from .utils import runtime_root
 
 
+_ICON_CACHE: dict[str, QIcon] = {}
+
+
 def icon(icon_key: str, root: Path | None = None) -> QIcon:
     """从 assets/icons 加载图标。icon_key 支持 'chip', 'settings', 'download' 等。"""
+    cache_key = f"{icon_key}_{root}"
+    if cache_key in _ICON_CACHE:
+        return _ICON_CACHE[cache_key]
+
     _MAP: dict[str, str] = {
         "chip": "microchip.svg",
         "cloud": "cloud-download.svg",
@@ -33,5 +40,8 @@ def icon(icon_key: str, root: Path | None = None) -> QIcon:
     filename = _MAP.get(icon_key, icon_key)
     icon_path = base / "assets" / "icons" / filename
     if icon_path.exists():
-        return QIcon(str(icon_path))
-    return QIcon()
+        res = QIcon(str(icon_path))
+    else:
+        res = QIcon()
+    _ICON_CACHE[cache_key] = res
+    return res

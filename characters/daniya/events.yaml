@@ -141,8 +141,8 @@ events:
   - id: reminder_due
     name: 提醒事项到期
     type: reminder_event
-    trigger_keywords: ["[reminder]", "提醒我", "该做事"]
-    triggers: ["[reminder]", "提醒我", "该做事"]
+    trigger_keywords: ["[reminder]"]
+    triggers: ["[reminder]"]
     response_style: remind
     lines:
       - "......该做事了。"

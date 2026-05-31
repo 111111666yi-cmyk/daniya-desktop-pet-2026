@@ -21,14 +21,17 @@ REQUIRED_YAML_FILES = {
     "relationship.yaml": "relationship",
     "events.yaml": "events",
     "actions.yaml": "actions",
-    "lore_index.yaml": "lore_index",
 }
-REQUIRED_TEXT_FILES = {"lore.md": "lore"}
+
 
 
 def character_pack_path(character_id: str = "daniya", root: Path | None = None) -> Path:
-    base = root or default_character_root()
-    return base / character_id
+    if root:
+        return root / character_id
+    external = runtime_root() / "characters" / character_id
+    if external.exists():
+        return external
+    return bundled_root() / "characters" / character_id
 
 
 def load_character(character_id: str = "daniya", root: Path | None = None) -> CharacterPack:
@@ -67,6 +70,25 @@ def _build_pack(character_id: str, root: Path, data: dict[str, dict[str, Any]], 
     )
 
 
+def _read_yaml_with_fallback(
+    base: Path,
+    file_name: str,
+    root: Path | None,
+    result: ValidationResult,
+    character_id: str,
+) -> dict[str, Any]:
+    path = base / file_name
+    if path.exists():
+        return _read_yaml(path, file_name, result)
+    if character_id != "template":
+        template_base = character_pack_path("template", root)
+        template_path = template_base / file_name
+        if template_path.exists():
+            return _read_yaml(template_path, file_name, result)
+    result.add_error(file_name, "", "Required file is missing and template fallback failed.")
+    return {}
+
+
 def _read_pack(
     character_id: str,
     root: Path | None = None,
@@ -80,9 +102,22 @@ def _read_pack(
         return data, "", result
 
     for file_name, key in REQUIRED_YAML_FILES.items():
-        data[key] = _read_yaml(base / file_name, file_name, result)
+        data[key] = _read_yaml_with_fallback(base, file_name, root, result, character_id)
 
-    lore = _read_text(base / "lore.md", "lore.md", result)
+    # Optional lore.md
+    lore_path = base / "lore.md"
+    if lore_path.exists():
+        lore = _read_text(lore_path, "lore.md", result)
+    else:
+        lore = ""
+
+    # Optional lore_index.yaml
+    lore_index_path = base / "lore_index.yaml"
+    if lore_index_path.exists():
+        data["lore_index"] = _read_yaml(lore_index_path, "lore_index.yaml", result)
+    else:
+        data["lore_index"] = {"fragments": []}
+
     return data, lore, result
 
 
@@ -159,15 +194,16 @@ def _validate_pack_data(data: dict[str, dict[str, Any]], lore: str, result: Vali
                 continue
             _require_keys(action, "actions.yaml", path, ["fallback"], result)
 
-    _require_list(lore_index, "lore_index.yaml", "fragments", result)
-    for index, fragment in enumerate(lore_index.get("fragments", []) if isinstance(lore_index.get("fragments"), list) else []):
-        path = f"fragments[{index}]"
-        if not isinstance(fragment, dict):
-            result.add_error("lore_index.yaml", path, "Fragment must be a mapping.")
-            continue
-        _require_keys(fragment, "lore_index.yaml", path, ["id", "keywords", "level"], result)
-        if not isinstance(fragment.get("keywords"), list) or not fragment.get("keywords"):
-            result.add_error("lore_index.yaml", f"{path}.keywords", "Field must be a non-empty list.")
+    if (result.root / "lore_index.yaml").exists():
+        _require_list(lore_index, "lore_index.yaml", "fragments", result)
+        for index, fragment in enumerate(lore_index.get("fragments", []) if isinstance(lore_index.get("fragments"), list) else []):
+            path = f"fragments[{index}]"
+            if not isinstance(fragment, dict):
+                result.add_error("lore_index.yaml", path, "Fragment must be a mapping.")
+                continue
+            _require_keys(fragment, "lore_index.yaml", path, ["id", "keywords", "level"], result)
+            if not isinstance(fragment.get("keywords"), list) or not fragment.get("keywords"):
+                result.add_error("lore_index.yaml", f"{path}.keywords", "Field must be a non-empty list.")
 
 
 def _require_keys(

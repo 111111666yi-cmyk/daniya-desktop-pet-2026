@@ -36,6 +36,33 @@ class MenuManager:
 
     def create_menu(self) -> QMenu:
         menu = QMenu(self.window)
+        # [MODERN UI] Apply modern QSS to context menu
+        menu.setStyleSheet(
+            """
+            QMenu {
+                background-color: rgba(255, 255, 255, 240);
+                border: 1px solid rgba(200, 200, 200, 150);
+                border-radius: 8px;
+                padding: 6px;
+                font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+                color: #2b2b2b;
+            }
+            QMenu::item {
+                padding: 6px 24px 6px 24px;
+                border-radius: 4px;
+                margin: 2px 4px;
+            }
+            QMenu::item:selected {
+                background-color: rgba(100, 150, 255, 50);
+                color: #000000;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: rgba(200, 200, 200, 150);
+                margin: 4px 10px;
+            }
+            """
+        )
 
         basic = menu.addMenu(ic("settings"), "基础")
         input_action = basic.addAction(ic("document"), "显示输入框" if not self.window.input_box.isVisible() else "隐藏输入框")
@@ -716,15 +743,30 @@ class HistoryDialog(QDialog):
                 f"达妮娅：{record.get('assistant', '')}"
             )
             text.setWordWrap(True)
+            text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+
+            copy_button = QPushButton("复制")
+            record_text = (
+                f"你：{record.get('user', '')}\n"
+                f"达妮娅：{record.get('assistant', '')}"
+            )
+            copy_button.clicked.connect(lambda checked=False, txt=record_text: self.copy_text(txt))
+
             delete_button = QPushButton("删除")
             record_id = str(record.get("id", ""))
             delete_button.clicked.connect(lambda checked=False, rid=record_id: self.delete_record(rid))
+
             row_layout.addWidget(text, 1)
+            row_layout.addWidget(copy_button)
             row_layout.addWidget(delete_button)
             box.addWidget(row)
 
         box.addStretch(1)
         self.scroll.setWidget(container)
+
+    def copy_text(self, text: str) -> None:
+        from PySide6.QtWidgets import QApplication
+        QApplication.clipboard().setText(text)
 
     def delete_record(self, record_id: str) -> None:
         if not record_id:

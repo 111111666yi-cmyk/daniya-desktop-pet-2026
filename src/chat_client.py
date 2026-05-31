@@ -55,7 +55,7 @@ class ChatClient:
         """
         if self.local_mode:
             print("[Daniya] Chat response: provider=none, model=none, source=local, fallback_used=True, error_summary=\"local_mode_enabled\"")
-            return self.local_reply(missing_key=False), "local"
+            return self.local_reply(missing_key=True), "local"
             
         if not self.provider_manager:
             print("[Daniya] Chat response: provider=none, model=none, source=local, fallback_used=True, error_summary=\"provider_manager_missing\"")

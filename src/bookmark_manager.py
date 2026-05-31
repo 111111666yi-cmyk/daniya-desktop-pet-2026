@@ -32,9 +32,9 @@ class BookmarkManager:
         clean = url.strip()
         parsed = urlparse(clean)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-            return False, "这个传送门地址看起来不太对。"
+            return False, "……这个地址怪怪的，打不开。"
         try:
             webbrowser.open(clean)
         except webbrowser.Error:
-            return False, "浏览器好像没有接住这个传送门。"
-        return True, "传送门打开啦～"
+            return False, "……浏览器没反应。你是不是没装好？"
+        return True, "……打开了。自己看吧。"

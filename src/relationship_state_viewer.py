@@ -21,7 +21,13 @@ class RelationshipStateViewer:
     def status(self) -> dict[str, Any]:
         paths = self.paths()
         state, state_error = _read_json_safe(paths["relationship_state"], {})
-        events, event_error = _read_json_safe(paths["event_log"], [])
+        from core.memory_engine import load_event_log
+        try:
+            events = load_event_log()
+            event_error = None
+        except Exception as exc:
+            events = []
+            event_error = str(exc)
         memory, memory_error = _read_json_safe(paths["user_memory"], {})
         return {
             "data_dir": str(self.data_dir),

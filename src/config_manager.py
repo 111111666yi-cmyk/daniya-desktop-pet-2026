@@ -12,6 +12,7 @@ from .version import APP_VERSION
 
 DEFAULT_APP_CONFIG: dict[str, Any] = {
     "version": APP_VERSION,
+    "current_character": "daniya",
     "window": {
         "start_x": 1180,
         "start_y": 680,
@@ -52,8 +53,8 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
         "context_limit": 8,
         "temperature": 0.8,
         "max_tokens": 360,
-        "fallback_reply": "达妮娅现在还没有连上大脑，但我已经在这里啦！",
-        "api_error_fallback_reply": "达妮娅刚刚走神了一下……但我还在哦。",
+        "fallback_reply": "……脑子没连上。不过，我还在就是了。",
+        "api_error_fallback_reply": "唔……刚刚没连上，我先用本地脑袋陪你。",
     },
     "api": {
         "base_url": "https://api.deepseek.com",
@@ -75,6 +76,15 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "day_night_enabled": True,
     "night_start_hour": 23,
     "night_end_hour": 7,
+    "behavior_enabled": True,
+    "snap_to_edge_enabled": True,
+    "snap_margin_px": 24,
+    "keep_on_screen_enabled": True,
+    "drag_return_enabled": True,
+    "idle_behavior_enabled": True,
+    "idle_behavior_seconds": 90,
+    "double_click_enabled": True,
+    "long_press_ms": 600,
 }
 
 DEFAULT_SYSTEM_PROMPT = """你是达妮娅的 Q 版夏日桌宠形态。
@@ -161,10 +171,24 @@ class ConfigManager:
             return deepcopy(default)
 
     def save_json(self, path: Path, value: Any) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(path.suffix + ".tmp")
-        tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-        tmp.replace(path)
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+            try:
+                tmp.replace(path)
+            except OSError:
+                path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+                if tmp.exists():
+                    try:
+                        tmp.unlink()
+                    except OSError:
+                        pass
+        except Exception:
+            try:
+                path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+            except Exception:
+                pass
 
     def _backup_broken_json(self, path: Path) -> None:
         if not path.exists():
@@ -176,6 +200,8 @@ class ConfigManager:
             pass
 
     def _normalize_app_config(self, config: dict[str, Any]) -> dict[str, Any]:
+        if "current_character" not in config or not config["current_character"]:
+            config["current_character"] = "daniya"
         pet = config.setdefault("pet", {})
         if not isinstance(pet, dict):
             pet = deepcopy(DEFAULT_APP_CONFIG["pet"])
@@ -247,6 +273,26 @@ class ConfigManager:
         states.setdefault("idle", "idle")
         states.setdefault("speaking", "talking")
         pet["states"] = states
+
+        config["behavior_enabled"] = bool(config.get("behavior_enabled", True))
+        config["snap_to_edge_enabled"] = bool(config.get("snap_to_edge_enabled", True))
+        try:
+            config["snap_margin_px"] = int(config.get("snap_margin_px", 24))
+        except (TypeError, ValueError):
+            config["snap_margin_px"] = 24
+        config["keep_on_screen_enabled"] = bool(config.get("keep_on_screen_enabled", True))
+        config["drag_return_enabled"] = bool(config.get("drag_return_enabled", True))
+        config["idle_behavior_enabled"] = bool(config.get("idle_behavior_enabled", True))
+        try:
+            config["idle_behavior_seconds"] = int(config.get("idle_behavior_seconds", 90))
+        except (TypeError, ValueError):
+            config["idle_behavior_seconds"] = 90
+        config["double_click_enabled"] = bool(config.get("double_click_enabled", True))
+        try:
+            config["long_press_ms"] = int(config.get("long_press_ms", 600))
+        except (TypeError, ValueError):
+            config["long_press_ms"] = 600
+
         return config
 
 

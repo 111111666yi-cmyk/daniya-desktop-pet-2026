@@ -5,8 +5,8 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 set "APP_NAME=DaniyaSummerPet"
-set "VERSION=v0.49"
-set "PACKAGE_NAME=DaniyaSummerPet-v0.49-win-x64"
+set "VERSION=v0.55.2"
+set "PACKAGE_NAME=DaniyaSummerPet-v0.55.2-win-x64"
 set "PYTHON_EXE=python"
 
 if exist ".venv\Scripts\python.exe" (
@@ -62,8 +62,16 @@ echo [Daniya] Running PyInstaller...
   --name "%APP_NAME%" ^
   %ICON_ARGS% ^
   --add-data "assets\placeholder;assets\placeholder" ^
+  --add-data "assets\icons;assets\icons" ^
   --add-data "config;config" ^
-  --add-data "characters;characters" ^
+  --add-data "characters\daniya\actions.yaml;characters\daniya" ^
+  --add-data "characters\daniya\character.yaml;characters\daniya" ^
+  --add-data "characters\daniya\events.yaml;characters\daniya" ^
+  --add-data "characters\daniya\lore.md;characters\daniya" ^
+  --add-data "characters\daniya\lore_index.yaml;characters\daniya" ^
+  --add-data "characters\daniya\relationship.yaml;characters\daniya" ^
+  --add-data "characters\daniya\speech.yaml;characters\daniya" ^
+  --add-data "characters\template;characters\template" ^
   --add-data "docs;docs" ^
   --add-data "README.md;." ^
   --add-data "LICENSE;." ^
@@ -94,7 +102,9 @@ if %ERRORLEVEL% GEQ 8 (
 
 echo [Daniya] Copying public project files...
 if not exist "release\%PACKAGE_NAME%\assets\placeholder" robocopy "assets\placeholder" "release\%PACKAGE_NAME%\assets\placeholder" /E >nul
-if not exist "release\%PACKAGE_NAME%\characters" robocopy "characters" "release\%PACKAGE_NAME%\characters" /E >nul
+if not exist "release\%PACKAGE_NAME%\assets\icons" robocopy "assets\icons" "release\%PACKAGE_NAME%\assets\icons" /E >nul
+if not exist "release\%PACKAGE_NAME%\characters\daniya" robocopy "characters\daniya" "release\%PACKAGE_NAME%\characters\daniya" /E /XD "assets" >nul
+if not exist "release\%PACKAGE_NAME%\characters\template" robocopy "characters\template" "release\%PACKAGE_NAME%\characters\template" /E >nul
 if not exist "release\%PACKAGE_NAME%\config" robocopy "config" "release\%PACKAGE_NAME%\config" /E >nul
 if not exist "release\%PACKAGE_NAME%\docs" robocopy "docs" "release\%PACKAGE_NAME%\docs" /E >nul
 copy /Y "README.md" "release\%PACKAGE_NAME%\README.md" >nul
@@ -116,7 +126,7 @@ for /r "release\%PACKAGE_NAME%" %%F in (*.log *.spec *.broken-*) do del /q "%%F"
 for /d /r "release\%PACKAGE_NAME%" %%D in (__pycache__) do rmdir /s /q "%%D" 2>nul
 
 echo [Daniya] Creating zip package...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path 'release\%PACKAGE_NAME%\*' -DestinationPath 'release\%PACKAGE_NAME%.zip' -Force"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path 'release\%PACKAGE_NAME%' -DestinationPath 'release\%PACKAGE_NAME%.zip' -Force"
 if errorlevel 1 (
     echo [Daniya] Zip creation failed.
     pause

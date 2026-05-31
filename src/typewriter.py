@@ -63,8 +63,6 @@ class Typewriter(QObject):
             return
         if self.queue:
             self._start_next()
-        else:
-            self.hide()
 
     def stop(self) -> None:
         self.char_timer.stop()
@@ -118,6 +116,9 @@ class Typewriter(QObject):
         self.auto_timer.start(self.auto_next_ms if self.queue else self.auto_hide_ms)
 
     def _auto_continue(self) -> None:
+        if self.label.underMouse():
+            self.auto_timer.start(self.auto_hide_ms)
+            return
         if self.queue:
             self._start_next()
         else:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import traceback
 
 from PySide6.QtCore import QObject, QThread, QTimer, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox
@@ -10,7 +11,7 @@ from .asset_manager import AssetManager
 from .bookmark_manager import BookmarkManager
 from .chat_client import ChatClient
 from .config_manager import ConfigManager
-from .daniya_engine_adapter import DaniyaEngineAdapter  # [CHANGE-001] v0.415 引擎接入
+from .daniya_engine_adapter import DaniyaEngineAdapter, DaniyaEngineAdapterConfig  # [CHANGE-001] v0.415 引擎接入
 from .day_night_manager import DayNightManager
 from .history_manager import HistoryManager
 from .idle_manager import IdleManager
@@ -70,15 +71,16 @@ class ChatWorker(QThread):
     """
     reply_ready = Signal(str, str)  # (response_text, source)
 
-    def __init__(self, adapter: DaniyaEngineAdapter, user_text: str) -> None:
+    def __init__(self, adapter: DaniyaEngineAdapter, user_text: str, context: dict[str, Any] | None = None) -> None:
         super().__init__()
         self.adapter = adapter
         self.user_text = user_text
+        self.context = context or {}
         # [LEGACY] 原签名: def __init__(self, chat_client: ChatClient, user_text: str)
 
     def run(self) -> None:
         try:
-            result = self.adapter.handle_user_text(self.user_text)
+            result = self.adapter.handle_user_text(self.user_text, context=self.context)
             self.reply_ready.emit(result.response, result.source)
         except Exception as exc:
             # 引擎异常时 fallback 到安全回复，不让线程崩溃
@@ -121,7 +123,6 @@ class AppController(QObject):
             self.config_manager,
             int(self.app_config.get("affinity", {}).get("click_cooldown_seconds", 5)),
         )
-        self.asset_manager = AssetManager(self.app_config)
         self.chat_client = ChatClient(self.config_manager, self.history_manager, self.profile_manager)
         self.notes_manager = NotesManager(self.config_manager)
         self.reminder_manager = ReminderManager(self.config_manager)
@@ -134,11 +135,19 @@ class AppController(QObject):
         # 将 chat_client 作为 model_client 传入，适配器内部通过 _wrap_model_client
         # 自动包装其 .reply() 方法为 DialogueEngine 所需的接口。
         # animation_manager 和 state_manager 在 PetWindow 创建后再绑定。
+        char_id = self.app_config.get("current_character", "daniya")
         self.daniya_adapter = DaniyaEngineAdapter(
             model_client=self.chat_client,
+            config=DaniyaEngineAdapterConfig(character_id=char_id)
         )
+        resolved_char_id = self.daniya_adapter.character_pack.character_id
+        self.asset_manager = AssetManager(self.app_config, resolved_char_id)
 
         self.window = PetWindow(self.asset_manager, self.app_config)
+        # Inject behavior engine checkers
+        self.window.behavior_engine.idle_behavior.is_allowed = self.is_idle_behavior_allowed
+        self.window.behavior_engine.idle_behavior.is_night = self.is_night_behavior
+
         self.idle_manager = IdleManager(self.app_config, self.window.can_show_idle_message)
         self.menu_manager = MenuManager(self.window, self)
         self.window.set_context_menu(self.menu_manager.create_menu())
@@ -155,6 +164,7 @@ class AppController(QObject):
         self.window.position_changed.connect(self.save_window_position)
         self.window.drag_completed.connect(self.on_drag_completed)
         self.window.activity_detected.connect(self.idle_manager.mark_activity)
+        self.window.activity_detected.connect(self.window.behavior_engine.mark_activity)
         self.reminder_manager.reminder_due.connect(self.on_reminder_due)
         self.time_event_manager.hourly_chime.connect(self.speak_remind)
         self.idle_manager.idle_message.connect(self.speak_happy)
@@ -176,12 +186,14 @@ class AppController(QObject):
     def send_message(self, user_text: str) -> None:
         self.idle_manager.mark_activity()
         if self.worker is not None and self.worker.isRunning():
-            self.window.speak("等我把上一句话想完哦。")
+            self.window.speak("……等一下，我还在想刚才那句呢。")
             return
         self.window.set_input_enabled(False)
-        self.window.show_message("达妮娅正在想...")
+        self.window.set_thinking_state(True)
         # [CHANGE-002] 使用适配器代替直连 chat_client
-        self.worker = ChatWorker(self.daniya_adapter, user_text)
+        recent_messages = self.history_manager.recent_messages(self.chat_client.context_limit)
+        context = {"recent_messages": recent_messages}
+        self.worker = ChatWorker(self.daniya_adapter, user_text, context=context)
         # [LEGACY] 原: self.worker = ChatWorker(self.chat_client, user_text)
         self.worker.reply_ready.connect(lambda reply, source: self._handle_reply(user_text, reply, source))
         self.worker.finished.connect(self.worker.deleteLater)
@@ -190,15 +202,35 @@ class AppController(QObject):
     def _handle_reply(self, user_text: str, reply: str, source: str) -> None:
         print(f"[Daniya] chat saved source={source}")
         self.history_manager.append(user_text, reply, source)
-        self.affinity_manager.add_chat()
+        upgraded = self.affinity_manager.add_chat()
         self.window.update_affinity(self.affinity_manager.badge())
         self.window.set_input_enabled(True)
+        self.window.set_thinking_state(False)
         self.window.speak(reply)
         self.worker = None
+        if upgraded:
+            QTimer.singleShot(2500, lambda: self._check_affinity_upgrade(upgraded))
+
+    def is_idle_behavior_allowed(self) -> bool:
+        if self.worker is not None and self.worker.isRunning():
+            return False
+        if self.window.typewriter.is_typing:
+            return False
+        if self.window.input_box.isVisible() and self.window.input_box.hasFocus() and self.window.input_box.text().strip():
+            return False
+        if self.settings_window is not None and self.settings_window.isVisible():
+            return False
+        if self.reminder_boxes:
+            return False
+        return True
+
+    def is_night_behavior(self) -> bool:
+        return self.day_night_manager.is_night()
 
     def on_pet_clicked(self) -> None:
         self.idle_manager.mark_activity()
-        if self.affinity_manager.add_click():
+        success, upgraded = self.affinity_manager.add_click()
+        if success:
             self.window.update_affinity(self.affinity_manager.badge())
         if self.day_night_manager.is_night():
             self.window.animation_manager.trigger_sleeping()
@@ -207,6 +239,8 @@ class AppController(QObject):
         self.window.speak(self.day_night_manager.click_line())
         # [CHANGE-003+005] 物理点击事件流入引擎（后台线程，不阻塞 GUI）
         self._fire_physical_event("user_click")
+        if upgraded:
+            QTimer.singleShot(2000, lambda: self._check_affinity_upgrade(upgraded))
 
     def save_window_position(self, x: int, y: int) -> None:
         self.app_config.setdefault("window", {})["start_x"] = x
@@ -230,6 +264,50 @@ class AppController(QObject):
         self.config_manager.save_app_config(self.app_config)
         self.window.set_context_menu(self.menu_manager.create_menu())
 
+    def reload_character(self, character_id: str | None = None) -> bool:
+        from .character_pack_editor import CharacterPackEditor
+        if character_id is not None:
+            self.app_config["current_character"] = character_id
+            self.config_manager.save_app_config(self.app_config)
+        else:
+            character_id = self.app_config.get("current_character", "daniya")
+
+        # 1. Re-initialize DaniyaEngineAdapter
+        self.daniya_adapter = DaniyaEngineAdapter(
+            model_client=self.chat_client,
+            config=DaniyaEngineAdapterConfig(character_id=character_id)
+        )
+        resolved_char_id = self.daniya_adapter.character_pack.character_id
+
+        # 2. Re-initialize AssetManager
+        self.asset_manager = AssetManager(self.app_config, resolved_char_id)
+
+        # 3. Bind animation and state managers
+        self.daniya_adapter.animation_manager = self.thread_safe_anim_manager
+        self.daniya_adapter.state_manager = self.window
+
+        # 4. Update window references and reload manifest/assets
+        self.window.asset_manager = self.asset_manager
+        self.window.animation_manager.asset_manager = self.asset_manager
+        self.window.animation_manager.reload_manifest()
+        self.window.animation_manager.refresh()
+
+        # Reload behavior config and checkers
+        self.window.behavior_engine.reload_config(self.app_config)
+        self.window.behavior_engine.idle_behavior.is_allowed = self.is_idle_behavior_allowed
+        self.window.behavior_engine.idle_behavior.is_night = self.is_night_behavior
+
+        # If settings window is open, update its references as well
+        if self.settings_window is not None and self.settings_window.isVisible():
+            self.settings_window.character_editor = CharacterPackEditor(character_id=resolved_char_id)
+            self.settings_window._refresh_char_info()
+            self.settings_window._refresh_character_status()
+            self.settings_window._refresh_action_status()
+            self.settings_window._load_pack_file(self.settings_window.pack_file_combo.currentText())
+
+        print(f"[Daniya] Hot reloaded character ID: {resolved_char_id} (requested: {character_id})")
+        return True
+
     def set_pet_feature(self, key: str, enabled: bool) -> None:
         if key not in {"hover_animation_enabled", "edge_peek_enabled", "click_to_call_enabled"}:
             return
@@ -248,19 +326,19 @@ class AppController(QObject):
         self.config_manager.save_system_prompt(text)
         self.history_manager.clear_short_context()
         self.chat_client.reload()
-        self.window.speak("人设已经更新啦。")
+        self.window.speak("……人设更新了。别总是变来变去的。")
 
     def save_profile(self, profile: dict[str, str]) -> None:
         self.profile_manager.save(profile)
         self.chat_client.reload()
-        self.window.speak("主人档案保存好了。")
+        self.window.speak("……你的事情，我稍微记了一下。")
 
     def add_note(self, text: str) -> None:
         self.idle_manager.mark_activity()
         if self.notes_manager.append(text):
-            self.window.speak("记好啦，主人～")
+            self.window.speak("……记下了。别丢三落四的。")
         else:
-            self.window.speak("空白的东西我就不记啦。")
+            self.window.speak("……空白的。你是在耍我吗？")
 
     def add_reminder(self, time_text: str, text: str) -> tuple[bool, str]:
         self.idle_manager.mark_activity()
@@ -271,12 +349,12 @@ class AppController(QObject):
     def on_reminder_due(self, reminder_id: str, text: str) -> None:
         self.window.set_always_on_top(True)
         self.window.animation_manager.trigger_remind()
-        self.window.speak(f"提醒时间到啦：{text}")
+        self.window.speak(f"……喂，时间到了：{text}。去处理一下。")
         # [CHANGE-003+005] 提醒到期事件流入引擎（后台线程）
         self._fire_physical_event("reminder_due")
         box = QMessageBox(self.window)
-        box.setWindowTitle("达妮娅提醒")
-        box.setText(f"提醒时间到啦：{text}")
+        box.setWindowTitle("达妮娅的唠叨")
+        box.setText(f"……喂，时间到了：\n【{text}】\n去处理一下。")
         box.setStandardButtons(QMessageBox.StandardButton.Ok)
         ok_button = box.button(QMessageBox.StandardButton.Ok)
         if ok_button is not None:
@@ -289,6 +367,10 @@ class AppController(QObject):
         self.reminder_manager.mark_done(reminder_id)
         if box in self.reminder_boxes:
             self.reminder_boxes.remove(box)
+        upgraded = self.affinity_manager.add_value(1)
+        self.window.update_affinity(self.affinity_manager.badge())
+        if upgraded:
+            QTimer.singleShot(1000, lambda: self._check_affinity_upgrade(upgraded))
 
     def speak_remind(self, text: str) -> None:
         if not self.window.can_show_idle_message():
@@ -303,10 +385,13 @@ class AppController(QObject):
     def play_rps(self, choice: str) -> None:
         self.idle_manager.mark_activity()
         message, user_wins = self.mini_games.play_rps(choice)
+        upgraded = None
         if user_wins:
-            self.affinity_manager.add_value(1)
+            upgraded = self.affinity_manager.add_value(1)
             self.window.update_affinity(self.affinity_manager.badge())
         self.window.speak(message)
+        if upgraded:
+            QTimer.singleShot(2500, lambda: self._check_affinity_upgrade(upgraded))
 
     def roll_dice(self) -> None:
         self.idle_manager.mark_activity()
@@ -333,7 +418,15 @@ class AppController(QObject):
             self.settings_window.finished.connect(lambda _result: setattr(self, "settings_window", None))
             self.settings_window.show()
         except Exception as exc:
-            QMessageBox.warning(self.window, "设置中心", f"设置中心打开失败：{exc.__class__.__name__}")
+            self.settings_window = None
+            traceback.print_exc()
+            detail = f"{exc.__class__.__name__}: {exc}" if str(exc) else exc.__class__.__name__
+            QMessageBox.warning(
+                self.window,
+                "\u8bbe\u7f6e\u4e2d\u5fc3",
+                f"\u8bbe\u7f6e\u4e2d\u5fc3\u6253\u5f00\u5931\u8d25\uff1a{detail}",
+            )
+            return
 
     def quit(self) -> None:
         self.qapp.quit()
@@ -357,13 +450,124 @@ class AppController(QObject):
             self._phys_workers.remove(w)
         w.deleteLater()
 
+    def _check_affinity_upgrade(self, upgrade_level: str | None) -> None:
+        if not upgrade_level:
+            return
+        lines = {
+            "熟悉": "……好像稍微习惯你在旁边了。关系变成「熟悉」了。",
+            "亲近": "……允许你再离我近一点点。只是……一点点哦。关系变成「亲近」了。",
+            "依赖": "……真是的。以后，别指望我会放你走。关系变成「依赖」了。"
+        }
+        line = lines.get(upgrade_level)
+        if line:
+            self.window.animation_manager.trigger_happy()
+            self.window.speak(line)
+
 def run() -> None:
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
-    
+
+    app.setStyleSheet("""
+        QDialog, QMainWindow {
+            background-color: #f3f5f7;
+        }
+        QTabWidget::pane {
+            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            border-radius: 8px;
+        }
+        QTabBar::tab {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 8px 16px;
+            margin-right: 4px;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            color: #64748b;
+            font-family: "Segoe UI", "Microsoft YaHei";
+            font-size: 13px;
+        }
+        QTabBar::tab:selected {
+            background-color: #ffffff;
+            border-bottom-color: transparent;
+            color: #0f172a;
+            font-weight: bold;
+        }
+        QTabBar::tab:hover:!selected {
+            background-color: #f1f5f9;
+        }
+        QGroupBox {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-top: 18px;
+            background-color: rgba(255, 255, 255, 0.6);
+            font-family: "Segoe UI", "Microsoft YaHei";
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            left: 12px;
+            padding: 0 4px;
+            color: #475569;
+            font-weight: bold;
+        }
+        QLineEdit, QTextEdit, QComboBox {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px 8px;
+            color: #334155;
+            selection-background-color: #bae6fd;
+        }
+        QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
+            border: 1px solid #3b82f6;
+            background-color: #ffffff;
+        }
+        QPushButton {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px 14px;
+            color: #334155;
+            font-family: "Segoe UI", "Microsoft YaHei";
+        }
+        QPushButton:hover {
+            background-color: #f0f9ff;
+            border: 1px solid #7dd3fc;
+            color: #0284c7;
+        }
+        QPushButton:pressed {
+            background-color: #e0f2fe;
+        }
+        QScrollArea {
+            border: none;
+            background-color: transparent;
+        }
+        QScrollBar:vertical {
+            border: none;
+            background-color: transparent;
+            width: 8px;
+            margin: 0px 0px 0px 0px;
+        }
+        QScrollBar::handle:vertical {
+            background-color: #cbd5e1;
+            min-height: 20px;
+            border-radius: 4px;
+        }
+        QScrollBar::handle:vertical:hover {
+            background-color: #94a3b8;
+        }
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            height: 0px;
+        }
+        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            background: none;
+        }
+    """)
+
     from .setup_state_manager import SetupStateManager
     from .first_run_wizard import FirstRunWizard
-    
+
     setup_manager = SetupStateManager()
     if not setup_manager.is_first_run_complete():
         wizard = FirstRunWizard(setup_manager)
@@ -371,7 +575,7 @@ def run() -> None:
         if not setup_manager.is_first_run_complete():
             # 用户关闭了向导而没有完成设置
             sys.exit(0)
-            
+
     controller = AppController(app)
     controller.show()
     sys.exit(app.exec())

@@ -16,7 +16,7 @@ def build_prompt(
         build_system_rules(),
         build_character_summary(character_pack),
         build_speech_summary(character_pack),
-        build_state_summary(relationship_state),
+        build_state_summary(relationship_state, character_pack),
         build_lore_block(lore_fragments),
         build_recent_messages_block(recent_messages),
         f"用户当前输入：\n{user_text.strip()}",
@@ -38,8 +38,10 @@ def build_system_rules() -> str:
             "- 不要客服式安慰",
             "- 不要主动联动无关话题",
             "- 普通闲聊不得注入完整 lore.md",
+            "- 如果用户要求写代码或写程序，请给出完整的代码块，不受短句和极简限制",
         ]
     )
+
 
 
 def build_character_summary(character_pack: CharacterPack) -> str:
@@ -71,7 +73,7 @@ def build_speech_summary(character_pack: CharacterPack) -> str:
     return "\n".join(lines)
 
 
-def build_state_summary(relationship_state: dict[str, Any] | None = None) -> str:
+def build_state_summary(relationship_state: dict[str, Any] | None = None, character_pack: CharacterPack | None = None) -> str:
     if not relationship_state:
         return "当前 relationship_state 摘要：无"
     keys = ["relationship_stage", "affection", "trust", "softness_leak", "defense_level", "empathy_load", "stay_tendency"]
@@ -79,6 +81,14 @@ def build_state_summary(relationship_state: dict[str, Any] | None = None) -> str
     for key in keys:
         if key in relationship_state:
             lines.append(f"- {key}: {relationship_state[key]}")
+    if character_pack and character_pack.relationship:
+        stage_id = relationship_state.get("relationship_stage")
+        stages = character_pack.relationship.get("relationship_stages") or character_pack.relationship.get("stages") or []
+        for stage in stages:
+            if isinstance(stage, dict) and stage.get("id") == stage_id:
+                lines.append(f"- 当前关系阶段名称: {stage.get('name')}")
+                lines.append(f"- 当前关系表现要求: {stage.get('description')}")
+                break
     return "\n".join(lines)
 
 

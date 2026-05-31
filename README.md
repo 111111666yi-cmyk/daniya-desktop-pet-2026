@@ -50,7 +50,7 @@ install.bat
 | `assets/icons/` | UI 图标（来自 Nieobie/Game-Icon-Pack） |
 | `data/` | 运行时数据（关系状态、事件日志，Git忽略） |
 | `docs/` | 项目文档 |
-| `tests/` | 测试用例（179 通过） |
+| `tests/` | 测试用例（206 通过，3 个跳过） |
 
 ## API 配置
 
@@ -89,7 +89,13 @@ pytest tests/ -q
 - v0.43 — GitHub 开源整理
 - v0.44-v0.48 — 多轮迭代（多模型Provider、本地模型接入、打包测试）
 - v0.49 — Provider 架构重构（Boundary 模式 + ProviderRegistry）
-- **v0.50** — 首个正式开源发布版（推荐模型目录、内置下载器、许可证确认、图标系统、桌面快捷方式）
+- v0.50 — 首个正式开源发布版（推荐模型目录、内置下载器、许可证确认、图标系统、桌面快捷方式）
+- v0.51 — 发布后补丁修复版（修复打包资源路径、本地与动作 fallback 异常、设置原子写入防锁保护等）
+- v0.52 — 角色体验、人设回应、关系与 lore 注入精修
+- v0.53 — 多角色模板、角色 fallback 与热重载
+- v0.54 — 对话路由与剧情事件分流系统
+- v0.55 — 桌宠行为引擎（屏幕边缘吸附、防止移出屏幕、点击分流检测、空闲小动作）
+- **v0.55.2** — 工程审计补丁（提醒事件误触发、隐藏命令回应、发布包角色素材隔离）
 
 ## 许可证
 
@@ -137,7 +143,10 @@ Read:
 - v0.46: local model connection, integrated.
 - v0.47: action asset pack integration, integrated.
 - v0.48: release candidate, accepted.
-- v0.49: official open source release, current stable version.
+- v0.49: official open source release.
+- v0.54: dialogue router and lore triggers.
+- v0.55: behavior engine (dragging, snapping, idle behavior).
+- v0.55.2: current engineering-audit patch.
 
 ## License
 

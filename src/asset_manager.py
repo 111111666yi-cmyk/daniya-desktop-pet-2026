@@ -70,10 +70,14 @@ DEFAULT_MANIFEST: dict[str, Any] = {
 
 
 class AssetManager:
-    def __init__(self, app_config: dict[str, Any]) -> None:
+    def __init__(self, app_config: dict[str, Any], character_id: str = "daniya") -> None:
         self.app_config = app_config
+        self.character_id = character_id
         self.runtime_assets = runtime_root() / "assets"
         self.bundled_assets = bundled_root() / "assets"
+        self.characters_dir = runtime_root() / "characters"
+        if not self.characters_dir.exists():
+            self.characters_dir = bundled_root() / "characters"
         self.pet_id = PET_ID
         self._manifest: dict[str, Any] | None = None
         self._asset_dir: Path | None = None
@@ -84,6 +88,8 @@ class AssetManager:
             return self._asset_dir
 
         candidates = [
+            self.characters_dir / self.character_id / "assets",
+            self.characters_dir / "template" / "assets",
             self.runtime_assets / "private" / self.pet_id,
             self.runtime_assets / "private",
             self.runtime_assets / "placeholder" / self.pet_id,
@@ -92,7 +98,7 @@ class AssetManager:
             self.bundled_assets / "placeholder",
         ]
         for candidate in candidates:
-            if (candidate / "manifest.json").exists() or (candidate / "normal1.png").exists():
+            if candidate.exists() and ((candidate / "manifest.json").exists() or (candidate / "normal1.png").exists()):
                 self._asset_dir = candidate
                 return candidate
         self._asset_dir = self.runtime_assets / "placeholder"
@@ -114,6 +120,19 @@ class AssetManager:
                     return self._manifest
             except (OSError, json.JSONDecodeError):
                 pass
+
+        # Fallback to template manifest
+        template_path = self.characters_dir / "template" / "assets" / "manifest.json"
+        if template_path.exists() and template_path != path:
+            try:
+                data = json.loads(template_path.read_text(encoding="utf-8-sig"))
+                if isinstance(data, dict):
+                    self._manifest = self._merge_manifest(data)
+                    self._print_manifest_debug(template_path, self._manifest)
+                    return self._manifest
+            except (OSError, json.JSONDecodeError):
+                pass
+
         self._manifest = self._merge_manifest({})
         self._print_manifest_debug(path, self._manifest)
         return self._manifest
@@ -232,18 +251,35 @@ class AssetManager:
     def _resolve_image_ref(self, ref: str) -> Path:
         clean = ref.replace("\\", "/").lstrip("/")
         active = self.active_asset_dir()
+
+        template_assets = self.characters_dir / "template" / "assets"
+        placeholder_dir = self.runtime_assets / "placeholder"
+        if not placeholder_dir.exists():
+            placeholder_dir = self.bundled_assets / "placeholder"
+
         candidates = [
             active / clean,
-            self.runtime_assets / "private" / self.pet_id / clean,
-            self.runtime_assets / "private" / clean,
-            self.runtime_assets / "placeholder" / self.pet_id / clean,
-            self.runtime_assets / "placeholder" / clean,
-            self.bundled_assets / "placeholder" / self.pet_id / clean,
-            self.bundled_assets / "placeholder" / clean,
+            template_assets / clean,
+            placeholder_dir / clean,
         ]
         for candidate in candidates:
             if candidate.exists():
                 return candidate
+
+        # Resolve normal1/normal2 fallback if file is still not found
+        is_normal2 = "normal2" in clean or any(k in clean.lower() for k in ("clicked", "drag", "happy", "remind", "talk", "speaking"))
+        fallback_name = "normal2.png" if is_normal2 else "normal1.png"
+
+        candidates_fallback = [
+            active / fallback_name,
+            template_assets / fallback_name,
+            placeholder_dir / fallback_name,
+            placeholder_dir / "normal1.png",
+        ]
+        for candidate in candidates_fallback:
+            if candidate.exists():
+                return candidate
+
         return active / clean
 
     def _merge_manifest(self, data: dict[str, Any]) -> dict[str, Any]:

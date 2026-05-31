@@ -40,3 +40,15 @@ def test_happy_to_see_you_is_rewritten():
 def test_already_daniya_style_is_preserved():
     assert apply_daniya_speech_filter("......烦。", speech_config()) == "......烦。"
 
+
+def test_already_has_ellipsis_is_not_duplicated():
+    assert apply_daniya_speech_filter("……嗯。", speech_config()) == "……嗯。"
+    assert apply_daniya_speech_filter("...嗯。", speech_config()) == "...嗯。"
+    assert apply_daniya_speech_filter("…嗯。", speech_config()) == "…嗯。"
+    assert apply_daniya_speech_filter("嗯。", speech_config()) == "嗯。"
+    assert apply_daniya_speech_filter("你好", speech_config()) == "......你好"
+
+
+def test_code_block_bypasses_speech_filter():
+    code_text = "……好哦。\n```python\ndef test():\n    print('hello')\n```"
+    assert apply_daniya_speech_filter(code_text, speech_config()) == code_text

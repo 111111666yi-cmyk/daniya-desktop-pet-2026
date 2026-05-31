@@ -28,33 +28,38 @@ class AffinityManager:
 
     def level_name(self) -> str:
         value = self.value()
-        if value <= 30:
+        if value < 35:
             return "初识"
-        if value <= 70:
+        if value < 60:
             return "熟悉"
-        if value <= 120:
+        if value < 90:
             return "亲近"
-        return "很依赖"
+        return "依赖"
 
     def badge(self) -> str:
         marks = {
             "初识": "♡",
             "熟悉": "♥",
             "亲近": "✦",
-            "很依赖": "✧",
+            "依赖": "✧",
         }
         level = self.level_name()
         return f"{marks.get(level, '♡')} {level}"
 
-    def add_chat(self) -> None:
-        self.add_value(1)
+    def add_chat(self) -> str | None:
+        return self.add_value(1)
 
-    def add_value(self, amount: int) -> None:
+    def add_value(self, amount: int) -> str | None:
+        old_level = self.level_name()
         data = self._load()
         data["value"] = max(0, int(data.get("value", 0)) + amount)
         self._save(data)
+        new_level = self.level_name()
+        if old_level != new_level and amount > 0:
+            return new_level
+        return None
 
-    def add_click(self) -> bool:
+    def add_click(self) -> tuple[bool, str | None]:
         data = self._load()
         now = datetime.now()
         last_click_raw = data.get("last_click_at")
@@ -62,13 +67,16 @@ class AffinityManager:
             try:
                 last_click = datetime.fromisoformat(str(last_click_raw))
                 if now - last_click < self.cooldown:
-                    return False
+                    return False, None
             except ValueError:
                 pass
+        old_level = self.level_name()
         data["value"] = int(data.get("value", 0)) + 1
         data["last_click_at"] = now.isoformat(timespec="seconds")
         self._save(data)
-        return True
+        new_level = self.level_name()
+        upgraded = new_level if (old_level != new_level) else None
+        return True, upgraded
 
     def _load(self) -> dict[str, Any]:
         data = self.config_manager.load_json(self.path, DEFAULT_AFFINITY)

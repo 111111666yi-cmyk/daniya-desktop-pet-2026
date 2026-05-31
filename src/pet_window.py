@@ -6,59 +6,14 @@ from pathlib import Path
 from typing import Any, Callable
 
 from PySide6.QtCore import QPoint, QRect, Qt, QTimer, Signal
-from PySide6.QtGui import QCursor, QGuiApplication, QIcon, QMouseEvent, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QMenu, QSizePolicy, QSystemTrayIcon, QVBoxLayout, QWidget
+from PySide6.QtGui import QCursor, QGuiApplication, QIcon, QPixmap
+from PySide6.QtWidgets import QHBoxLayout, QMenu, QSizePolicy, QSystemTrayIcon, QVBoxLayout, QWidget
 
 from .animation_manager import AnimationManager
 from .asset_manager import AssetManager
 from .typewriter import Typewriter
 
-
-class ClickableLabel(QLabel):
-    drag_started = Signal(QPoint)
-    dragged = Signal(QPoint)
-    drag_finished = Signal(QPoint)
-    context_requested = Signal(QPoint)
-    hover_changed = Signal(bool)
-
-    def enterEvent(self, event) -> None:  # type: ignore[no-untyped-def]
-        self.hover_changed.emit(True)
-        super().enterEvent(event)
-
-    def leaveEvent(self, event) -> None:  # type: ignore[no-untyped-def]
-        self.hover_changed.emit(False)
-        super().leaveEvent(event)
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.grabMouse()
-            self.drag_started.emit(event.globalPosition().toPoint())
-        elif event.button() == Qt.MouseButton.RightButton:
-            self.context_requested.emit(event.globalPosition().toPoint())
-        super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        if event.buttons() & Qt.MouseButton.LeftButton:
-            self.dragged.emit(event.globalPosition().toPoint())
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            try:
-                self.releaseMouse()
-            except Exception:
-                pass
-            self.drag_finished.emit(event.globalPosition().toPoint())
-        super().mouseReleaseEvent(event)
-
-
-class BubbleLabel(QLabel):
-    clicked = Signal()
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit()
-        super().mousePressEvent(event)
+from .ui import ModernBubble, PetAvatar, StatusBadge, InputBar
 
 
 class WinPoint(ctypes.Structure):
@@ -123,23 +78,7 @@ class PetWindow(QWidget):
         self.root_layout.setContentsMargins(6, 6, 6, 6)
         self.root_layout.setSpacing(4)
 
-        self.bubble = BubbleLabel()
-        self.bubble.setWordWrap(True)
-        self.bubble.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-        self.bubble.setMaximumWidth(int(ui_config.get("bubble_max_width", 300)))
-        self.bubble.setStyleSheet(
-            """
-            QLabel {
-                color: #43233a;
-                background: rgba(255, 247, 252, 235);
-                border: 1px solid rgba(235, 130, 180, 210);
-                border-radius: 8px;
-                padding: 7px 9px;
-                font-size: 12px;
-            }
-            """
-        )
-        self.bubble.hide()
+        self.bubble = ModernBubble(max_width=int(ui_config.get("bubble_max_width", 300)))
 
         bubble_row = QHBoxLayout()
         bubble_row.addStretch(1)
@@ -147,50 +86,52 @@ class PetWindow(QWidget):
         bubble_row.addStretch(1)
         self.root_layout.addLayout(bubble_row)
 
-        self.image_label = ClickableLabel()
+        self.image_label = PetAvatar()
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.image_label.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
-        self.image_label.drag_started.connect(self._start_drag)
-        self.image_label.dragged.connect(self._drag)
-        self.image_label.drag_finished.connect(self._finish_drag)
+        # Behavior Engine Integration
+        from .behavior.behavior_engine import PetBehaviorEngine
+        self.behavior_engine = PetBehaviorEngine(
+            window=self,
+            app_config=self.app_config,
+            is_allowed_callback=lambda: True, # Injected by app.py later
+            is_night_callback=lambda: False,   # Injected by app.py later
+            speak_callback=self.speak
+        )
+        self.behavior_engine.action_requested.connect(self._handle_behavior_action)
+
+        self.image_label.drag_started.connect(self.behavior_engine.detector.handle_press)
+        self.image_label.dragged.connect(self.behavior_engine.detector.handle_move)
+        self.image_label.drag_finished.connect(self.behavior_engine.detector.handle_release)
         self.image_label.context_requested.connect(self._show_context_menu)
         self.image_label.hover_changed.connect(self._hover_changed)
-        self.root_layout.addWidget(self.image_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.affinity_label = QLabel()
-        self.affinity_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.affinity_label.setStyleSheet(
-            """
-            QLabel {
-                color: #7a3a63;
-                background: rgba(255, 255, 255, 130);
-                border: 1px solid rgba(235, 130, 180, 95);
-                border-radius: 7px;
-                padding: 0 5px;
-                font-size: 10px;
-            }
-            """
-        )
-        self.root_layout.addWidget(self.affinity_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.affinity_label = StatusBadge()
 
         self.input_min_width = int(ui_config.get("input_min_width", 180))
-        self.input_box = QLineEdit()
-        self.input_box.setPlaceholderText("和达妮娅说点什么...")
-        self.input_box.setMinimumWidth(self.input_min_width)
-        self.input_box.setStyleSheet(
-            """
-            QLineEdit {
-                color: #392033;
-                background: rgba(255, 255, 255, 235);
-                border: 1px solid rgba(235, 130, 180, 210);
-                border-radius: 8px;
-                padding: 6px 9px;
-            }
-            """
-        )
-        self.input_box.returnPressed.connect(self._submit_message)
-        self.root_layout.addWidget(self.input_box, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.input_box = InputBar(min_width=self.input_min_width)
+        self.input_box.submitted.connect(self._submit_message)
+
+        # 整体包裹：将宠物立绘置于左侧，控制栏置于右侧
+        pet_row = QHBoxLayout()
+        # 使用负间距，拉近图标和达妮娅的距离，使其重叠进图片的透明边缘中
+        pet_row.setSpacing(-12)
+        pet_row.setContentsMargins(0, 0, 0, 0)
+
+        pet_row.addWidget(self.image_label, alignment=Qt.AlignmentFlag.AlignBottom)
+
+        # 右下角控件列
+        controls_layout = QVBoxLayout()
+        controls_layout.setSpacing(4)
+        controls_layout.addStretch(1)  # 压到最下方
+        controls_layout.addWidget(self.affinity_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        controls_layout.addWidget(self.input_box, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        pet_row.addLayout(controls_layout)
+        pet_row.addStretch(1)  # 右侧拉伸，确保整体左对齐
+
+        self.root_layout.addLayout(pet_row)
 
         if not bool(self.app_config.get("window", {}).get("show_input", True)):
             self.input_box.setMinimumWidth(0)
@@ -202,9 +143,27 @@ class PetWindow(QWidget):
     def closeEvent(self, event) -> None:  # type: ignore[no-untyped-def]
         self._stop_pet_feature_timers()
         self._cancel_walk_move()
+        # Save position state on close
+        self.behavior_engine.snap_controller.save_window_state(
+            self.x(),
+            self.y(),
+            self.behavior_engine.snap_controller.get_current_snap_state()
+        )
         if self._tray_icon is not None:
             self._tray_icon.hide()
         super().closeEvent(event)
+
+    def _handle_behavior_action(self, action: str) -> None:
+        if action == "clicked":
+            self.animation_manager.trigger_clicked()
+        elif action == "happy":
+            self.animation_manager.trigger_happy()
+        elif action == "drag":
+            self.set_pet_state("dragging")
+        elif action == "sleep":
+            self.animation_manager.trigger_sleeping()
+        elif action == "idle":
+            self.set_pet_state("idle")
 
     def _setup_tray(self) -> None:
         icon_path = self.asset_manager.icon_path()
@@ -242,16 +201,29 @@ class PetWindow(QWidget):
             self._menu_refresh_callback()
 
     def show_at_config_position(self) -> None:
-        window_config = self.app_config.get("window", {})
-        requested = QPoint(
-            _safe_int(window_config.get("start_x"), 1000),
-            _safe_int(window_config.get("start_y"), 500),
-        )
+        saved_pos = self.behavior_engine.snap_controller.load_window_state()
+        if saved_pos is not None:
+            requested = QPoint(saved_pos[0], saved_pos[1])
+        else:
+            window_config = self.app_config.get("window", {})
+            requested = QPoint(
+                _safe_int(window_config.get("start_x"), 1000),
+                _safe_int(window_config.get("start_y"), 500),
+            )
         self.move(requested)
         self.show()
         self._resize_to_content()
         final_pos = self._safe_start_position(requested)
         self.move(final_pos)
+
+        # Save loaded/fallback position
+        self.behavior_engine.snap_controller.save_window_state(
+            final_pos.x(),
+            final_pos.y(),
+            self.behavior_engine.snap_controller.get_current_snap_state()
+        )
+
+        window_config = self.app_config.setdefault("window", {})
         window_config["start_x"] = final_pos.x()
         window_config["start_y"] = final_pos.y()
         print(
@@ -285,10 +257,15 @@ class PetWindow(QWidget):
 
         logical_width = max(1, int(round(scaled.width() / dpr)))
         logical_display_height = max(1, int(round(scaled.height() / dpr)))
+
+        # FIX: Force a STRICT, square container size based on target_height to completely prevent layout jumping!
+        # The QPixmap will be automatically centered inside it by QLabel.
+        container_size = int(max(logical_height, logical_width))
+        self.image_label.setFixedSize(container_size, container_size)
         self.image_label.setPixmap(scaled)
-        self.image_label.setFixedSize(logical_width, logical_display_height)
+
         self._print_render_debug(path, pixmap, target_height, dpr, scaled, logical_width, logical_display_height)
-        self._resize_to_content()
+        # Remove resize_to_content() to prevent micro-jumping
         if self.isVisible():
             self.move(self._clamped_position(self.pos()))
 
@@ -296,10 +273,14 @@ class PetWindow(QWidget):
         self.typewriter.speak(text)
 
     def show_message(self, text: str) -> None:
-        self.bubble.setText(text)
-        self.bubble.show()
+        self.bubble.show_message(text)
         self._resize_to_content()
         self.move(self._clamped_position(self.pos()))
+
+    def set_thinking_state(self, is_thinking: bool) -> None:
+        """[MODERN UI] Sets a visual thinking state (e.g. while waiting for LLM)"""
+        self.bubble.set_thinking_state(is_thinking)
+        self._resize_to_content()
 
     def set_input_enabled(self, enabled: bool) -> None:
         self.input_box.setEnabled(enabled)
@@ -307,11 +288,7 @@ class PetWindow(QWidget):
             self.input_box.setFocus()
 
     def toggle_input(self) -> None:
-        should_show = not self.input_box.isVisible()
-        self.input_box.setMinimumWidth(self.input_min_width if should_show else 0)
-        self.input_box.setVisible(should_show)
-        if should_show:
-            self.input_box.setFocus()
+        self.input_box.toggle_visibility()
         self._resize_to_content()
         self.move(self._clamped_position(self.pos()))
 
@@ -333,8 +310,7 @@ class PetWindow(QWidget):
         return actual
 
     def update_affinity(self, text: str) -> None:
-        self.affinity_label.setText(text)
-        self.affinity_label.setVisible(bool(text))
+        self.affinity_label.update_badge(text)
 
     def can_show_idle_message(self) -> bool:
         if self.typewriter.is_typing:
@@ -343,15 +319,14 @@ class PetWindow(QWidget):
             return False
         return True
 
-    def _submit_message(self) -> None:
-        text = self.input_box.text().strip()
-        if not text:
-            return
-        self.input_box.clear()
+    def _submit_message(self, text: str) -> None:
         self.activity_detected.emit()
         self.message_submitted.emit(text)
 
     def _start_drag(self, global_pos: QPoint) -> None:
+        if self.input_box.line_edit.isVisible():
+            self.input_box.collapse_input()
+
         self.activity_detected.emit()
         self._cancel_walk_move()
         self.dock_side = None
@@ -413,8 +388,21 @@ class PetWindow(QWidget):
         if not bool(pet_config.get("edge_peek_enabled", True)):
             self.dock_side = None
             return
-        if self.drag_start_global is not None or self.context_menu is not None and self.context_menu.isVisible():
+
+        # Prevent snapping if dragging, mouse is pressed down on pet, context menu is open, or a snapping animation is running
+        is_user_interacting = (
+            self.drag_start_global is not None
+            or (hasattr(self, "behavior_engine") and (
+                self.behavior_engine.detector.is_dragging
+                or getattr(self.behavior_engine.detector, "is_pressed", False)
+                or (self.behavior_engine.snap_controller._anim is not None and
+                    self.behavior_engine.snap_controller._anim.state() == self.behavior_engine.snap_controller._anim.State.Running)
+            ))
+            or (self.context_menu is not None and self.context_menu.isVisible())
+        )
+        if is_user_interacting:
             return
+
         if self.dock_side is None:
             self.dock_side = self._nearest_edge_side(8)
         if self.dock_side is None:
@@ -424,15 +412,6 @@ class PetWindow(QWidget):
             self.animation_manager.set_edge_peek(self.dock_side)
 
     def _tick_global_click(self) -> None:
-        if self.drag_start_global is not None:
-            try:
-                key_state = ctypes.windll.user32.GetAsyncKeyState(0x01)
-                left_down = bool(key_state & 0x8000)
-                if not left_down:
-                    self._finish_drag(QCursor.pos())
-            except Exception:
-                pass
-
         pet_config = self.app_config.get("pet", {})
         if not bool(pet_config.get("click_to_call_enabled", False)):
             self._last_left_button_down = False
@@ -659,10 +638,19 @@ class PetWindow(QWidget):
         return bounds
 
     def _resize_to_content(self) -> None:
+        # FIX 错位：记录宠物立绘在屏幕上的绝对全局坐标
+        old_avatar_pos = self.image_label.mapToGlobal(QPoint(0, 0)) if hasattr(self, "image_label") else None
+
         self.adjustSize()
         hint = self.sizeHint()
         if hint.isValid():
             self.resize(hint)
+
+        # FIX 错位：在调整窗口大小后，微调窗口位置，确保宠物在屏幕上的绝对位置保持不变
+        if old_avatar_pos is not None:
+            new_avatar_pos = self.image_label.mapToGlobal(QPoint(0, 0))
+            delta = old_avatar_pos - new_avatar_pos
+            self.move(self.pos() + delta)
 
     def _current_device_pixel_ratio(self) -> float:
         screen = self.screen() or QGuiApplication.primaryScreen()

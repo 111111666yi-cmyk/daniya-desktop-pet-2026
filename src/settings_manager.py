@@ -23,8 +23,8 @@ def _build_default_api_config() -> dict[str, Any]:
         "providers": {},
         "local_mode": False,
         "chat": {
-            "fallback_reply": "达妮娅现在还没有连上大脑，但我已经在这里啦！",
-            "api_error_fallback_reply": "达妮娅刚刚走神了一下……但我还在哦。"
+            "fallback_reply": "……脑子没连上。不过，我还在就是了。",
+            "api_error_fallback_reply": "唔……刚刚没连上，我先用本地脑袋陪你。"
         },
     }
     # 只为云端 Provider 生成默认 entry
@@ -221,6 +221,8 @@ class SettingsManager:
             )
 
     def current_api_key(self, env_key_name: str = "DEEPSEEK_API_KEY") -> str:
+        if not env_key_name:
+            return ""
         env = dotenv_values(self.env_path) if self.env_path.exists() else {}
         key = os.environ.get(env_key_name) or env.get(env_key_name)
         return str(key or "").strip()
@@ -397,10 +399,24 @@ class SettingsManager:
             return deepcopy(default)
 
     def _save_json_atomic(self, path: Path, value: Any) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(path.suffix + ".tmp")
-        tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-        tmp.replace(path)
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+            try:
+                tmp.replace(path)
+            except OSError:
+                path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+                if tmp.exists():
+                    try:
+                        tmp.unlink()
+                    except OSError:
+                        pass
+        except Exception:
+            try:
+                path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+            except Exception:
+                pass
 
     def _backup_broken(self, path: Path) -> None:
         if not path.exists():

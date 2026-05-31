@@ -84,6 +84,17 @@ git ls-files .env data assets/private models backups dist build
 - Confirm relationship reset requires confirmation and creates a backup.
 - Confirm diagnostics can run without crashing the desktop pet.
 
+## Behavior Engine Checks
+
+- Press and hold to drag the pet. Confirm it enters the dragging state and switches to the "drag" animation.
+- Release the pet close to the screen edges (within 24px). Confirm it snaps smoothly.
+- Release the pet in the middle of the screen. Confirm it remains there.
+- Verify snapping returns and keeps at least 32px of the pet visible when dragged off-screen.
+- Click once. Confirm "clicked" animation triggers.
+- Double-click. Confirm "happy" animation and custom line triggers.
+- Verify `data/window_state.json` is created/updated on exit and drag release.
+- Delete `data/window_state.json` and ensure startup proceeds gracefully.
+
 ## Sensitive File Checks
 
 These must not be tracked:

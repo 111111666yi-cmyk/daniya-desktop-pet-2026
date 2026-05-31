@@ -19,7 +19,7 @@ def test_match_wont_leave_first_with_effect():
     assert result["matched"] is True
     assert result["id"] == "wont_leave_first"
     assert result["response"] == "......随便你。反正我也懒得赶。"
-    assert result["action"] == "soft_idle"
+    assert result["action"] == "talk"
     assert result["relationship_effect"]["trust"] == 2
 
 

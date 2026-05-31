@@ -23,41 +23,56 @@ DEFAULT_MANIFEST: dict[str, Any] = {
 }
 
 class ActionManifest:
-    def __init__(self) -> None:
+    def __init__(self, base_dir: Path | None = None) -> None:
         self.data = DEFAULT_MANIFEST.copy()
-        self.base_dir = resource_path("assets", "placeholder")
-        self.load_manifest()
-        
-    def load_manifest(self) -> None:
-        private_path = resource_path("assets", "private", "manifest.json")
-        placeholder_path = resource_path("assets", "placeholder", "manifest.json")
-        
-        target_path = None
-        if private_path.exists():
-            target_path = private_path
-            self.base_dir = resource_path("assets", "private")
-        elif placeholder_path.exists():
-            target_path = placeholder_path
+        if base_dir is not None and isinstance(base_dir, (Path, str)):
+            self.base_dir = Path(base_dir)
+        else:
             self.base_dir = resource_path("assets", "placeholder")
-            
-        if target_path:
+        self.load_manifest(self.base_dir)
+
+    def load_manifest(self, base_dir: Path | None = None) -> None:
+        if base_dir is not None and isinstance(base_dir, (Path, str)):
+            self.base_dir = Path(base_dir)
+
+        content = None
+        # 1. Try to load from active base_dir
+        manifest_path = self.base_dir / "manifest.json"
+        if manifest_path.exists():
             try:
-                content = json.loads(target_path.read_text(encoding="utf-8"))
-                if "actions" in content:
-                    self.data = content
+                content = json.loads(manifest_path.read_text(encoding="utf-8"))
             except Exception as e:
-                logger.error(f"Failed to load manifest {target_path}: {e}")
-                
+                logger.error(f"Failed to load manifest {manifest_path}: {e}")
+
+        # 2. Try template manifest
+        if not content or "actions" not in content:
+            from .utils import runtime_root, bundled_root
+            template_assets = runtime_root() / "characters" / "template" / "assets"
+            if not template_assets.exists():
+                template_assets = bundled_root() / "characters" / "template" / "assets"
+            template_manifest = template_assets / "manifest.json"
+            if template_manifest.exists():
+                try:
+                    content = json.loads(template_manifest.read_text(encoding="utf-8"))
+                except Exception as e:
+                    logger.error(f"Failed to load template manifest: {e}")
+
+        # 3. Use default manifest if all else fails
+        if content and "actions" in content:
+            self.data = content
+        else:
+            self.data = DEFAULT_MANIFEST.copy()
+
         self.validate_manifest()
 
     def validate_manifest(self) -> None:
         if "actions" not in self.data or not isinstance(self.data["actions"], dict):
             self.data["actions"] = {}
-            
+
         for action_name, default_config in DEFAULT_MANIFEST["actions"].items():
             if action_name not in self.data["actions"]:
                 self.data["actions"][action_name] = default_config.copy()
-            
+
         for action_name, action_config in self.data["actions"].items():
             if not isinstance(action_config, dict):
                 continue
@@ -73,11 +88,57 @@ class ActionManifest:
     def get_action_config(self, action_name: str) -> dict[str, Any] | None:
         return self.data.get("actions", {}).get(action_name)
 
+    def _find_fallback_image(self, frame: str) -> Path:
+        from .utils import runtime_root, bundled_root
+        template_assets = runtime_root() / "characters" / "template" / "assets"
+        if not template_assets.exists():
+            template_assets = bundled_root() / "characters" / "template" / "assets"
+
+        placeholder_dir = runtime_root() / "assets" / "placeholder"
+        if not placeholder_dir.exists():
+            placeholder_dir = bundled_root() / "assets" / "placeholder"
+
+        is_normal2 = "normal2" in frame or any(k in frame.lower() for k in ("clicked", "drag", "happy", "remind", "talk", "speaking"))
+        fallback_name = "normal2.png" if is_normal2 else "normal1.png"
+
+        # 1. base_dir / frame
+        p = self.base_dir / frame
+        if p.exists():
+            return p
+
+        # 2. template_assets / frame
+        p = template_assets / frame
+        if p.exists():
+            return p
+
+        # 3. template_assets / fallback_name
+        p = template_assets / fallback_name
+        if p.exists():
+            return p
+
+        # 4. placeholder_dir / frame
+        p = placeholder_dir / frame
+        if p.exists():
+            return p
+
+        # 5. placeholder_dir / fallback_name
+        p = placeholder_dir / fallback_name
+        if p.exists():
+            return p
+
+        # 6. placeholder_dir / "normal1.png"
+        p = placeholder_dir / "normal1.png"
+        if p.exists():
+            return p
+
+        return self.base_dir / frame
+
     def _verify_frames(self, frames: list[str]) -> list[str]:
         valid_frames = []
         for frame in frames:
-            if (self.base_dir / frame).exists():
-                valid_frames.append(frame)
+            resolved = self._find_fallback_image(frame)
+            if resolved.exists():
+                valid_frames.append(str(resolved))
         return valid_frames
 
     def get_frames(self, action_name: str) -> list[str]:
@@ -93,13 +154,14 @@ class ActionManifest:
     def get_fallback_frames(self, action_name: str) -> list[str]:
         config = self.get_action_config(action_name)
         if not config:
-            # Absolute fallback
-            return ["normal1.png"]
-        
+            placeholder = resource_path("assets", "placeholder", "normal1.png")
+            return [str(placeholder)]
+
         fallback_frames = config.get("fallback", ["normal1.png"])
         valid_frames = self._verify_frames(fallback_frames)
         if not valid_frames:
-            return ["normal1.png"]
+            placeholder = resource_path("assets", "placeholder", "normal1.png")
+            return [str(placeholder)]
         return valid_frames
 
     def available_actions(self) -> list[str]:

@@ -45,11 +45,11 @@ def test_hug_negative_lore_and_physical_acceptance_paths():
 
     hug = engine.handle_user_message(zh(0x62b1, 0x62b1))
     assert hug.response == zh(0x2e, 0x2e, 0x2e, 0x2e, 0x2e, 0x2e, 0x70e6, 0x6b7b, 0x4e86, 0x3002, 0x8fc7, 0x6765, 0x3002)
-    assert hug.action == "close_idle"
-    assert hug.fallback_chain[:3] == ["close_idle", "happy", "idle"]
+    assert hug.action == "happy"
+    assert hug.fallback_chain[:3] == ["happy", "normal2", "idle"]
 
     tired = engine.handle_user_message(zh(0x6211, 0x597d, 0x7d2f))
-    assert tired.action in {"soft_idle", "idle"}
+    assert tired.action == "remind"
     assert len(tired.response) <= 100
 
     birthday = engine.handle_user_message(zh(0x751f, 0x65e5))

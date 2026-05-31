@@ -9,6 +9,8 @@ data/daniya_relation/
 
 # Private or generated assets
 assets/private/
+characters/*/assets/
+!characters/template/assets/
 models/
 backups/
 output/
@@ -23,6 +25,7 @@ build/
 
 # User-specific config (may contain real API settings)
 config/api_config.json
+config/multimodal_config.json
 
 # Python
 .venv/
@@ -47,3 +50,6 @@ skills-lock.json
 
 # Scratch / temporary work
 scratch/
+docs/v0.51_patch_audit/
+run_verify.py
+drag_debug.log

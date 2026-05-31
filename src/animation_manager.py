@@ -9,14 +9,12 @@ from .state_manager import StateManager
 if TYPE_CHECKING:
     from .asset_manager import AssetManager
     from .pet_window import PetWindow
-
 class AnimationManager(QObject):
     def __init__(self, window: "PetWindow", asset_manager: "AssetManager") -> None:
         super().__init__(window)
         self.window = window
         self.asset_manager = asset_manager
-        
-        self.manifest = ActionManifest()
+        self.manifest = ActionManifest(self.asset_manager.active_asset_dir())
         self.state_manager = StateManager()
         
         self.current_action = "idle"

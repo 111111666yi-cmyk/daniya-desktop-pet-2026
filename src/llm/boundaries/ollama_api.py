@@ -43,7 +43,11 @@ def chat(
 
     try:
         resp = _retry_request(_call)
-    except Exception:
+    except BoundaryError as exc:
+        if exc.__cause__ and isinstance(exc.__cause__, requests.HTTPError):
+            status = exc.__cause__.response.status_code if exc.__cause__.response is not None else 0
+            if status == 404:
+                raise ModelNotFoundError(f"Model '{model}' not found on Ollama server") from exc
         raise
 
     try:

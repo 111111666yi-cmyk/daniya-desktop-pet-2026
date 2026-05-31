@@ -31,7 +31,7 @@ def test_hug_event_updates_relationship_and_memory():
 def test_negative_mood_event_updates_state_and_short_response():
     pack = load_character("daniya")
     result = DialogueEngine(pack, model_client=lambda prompt: "你一定很难过吧，我理解你。").handle_user_message("我好累")
-    assert result.event_id == "user_negative_mood"
+    assert result.special_response_id == "tired_remind"
     assert result.state["empathy_load"] == 85
     assert result.state["stay_tendency"] == 91
     assert len(result.response) <= 100

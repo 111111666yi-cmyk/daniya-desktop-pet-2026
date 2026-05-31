@@ -4,6 +4,38 @@
 
 ---
 
+## v0.55.2 (2026-05-31) — 工程审计补丁
+
+- 修复 `reminder_due` 事件触发词过宽的问题，普通“提醒我……”请求不再被误判为提醒到期事件。
+- 为 `/pet status`、`/pet reload`、`/pet event`、`/pet sleep`、`/pet wake` 增加明确的本地命令回应，避免隐藏命令落到“推进到下一周”的默认文案。
+- 收紧 `pack.bat` 的角色包打包范围：Daniya 只发布 YAML/lore 文本，公开图片资源只来自 template/placeholder，避免被 Git 忽略的角色素材误入 release。
+- 同步 `src/version.py`、示例配置和打包包名到 `v0.55.2`。
+
+---
+
+## v0.55.1 (2026-05-31) — 拖动与贴边锁死修复 (Bugfix Patch)
+
+### 交互层逻辑排斥架构与物理捕获
+
+- **移除轮询监听器**：彻底移除了 `_tick_global_click` 计时器中每 80ms 轮询 `GetAsyncKeyState(0x01)` 来强行释放拖拽的底层设计。改用 Qt 的 `grabMouse()` 独占事件响应机制，由 Qt 保证 `mouseReleaseEvent` 一定在释放时投递到 `PetAvatar`。
+- **用户交互防护拦截 (Interacting Blocker)**：在吸边计时器 `_tick_edge_peek` 中引入了精确的拦截器。当以下任一状态发生时，均屏蔽吸边动作：
+  - 用户按下鼠标且未松开（由 `InteractionDetector.is_pressed` 物理捕获跟踪）
+  - 用户正在拖拽（`is_dragging`）
+  - 弹性吸附动画正在运行（`SnapController._anim` 状态为 `Running`）
+  - 右键菜单处于打开状态
+- **信号总线修复**：修复了 `behavior_engine.py` 直接调用 PySide6 信号对象的崩溃。在 mock 和原生运行环境下兼容通过 `.emit()` 或直接调用的方法。
+- **真机模拟验证框架**：创建了 `scratch/physical_mouse_simulation.py` 通过 Windows user32 + Qt 事件投递实现 100% 确定性的真实鼠标拖曳模拟验证。
+
+## v0.55 (2026-05-30) — 行为与交互引擎架构 (Behavior Engine)
+
+### 引入 PetBehaviorEngine (解耦核心交互逻辑)
+
+- **InteractionDetector**：负责分析单击、双击、长按和拖动状态，并对点击和拖拽进行物理阈值隔离（8 像素门槛），彻底解决“点按误触拖拽”导致的界面抖动。
+- **SnapController**：接管贴边吸附和弹性回弹属性动画 (`QPropertyAnimation`)，使用配置保存与读取状态文件，防止关闭软件时数据丢失。
+- **IdleBehavior**：轻量级闲置行为调度，90s 闲置后触发微小位移或闲置气泡台词，引入冷却时间避免打扰。
+
+---
+
 ## v0.49.1 (2026-05-30) — 架构巩固
 
 ### 新增：ProviderRegistry（变速箱）

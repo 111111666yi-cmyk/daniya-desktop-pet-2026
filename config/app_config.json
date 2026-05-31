@@ -1,8 +1,9 @@
 {
-  "version": "v0.49",
+  "version": "v0.55.2",
+  "current_character": "daniya",
   "window": {
-    "start_x": 272,
-    "start_y": 352,
+    "start_x": 352,
+    "start_y": 26,
     "always_on_top": true,
     "show_input": true
   },
@@ -47,8 +48,8 @@
     "context_limit": 8,
     "temperature": 0.8,
     "max_tokens": 360,
-    "fallback_reply": "达妮娅现在还没有连上大脑，但我已经在这里啦！",
-    "api_error_fallback_reply": "达妮娅刚刚走神了一下……但我还在哦。"
+    "fallback_reply": "……达妮娅现在还没有连上大脑，但我已经在这里哦！",
+    "api_error_fallback_reply": "……达妮娅刚刚走神了一下，但我还在哦。"
   },
   "api": {
     "base_url": "https://api.deepseek.com",
@@ -70,5 +71,14 @@
   "idle_chat_minutes": 10,
   "day_night_enabled": true,
   "night_start_hour": 23,
-  "night_end_hour": 7
+  "night_end_hour": 7,
+  "behavior_enabled": true,
+  "snap_to_edge_enabled": true,
+  "snap_margin_px": 24,
+  "keep_on_screen_enabled": true,
+  "drag_return_enabled": true,
+  "idle_behavior_enabled": true,
+  "idle_behavior_seconds": 90,
+  "double_click_enabled": true,
+  "long_press_ms": 600
 }
