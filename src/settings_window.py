@@ -1125,6 +1125,14 @@ class SettingsWindow(QDialog):
         data_layout.addWidget(self.data_text)
         layout.addWidget(data_group)
 
+        onboarding_group = QGroupBox("首次启动向导")
+        onboarding_layout = QVBoxLayout(onboarding_group)
+        onboarding_layout.addWidget(QLabel("需要重新查看新手流程、API 配置或素材放置说明时，可以重新打开向导。"))
+        open_wizard = QPushButton("重新打开首次启动向导"); open_wizard.setIcon(get_icon("info"))
+        open_wizard.clicked.connect(self._open_first_run_wizard)
+        onboarding_layout.addWidget(open_wizard, alignment=Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(onboarding_group)
+
         # 使用帮助（可折叠）
         help_group = QGroupBox("使用帮助")
         help_layout = QVBoxLayout(help_group)
@@ -1339,6 +1347,22 @@ class SettingsWindow(QDialog):
         self.diagnostics_worker.finished_with_text.connect(self.diagnostics_text.setPlainText)
         self.diagnostics_worker.finished.connect(self.diagnostics_worker.deleteLater)
         self.diagnostics_worker.start()
+
+    def _open_first_run_wizard(self) -> None:
+        from .first_run_wizard import FirstRunWizard
+        from .setup_state_manager import SetupStateManager
+
+        wizard = FirstRunWizard(SetupStateManager(root=self.settings_manager.root))
+        wizard.exec()
+        self.api = self.settings_manager.load_api_config()
+        active = self.api.get("active_provider", "deepseek")
+        active_display = next((display for display, key in self._provider_display_map.items() if key == active), None)
+        if active_display:
+            self.provider_input.setCurrentText(active_display)
+        self.local_mode_input.setChecked(bool(self.api.get("local_mode", False)))
+        self.api_key_input.clear()
+        self._on_provider_changed(self.provider_input.currentText())
+        self._refresh_active_status()
 
     def _show_api_help(self) -> None:
         """弹出云端 API 配置帮助窗口。分三区：预设 Provider / CC Switch / 自部署代理。"""

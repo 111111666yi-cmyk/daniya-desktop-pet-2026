@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.58 (2026-05-31) - First-Run Onboarding Flow
+
+- Reworked the existing first-run dialog into a five-page onboarding guide covering welcome, API setup, private assets, character packs, and final startup.
+- Moved the canonical completion marker to `data/first_run_done.json` while keeping old `config/setup_config.json` compatibility.
+- Added a Settings Center entry to reopen the first-run guide without clearing existing settings.
+- Removed future-feature onboarding toggles for TTS, image, and video so v0.58 stays within the no-new-capability freeze rules.
+
 ## v0.57 (2026-05-31) - Release Freeze QA Checklist
 
 - Added the manual QA matrix for startup, GUI, API, Daniya character behavior, hidden commands, behavior engine states, packaging, and release smoke checks.

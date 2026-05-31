@@ -128,6 +128,14 @@ Source/development mode stores runtime data under `data/`. Packaged Windows rele
 
 `data/` and `data/daniya_relation/` are ignored by Git. Do not commit real user relationship state or chat history. Packaged release runtime data under `%APPDATA%\DaniyaSummerPet\` is outside the repository.
 
+## First-Run Wizard
+
+v0.58 adds a five-page first-run guide for welcome, API setup, private assets, character packs, and final startup. Users can skip API and use local fallback, or save a provider/base URL/model/API Key to the local `.env`.
+
+The completion marker is stored in `data/first_run_done.json` in source mode and `%APPDATA%\DaniyaSummerPet\data\first_run_done.json` in the Windows package. Open Settings Center -> System -> Reopen first-run wizard to view it again without clearing existing settings.
+
+See `docs/first_run_guide.md` and `docs/troubleshooting.md`.
+
 ## Development
 
 Common checks:
@@ -158,6 +166,7 @@ Read:
 - v0.54: dialogue router and lore triggers.
 - v0.55: behavior engine (dragging, snapping, idle behavior).
 - v0.55.3: current AppData runtime patch.
+- v0.58: first-run onboarding guide.
 
 ## License
 
