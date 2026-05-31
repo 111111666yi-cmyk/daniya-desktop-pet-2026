@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.57 (2026-05-31) - Release Freeze QA Checklist
+
+- Added the manual QA matrix for startup, GUI, API, Daniya character behavior, hidden commands, behavior engine states, packaging, and release smoke checks.
+- Added the release freeze checklist that blocks future-stage feature work and makes P0/P1/P2 handling explicit before v0.58.
+- Reaffirmed that manual acceptance must use temporary runtime state or documented human evidence instead of destructive scripts that touch real `data/`.
+
 ## v0.56 (2026-05-31) - Runtime Data Safety Hardening
 
 - Tightened destructive-test policy so `backups/` is also treated as protected runtime state.
