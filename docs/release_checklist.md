@@ -57,10 +57,16 @@ python tools\check_config_templates.py
 python tools\check_docs_links.py
 pytest -q
 pack.bat
-python tools\check_release_zip.py path\to\release.zip
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.60-win-x64.zip
 ```
 
 The GitHub `Release Check` workflow performs the package build and zip scan manually via `workflow_dispatch`. It must not require real API keys, private assets, or `characters/test_dummy/`.
+
+## v0.60 Target
+
+- Release name: `DaniyaSummerPet v0.60 Stable Preview`
+- Zip name: `DaniyaSummerPet-v0.60-win-x64.zip`
+- Do not create or push the `v0.60` tag until the final local report is accepted.
 
 ## Allowed Public Files
 

@@ -64,7 +64,7 @@ python tools\check_docs_links.py
 Release zip scan:
 
 ```bat
-python tools\check_release_zip.py release\DaniyaSummerPet-v0.55.3-win-x64.zip
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.60-win-x64.zip
 ```
 
 Startup:

@@ -5,8 +5,8 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 set "APP_NAME=DaniyaSummerPet"
-set "VERSION=v0.55.3"
-set "PACKAGE_NAME=DaniyaSummerPet-v0.55.3-win-x64"
+set "VERSION=v0.60"
+set "PACKAGE_NAME=DaniyaSummerPet-v0.60-win-x64"
 set "PYTHON_EXE=python"
 set "PKG_STAGING=%TEMP%\%APP_NAME%_package_%RANDOM%_%RANDOM%"
 set "SAFE_CONFIG=%PKG_STAGING%\config"

@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.60 Stable Preview
+
+- Consolidates the v0.56-v0.60 hardening series into a stable public preview baseline.
+- Includes runtime data safety policy and backup/restore tooling, safer release packaging, first-run onboarding, manual QA freeze checklists, local automated checks, and GitHub Actions preparation.
+- Keeps known non-blocking issues documented instead of changing state machines or Timer logic without reproduction evidence.
+- Prepares the final Windows package name `DaniyaSummerPet-v0.60-win-x64.zip`.
+
 ## v0.59 (2026-05-31) - Automated Checks and CI Preparation
 
 - Added local project checks for sensitive tracked paths, release zip safety, required character packs, config templates, and local documentation links.

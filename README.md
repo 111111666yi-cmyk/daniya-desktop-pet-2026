@@ -1,5 +1,7 @@
 # Daniya Summer Desktop Pet · 达妮娅夏日桌宠
 
+Current release track: **DaniyaSummerPet v0.60 Stable Preview**
+
 达妮娅是一款基于 Python + PySide6 的开源桌宠应用。提供透明置顶窗口、拖拽移动、右键菜单、输入框对话、气泡消息、打字机效果、云端/本地 AI 对话、角色关系引擎、设置中心等功能。
 
 这是一个非官方同人作品。本仓库不分发官方游戏资源、私有角色素材、用户关系数据或 API Key。
@@ -154,7 +156,7 @@ python tools\check_sensitive_files.py
 python tools\check_character_packs.py
 python tools\check_config_templates.py
 python tools\check_docs_links.py
-python tools\check_release_zip.py release\DaniyaSummerPet-v0.55.3-win-x64.zip
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.60-win-x64.zip
 ```
 
 Use GitHub Issues for reproducible bugs and Pull Requests for focused, stage-scoped changes. Do not include `.env`, runtime `data/`, private assets, model files, or `characters/test_dummy/`.
@@ -177,9 +179,10 @@ Read:
 - v0.49: official open source release.
 - v0.54: dialogue router and lore triggers.
 - v0.55: behavior engine (dragging, snapping, idle behavior).
-- v0.55.3: current AppData runtime patch.
+- v0.55.3: AppData runtime patch.
 - v0.58: first-run onboarding guide.
 - v0.59: automated local checks and CI preparation.
+- v0.60: Stable Preview release preparation.
 
 ## License
 
