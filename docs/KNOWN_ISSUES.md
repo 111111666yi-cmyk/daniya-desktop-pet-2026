@@ -55,3 +55,4 @@
 - 第二阶段临时自动化脚本曾误删 ignored `data/` 与 `config/api_config.json`；已重新生成安全默认文件。
 - 该副作用不影响 Git 和发布包，但旧本地运行态历史无法从 Git 恢复。
 - v0.56 已新增 `docs/DESTRUCTIVE_TEST_POLICY.md`、`tools/backup_runtime_state.py`、`tools/restore_runtime_state.py`，后续缺文件/坏文件测试必须使用备份恢复或临时沙盒。
+- v0.56 复核后，restore 必须显式传入 `backups/runtime_backup_YYYYMMDD_HHMMSS/`，并在恢复前创建二次备份；`models/` 只备份小型 metadata，不复制大模型本体。

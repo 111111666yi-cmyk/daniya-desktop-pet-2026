@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.56 (2026-05-31) - Runtime Data Safety Hardening
+
+- Tightened destructive-test policy so `backups/` is also treated as protected runtime state.
+- Aligned runtime backup/restore tooling with the v0.56 policy: explicit backup directories, `BACKUP_MANIFEST.json`, pre-restore copies, and no automatic restore from an implicit latest backup.
+- Restricted `models/` backups to small metadata files and skipped model body extensions such as `.gguf`, `.safetensors`, `.bin`, `.pt`, and `.onnx`.
+- Verified backup/restore behavior in a temporary sandbox without touching real ignored user runtime data.
+
 ## v0.55.3 (2026-05-31) - AppData Runtime Patch
 
 - Packaged Windows exe now stores runtime state in `%APPDATA%\DaniyaSummerPet\` instead of the exe directory.

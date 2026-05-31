@@ -222,3 +222,12 @@ v0.56 防复发：新增 `docs/DESTRUCTIVE_TEST_POLICY.md`、`tools/backup_runti
 结果：exe 进程 5 秒存活；重打包后 release/zip 干净
 发现：直接运行 release exe 会在 release 目录生成运行态文件，因此最终安全扫描必须在重打包后执行
 下一步：更新报告与 CHANGELOG
+
+## Step 25
+
+时间：2026-05-31 23:07+
+操作：v0.56 数据保护机制复核与补强
+命令：`python tools\backup_runtime_state.py --project-root scratch\v056_backup_restore_sandbox`; `python tools\restore_runtime_state.py --project-root scratch\v056_backup_restore_sandbox <backup-dir>`
+结果：备份目录生成于 `backups/runtime_backup_YYYYMMDD_HHMMSS/`；`BACKUP_MANIFEST.json` 存在；restore 前创建 `backups/pre_restore_YYYYMMDD_HHMMSS/` 二次备份；`.gguf` 模型本体被跳过，小型模型 metadata 被备份。
+发现：测试仅在 `scratch/` 临时沙盒执行，未触碰真实 `.env`、`data/`、`assets/private/` 或 `models/`。
+下一步：执行 v0.56 正式回归、打包和 release 扫描。

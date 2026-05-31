@@ -13,16 +13,17 @@
 - `config/multimodal_config.json`
 - `assets/private/`
 - `models/`
+- `backups/`
 
 ## 必须使用的测试方式
 
 缺文件、坏 JSON/YAML、坏 window state、缺 manifest、缺角色包等测试只能使用以下方式之一：
 
 1. 在临时沙盒目录中复制最小 fixture 后测试。
-2. 先运行 `python tools/backup_runtime_state.py`，再执行测试，最后运行 `python tools/restore_runtime_state.py`。
+2. 先运行 `python tools/backup_runtime_state.py`，再执行测试，最后运行 `python tools/restore_runtime_state.py backups/runtime_backup_YYYYMMDD_HHMMSS`。
 3. 对单个文件使用临时改名，并在 `finally` 或等价清理逻辑中恢复。
 
-如果测试中断，必须能通过 `backups/runtime_state/` 下最近一次备份恢复。不要伪造恢复成功；恢复失败时必须报告失败路径和原因。
+如果测试中断，必须能通过明确指定的 `backups/runtime_backup_YYYYMMDD_HHMMSS/` 备份目录恢复。不要伪造恢复成功；恢复失败时必须报告失败路径和原因。
 
 ## 工具和发布包规则
 
