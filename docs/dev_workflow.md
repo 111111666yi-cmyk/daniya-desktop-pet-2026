@@ -52,6 +52,21 @@ Tests:
 pytest -q
 ```
 
+Automated project checks:
+
+```bat
+python tools\check_sensitive_files.py
+python tools\check_character_packs.py
+python tools\check_config_templates.py
+python tools\check_docs_links.py
+```
+
+Release zip scan:
+
+```bat
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.55.3-win-x64.zip
+```
+
 Startup:
 
 ```bat

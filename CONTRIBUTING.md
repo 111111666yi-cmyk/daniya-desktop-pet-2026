@@ -45,6 +45,21 @@ python tools\validate_character_pack.py characters\daniya
 pytest -q
 ```
 
+Before submitting, also run:
+
+```bat
+python tools\check_sensitive_files.py
+python tools\check_character_packs.py
+python tools\check_config_templates.py
+python tools\check_docs_links.py
+```
+
+When a release zip exists, scan it before sharing:
+
+```bat
+python tools\check_release_zip.py path\to\release.zip
+```
+
 For UI regressions, also start `run.bat` and confirm the pet appears, the right-click menu opens, settings center opens, bubbles render, and typewriter text still works.
 
 ## Adding A Character Pack
@@ -82,11 +97,15 @@ Missing actions must keep fallback behavior. Do not rewrite the v0.41 animation 
 - Preserve local fallback and asset fallback.
 - Avoid blocking work on the PySide6 main thread.
 - Never commit secrets, private assets, models, runtime data, or build output.
+- Do not depend on `characters/test_dummy/`; it is local-only.
 
 ## Pre-Submit Checklist
 
 - `python tools\validate_character_pack.py characters\daniya`
 - `pytest -q`
+- `python tools\check_sensitive_files.py`
+- `python tools\check_character_packs.py`
+- `python tools\check_config_templates.py`
 - `run.bat`
 - `git status --short`
 - Confirm no tracked `.env`, `data/`, `data/daniya_relation/`, `assets/private/`, `models/`, `backups/`, `dist/`, or `build/`.

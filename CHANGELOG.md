@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.59 (2026-05-31) - Automated Checks and CI Preparation
+
+- Added local project checks for sensitive tracked paths, release zip safety, required character packs, config templates, and local documentation links.
+- Added Windows GitHub Actions for test and manual release package verification without requiring real API keys, private assets, or `characters/test_dummy/`.
+- Added bug report, feature request, and pull request templates for safer open source collaboration.
+
 ## v0.58 (2026-05-31) - First-Run Onboarding Flow
 
 - Reworked the existing first-run dialog into a five-page onboarding guide covering welcome, API setup, private assets, character packs, and final startup.

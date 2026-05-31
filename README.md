@@ -147,6 +147,18 @@ run.bat
 git status --short
 ```
 
+Automated project checks:
+
+```bat
+python tools\check_sensitive_files.py
+python tools\check_character_packs.py
+python tools\check_config_templates.py
+python tools\check_docs_links.py
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.55.3-win-x64.zip
+```
+
+Use GitHub Issues for reproducible bugs and Pull Requests for focused, stage-scoped changes. Do not include `.env`, runtime `data/`, private assets, model files, or `characters/test_dummy/`.
+
 Read:
 
 - `AGENTS.md` for AI coding agent rules.
@@ -167,6 +179,7 @@ Read:
 - v0.55: behavior engine (dragging, snapping, idle behavior).
 - v0.55.3: current AppData runtime patch.
 - v0.58: first-run onboarding guide.
+- v0.59: automated local checks and CI preparation.
 
 ## License
 
