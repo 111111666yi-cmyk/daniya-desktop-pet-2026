@@ -65,7 +65,7 @@ def test_adapter_initializes_and_wraps_existing_chat_client_shape():
     assert adapter.character_pack.character_id == "daniya"
     assert chat_client.prompts
     assert result.response == "......谁高兴了。"
-    assert result.source == "model"
+    assert result.source == "api"
 
 
 def test_dialogue_engine_accepts_existing_chat_client_shape_directly():
@@ -74,4 +74,16 @@ def test_dialogue_engine_accepts_existing_chat_client_shape_directly():
     result = DialogueEngine(pack, model_client=chat_client).handle_user_message("普通聊天")
     assert chat_client.prompts
     assert result.response == "......谁高兴了。"
-    assert result.source == "model"
+    assert result.source == "api"
+
+
+def test_dialogue_engine_preserves_tuple_source_from_callable_model():
+    pack = load_character("daniya")
+
+    def model(prompt: str) -> tuple[str, str]:
+        return "我很开心你来找我。", "api"
+
+    result = DialogueEngine(pack, model_client=model).handle_user_message("普通聊天")
+
+    assert result.response == "......谁高兴了。"
+    assert result.source == "api"

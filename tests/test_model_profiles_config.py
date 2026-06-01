@@ -2,6 +2,7 @@ import json
 import pytest
 from pathlib import Path
 from src.settings_manager import SettingsManager
+from src.llm.provider_registry import Provider
 
 class FakeConfigManager:
     def __init__(self) -> None:
@@ -85,3 +86,27 @@ def test_model_profiles_sanitization_on_save(tmp_path):
     assert "api_key" not in custom_profile
     assert "api_key_masked" not in custom_profile
     assert custom_profile["id"] == "custom_profile"
+
+
+def test_mimo_openai_compatible_profile_uses_api_key_auth_header(tmp_path):
+    fake = FakeConfigManager()
+    manager = SettingsManager(fake, root=tmp_path)
+
+    manager.save_api_settings(
+        provider=Provider.OPENAI_COMPATIBLE,
+        base_url="https://api.xiaomimimo.com/v1",
+        model="mimo-v2.5",
+        api_key="fake-secret",
+        auth_header="bearer",
+        activate=True,
+    )
+
+    profiles = json.loads((tmp_path / "config" / "model_profiles.json").read_text(encoding="utf-8"))
+    profile = next(p for p in profiles["profiles"] if p["id"] == "openai_compatible_default")
+    assert profile["auth_header"] == "api-key"
+    assert profiles["active_text_profile_id"] == "openai_compatible_default"
+
+    api_config = json.loads((tmp_path / "config" / "api_config.json").read_text(encoding="utf-8"))
+    assert api_config["providers"][Provider.OPENAI_COMPATIBLE]["auth_header"] == "api-key"
+    assert "fake-secret" not in json.dumps(api_config)
+    assert "OPENAI_COMPATIBLE_API_KEY=fake-secret" in (tmp_path / ".env").read_text(encoding="utf-8")

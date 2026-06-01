@@ -174,6 +174,26 @@ class TestOpenAIAPI:
             headers = call_kwargs["headers"]
             assert headers["Authorization"] == "Bearer sk-test-key"
 
+    def test_chat_sends_api_key_auth_when_requested(self) -> None:
+        mock_resp = Mock(spec=requests.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "choices": [{"message": {"content": "ok"}}]
+        }
+
+        with patch("requests.post", return_value=mock_resp) as mock_post:
+            openai_api.chat(
+                [{"role": "user", "content": "Hi"}],
+                api_key="sk-test-key",
+                base_url="https://api.test.com/v1",
+                model="m",
+                auth_header="api-key",
+            )
+            call_kwargs = mock_post.call_args[1]
+            headers = call_kwargs["headers"]
+            assert headers["api-key"] == "sk-test-key"
+            assert "Authorization" not in headers
+
     def test_chat_skips_auth_when_key_empty(self) -> None:
         mock_resp = Mock(spec=requests.Response)
         mock_resp.status_code = 200

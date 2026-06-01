@@ -336,10 +336,13 @@ class DialogueEngine:
             return self._build_fallback_response(user_text), "local_fallback", ["model_client_missing"]
         try:
             if hasattr(self.model_client, "generate"):
-                return _coerce_model_text(self.model_client.generate(prompt)), "model", []
+                text, source = _coerce_model_result(self.model_client.generate(prompt), "model")
+                return text, source, []
             if hasattr(self.model_client, "reply"):
-                return _coerce_model_text(self.model_client.reply(prompt)), "model", []
-            return _coerce_model_text(self.model_client(prompt)), "model", []
+                text, source = _coerce_model_result(self.model_client.reply(prompt), "model")
+                return text, source, []
+            text, source = _coerce_model_result(self.model_client(prompt), "model")
+            return text, source, []
         except Exception as exc:
             return self._build_fallback_response(user_text), "local_fallback", [f"{exc.__class__.__name__}: {exc}"]
 
@@ -356,6 +359,15 @@ def _coerce_model_text(reply: Any) -> str:
     if isinstance(reply, tuple):
         return str(reply[0])
     return str(reply)
+
+
+def _coerce_model_result(reply: Any, default_source: str) -> tuple[str, str]:
+    if isinstance(reply, tuple):
+        text = str(reply[0])
+        if len(reply) >= 2 and str(reply[1]).strip():
+            return text, str(reply[1]).strip()
+        return text, default_source
+    return str(reply), default_source
 
 
 def _event_effect(event: dict[str, Any] | None) -> dict[str, int]:

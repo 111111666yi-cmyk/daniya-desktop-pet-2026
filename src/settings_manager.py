@@ -37,6 +37,7 @@ def _build_default_api_config() -> dict[str, Any]:
             "max_tokens": meta["max_tokens"],
             "temperature": 0.8,
             "api_key_env": meta["api_key_env"],
+            "auth_header": meta["auth_header"],
         }
     return config
 
@@ -63,6 +64,7 @@ def _build_default_model_profiles() -> dict[str, Any]:
             "base_url": meta["base_url"],
             "model": meta["default_model"],
             "api_key_env": meta["api_key_env"],
+            "auth_header": meta["auth_header"],
             "enabled": True,
             "capabilities": ["text"],
             "source": "cloud",
@@ -192,6 +194,7 @@ class SettingsManager:
         base_url: str,
         model: str,
         api_key: str | None = None,
+        auth_header: str | None = None,
         local_mode: bool = False,
         activate: bool = False,
     ) -> None:
@@ -206,12 +209,14 @@ class SettingsManager:
         prov_conf["model"] = model or default_meta["default_model"]
 
         env_key_name = ProviderMeta.get_api_key_env(provider)
+        auth_header_name = _resolve_auth_header(provider, base_url, auth_header)
 
         prov_conf["api_key_env"] = env_key_name
+        prov_conf["auth_header"] = auth_header_name
 
         self.save_api_config(config)
         self._sync_app_api(config)
-        self._sync_model_profiles(provider, base_url, model, env_key_name, activate=activate)
+        self._sync_model_profiles(provider, base_url, model, env_key_name, auth_header_name, activate=activate)
 
         if api_key is not None and env_key_name:
             self.write_env_values(
@@ -295,7 +300,15 @@ class SettingsManager:
         app_config.setdefault("api", {})["local_mode"] = bool(api_config.get("local_mode", False))
         self.save_app_config(app_config)
 
-    def _sync_model_profiles(self, provider: str, base_url: str, model: str, env_key_name: str, activate: bool = False) -> None:
+    def _sync_model_profiles(
+        self,
+        provider: str,
+        base_url: str,
+        model: str,
+        env_key_name: str,
+        auth_header: str,
+        activate: bool = False,
+    ) -> None:
         """将 api_config.json 的 Provider 同步到 model_profiles.json。
 
         仅更新/创建 profile 条目，不自动改变 active_text_profile_id，
@@ -311,6 +324,7 @@ class SettingsManager:
                 p["base_url"] = base_url
                 p["model"] = model
                 p["api_key_env"] = env_key_name
+                p["auth_header"] = auth_header
                 p["enabled"] = True
                 found = True
                 break
@@ -327,6 +341,7 @@ class SettingsManager:
                 "base_url": base_url,
                 "model": model,
                 "api_key_env": env_key_name,
+                "auth_header": auth_header,
                 "enabled": True,
                 "capabilities": ["text"],
                 "source": source,
@@ -447,3 +462,12 @@ def _quote_env(value: str) -> str:
     if any(ch.isspace() for ch in value):
         return json.dumps(value, ensure_ascii=False)
     return value
+
+
+def _resolve_auth_header(provider: str, base_url: str, auth_header: str | None = None) -> str:
+    normalized = ProviderMeta.normalize(provider)
+    if normalized == Provider.OPENAI_COMPATIBLE and "xiaomimimo.com" in base_url.lower():
+        return "api-key"
+    if auth_header and auth_header.strip():
+        return auth_header.strip()
+    return ProviderMeta.get_auth_header(normalized)

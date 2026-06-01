@@ -90,6 +90,7 @@ class ProviderManager:
         model = profile.get("model", "")
         base_url = str(profile.get("base_url", ""))
         api_key = self._get_api_key(profile.get("api_key_env", ""))
+        auth_header = self._auth_header_for_profile(profile)
 
         try:
             if provider == Provider.OLLAMA:
@@ -124,6 +125,7 @@ class ProviderManager:
                     api_key=api_key,
                     base_url=base_url,
                     model=model,
+                    auth_header=auth_header,
                     max_tokens=int(profile.get("max_tokens", 360)),
                     timeout=int(profile.get("timeout", 20)),
                 )
@@ -185,7 +187,7 @@ class ProviderManager:
                 return ok, "连接成功" if ok else "连接失败"
             else:
                 ok = openai_api.test_connection(
-                    api_key=api_key, base_url=base_url, model=model, timeout=8,
+                    api_key=api_key, base_url=base_url, model=model, auth_header=auth_header, timeout=8,
                 )
                 return ok, "连接成功" if ok else "连接失败"
         except Exception as e:
@@ -233,6 +235,13 @@ class ProviderManager:
         key = os.environ.get(env_key_name) or env.get(env_key_name)
         return str(key or "").strip()
 
+    def _auth_header_for_profile(self, profile: dict[str, Any]) -> str:
+        value = str(profile.get("auth_header", "")).strip()
+        if value:
+            return value
+        provider = str(profile.get("provider", ""))
+        return ProviderMeta.get_auth_header(provider)
+
 
 def _default_profiles() -> dict[str, Any]:
     meta = ProviderMeta.get(Provider.DEEPSEEK)
@@ -251,6 +260,7 @@ def _default_profiles() -> dict[str, Any]:
                 "base_url": meta["base_url"],
                 "model": meta["default_model"],
                 "api_key_env": meta["api_key_env"],
+                "auth_header": meta["auth_header"],
                 "enabled": True,
                 "capabilities": ["text"],
                 "source": "cloud",

@@ -219,6 +219,9 @@ class SettingsWindow(QDialog):
         self.provider_input.setCurrentText(active_display)
         self.base_url_input = QLineEdit(str(prov_conf.get("base_url", "")))
         self.model_input = QLineEdit(str(prov_conf.get("model", "")))
+        self.auth_header_input = QComboBox()
+        self.auth_header_input.addItems(["bearer", "api-key", "x-api-key", "none"])
+        self.auth_header_input.setCurrentText(str(prov_conf.get("auth_header") or ProviderMeta.get_auth_header(active)))
         self.api_key_input = QLineEdit()
         self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.api_key_input.setPlaceholderText(str(prov_conf.get("api_key_masked", "<empty>")))
@@ -241,6 +244,7 @@ class SettingsWindow(QDialog):
         form.addRow("Provider", self.provider_input)
         form.addRow("Base URL", self.base_url_input)
         form.addRow("Model", self.model_input)
+        form.addRow("Auth Header", self.auth_header_input)
         form.addRow("API Key", key_row)
         form.addRow("本地模式", self.local_mode_input)
         parent_layout.addLayout(form)
@@ -1186,6 +1190,7 @@ class SettingsWindow(QDialog):
         meta = ProviderMeta.get(key)
         self.base_url_input.setText(str(prov_conf.get("base_url") or meta.get("base_url", "")))
         self.model_input.setText(str(prov_conf.get("model") or meta.get("default_model", "")))
+        self.auth_header_input.setCurrentText(str(prov_conf.get("auth_header") or meta.get("auth_header", "bearer")))
         self.api_key_input.setPlaceholderText(str(prov_conf.get("api_key_masked", "<empty>")))
 
     def _save_api_settings(self) -> None:
@@ -1195,6 +1200,7 @@ class SettingsWindow(QDialog):
             base_url=self.base_url_input.text(),
             model=self.model_input.text(),
             api_key=api_key if api_key else None,
+            auth_header=self.auth_header_input.currentText(),
             local_mode=self.local_mode_input.isChecked(),
         )
         self.controller.chat_client.reload()
@@ -1719,6 +1725,7 @@ class SettingsWindow(QDialog):
         if reply == QMessageBox.StandardButton.Yes:
             self.base_url_input.setText(meta["base_url"])
             self.model_input.setText(meta["default_model"])
+            self.auth_header_input.setCurrentText(str(meta.get("auth_header", "bearer")))
             self.api_result.setText(f"{provider} 已重置为默认值（需点击保存和设为当前模型生效）。")
 
     def _clear_local_config(self) -> None:

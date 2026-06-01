@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from src.llm.provider_manager import ProviderManager
+from src.llm.provider_registry import Provider
 from src.settings_manager import SettingsManager
 
 
@@ -77,3 +78,52 @@ def test_chat_error_fallback_handling(setup_provider_manager, monkeypatch):
 
     assert pm.last_source == "local_fallback"
     assert "API Timeout" in pm.last_error
+
+
+def test_openai_compatible_api_key_auth_header_is_forwarded(setup_provider_manager, monkeypatch):
+    pm, tmp_path = setup_provider_manager
+    pm.env_path = tmp_path / ".env"
+    pm.env_path.write_text("OPENAI_COMPATIBLE_API_KEY=fake-secret\n", encoding="utf-8")
+    pm.profiles_data = {
+        "active_text_profile_id": "openai_compatible_default",
+        "profiles": [
+            {
+                "id": "openai_compatible_default",
+                "provider": Provider.OPENAI_COMPATIBLE,
+                "base_url": "https://api.xiaomimimo.com/v1",
+                "model": "mimo-v2.5",
+                "api_key_env": "OPENAI_COMPATIBLE_API_KEY",
+                "auth_header": "api-key",
+                "max_tokens": 16,
+                "timeout": 8,
+                "source": "cloud",
+            }
+        ],
+    }
+    captured = {}
+
+    def mock_chat(messages, api_key, base_url="", model="", auth_header="bearer", max_tokens=360, timeout=20):
+        captured.update(
+            {
+                "api_key": api_key,
+                "base_url": base_url,
+                "model": model,
+                "auth_header": auth_header,
+            }
+        )
+        return "OK"
+
+    import src.llm.boundaries.openai_api as openai_boundary
+
+    monkeypatch.setattr(openai_boundary, "chat", mock_chat)
+
+    response, source = pm.chat([{"role": "user", "content": "hello"}])
+
+    assert response == "OK"
+    assert source == "api"
+    assert captured == {
+        "api_key": "fake-secret",
+        "base_url": "https://api.xiaomimimo.com/v1",
+        "model": "mimo-v2.5",
+        "auth_header": "api-key",
+    }

@@ -75,7 +75,13 @@ class TestProviderMetaGetters:
     def test_api_key_env(self) -> None:
         assert ProviderMeta.get_api_key_env(Provider.DEEPSEEK) == "DEEPSEEK_API_KEY"
         assert ProviderMeta.get_api_key_env(Provider.OPENAI) == "OPENAI_API_KEY"
+        assert ProviderMeta.get_api_key_env(Provider.OPENAI_COMPATIBLE) == "OPENAI_COMPATIBLE_API_KEY"
         assert ProviderMeta.get_api_key_env(Provider.OLLAMA) == ""
+
+    def test_auth_header(self) -> None:
+        assert ProviderMeta.get_auth_header(Provider.DEEPSEEK) == "bearer"
+        assert ProviderMeta.get_auth_header(Provider.OPENAI_COMPATIBLE) == "bearer"
+        assert ProviderMeta.get_auth_header(Provider.OLLAMA) == ""
 
     def test_source_classification(self) -> None:
         assert ProviderMeta.is_cloud(Provider.DEEPSEEK) is True

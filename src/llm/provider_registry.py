@@ -91,6 +91,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "https://api.deepseek.com",
         "default_model": "deepseek-chat",
         "api_key_env": "DEEPSEEK_API_KEY",
+        "auth_header": "bearer",
         "api_style": "openai_compatible",
         "source": "cloud",
         "timeout": 30,
@@ -103,6 +104,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "https://api.openai.com/v1",
         "default_model": "gpt-4.1-mini",
         "api_key_env": "OPENAI_API_KEY",
+        "auth_header": "bearer",
         "api_style": "openai_compatible",
         "source": "cloud",
         "timeout": 30,
@@ -115,6 +117,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "https://api.anthropic.com/v1",
         "default_model": "claude-sonnet-4-6",
         "api_key_env": "ANTHROPIC_API_KEY",
+        "auth_header": "x-api-key",
         "api_style": "anthropic",
         "source": "cloud",
         "timeout": 30,
@@ -127,6 +130,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
         "default_model": "gemini-2.5-flash",
         "api_key_env": "GEMINI_API_KEY",
+        "auth_header": "bearer",
         "api_style": "openai_compatible",
         "source": "cloud",
         "timeout": 30,
@@ -139,6 +143,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "https://api.mistral.ai/v1",
         "default_model": "mistral-large-latest",
         "api_key_env": "MISTRAL_API_KEY",
+        "auth_header": "bearer",
         "api_style": "openai_compatible",
         "source": "cloud",
         "timeout": 30,
@@ -151,6 +156,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "https://api.groq.com/openai/v1",
         "default_model": "llama-4-maverick-17b-128e-instruct",
         "api_key_env": "GROQ_API_KEY",
+        "auth_header": "bearer",
         "api_style": "openai_compatible",
         "source": "cloud",
         "timeout": 30,
@@ -163,6 +169,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "",
         "default_model": "",
         "api_key_env": "CUSTOM_API_KEY",
+        "auth_header": "bearer",
         "api_style": "openai_compatible",
         "source": "cloud",
         "timeout": 30,
@@ -175,6 +182,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "http://localhost:11434",
         "default_model": "",
         "api_key_env": "",
+        "auth_header": "",
         "api_style": "ollama",
         "source": "local",
         "timeout": 20,
@@ -187,6 +195,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "http://localhost:1234/v1",
         "default_model": "local-model",
         "api_key_env": "",
+        "auth_header": "",
         "api_style": "openai_compatible",
         "source": "local",
         "timeout": 60,
@@ -199,6 +208,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "http://localhost:8080/v1",
         "default_model": "local-model",
         "api_key_env": "",
+        "auth_header": "",
         "api_style": "openai_compatible",
         "source": "local",
         "timeout": 60,
@@ -211,6 +221,7 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "http://localhost:1234/v1",
         "default_model": "local-model",
         "api_key_env": "OPENAI_COMPATIBLE_API_KEY",
+        "auth_header": "bearer",
         "api_style": "openai_compatible",
         "source": "local",
         "timeout": 60,
@@ -222,7 +233,8 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "display_name": "OpenAI-Compatible",
         "base_url": "https://...",
         "default_model": "",
-        "api_key_env": "",
+        "api_key_env": "OPENAI_COMPATIBLE_API_KEY",
+        "auth_header": "bearer",
         "api_style": "openai_compatible",
         "source": "cloud",
         "timeout": 20,
@@ -290,6 +302,10 @@ class ProviderMeta:
     @classmethod
     def get_api_key_env(cls, key: str) -> str:
         return str(cls.get(key).get("api_key_env", ""))
+
+    @classmethod
+    def get_auth_header(cls, key: str) -> str:
+        return str(cls.get(key).get("auth_header", "bearer"))
 
     @classmethod
     def get_api_style(cls, key: str) -> str:
