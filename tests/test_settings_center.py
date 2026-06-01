@@ -168,6 +168,44 @@ def test_open_settings_center_warning_includes_attribute_detail(monkeypatch):
     ]
 
 
+def test_open_settings_center_restores_existing_minimized_window(monkeypatch):
+    from PySide6.QtCore import Qt
+    from src import app as app_module
+
+    calls = []
+
+    class ExistingSettingsWindow:
+        def isMinimized(self):
+            return True
+
+        def showNormal(self):
+            calls.append("showNormal")
+
+        def show(self):
+            calls.append("show")
+
+        def windowState(self):
+            return Qt.WindowState.WindowMinimized
+
+        def setWindowState(self, _state):
+            calls.append("setWindowState")
+
+        def raise_(self):
+            calls.append("raise")
+
+        def activateWindow(self):
+            calls.append("activate")
+
+    monkeypatch.setattr(app_module, "SettingsWindow", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should reuse existing window")))
+
+    existing = ExistingSettingsWindow()
+    controller = SimpleNamespace(settings_window=existing, window=object())
+    app_module.AppController.open_settings_center(controller)
+
+    assert controller.settings_window is existing
+    assert calls == ["showNormal", "setWindowState", "raise", "activate"]
+
+
 def test_settings_window_opens_with_expected_tabs_in_subprocess(tmp_path):
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"

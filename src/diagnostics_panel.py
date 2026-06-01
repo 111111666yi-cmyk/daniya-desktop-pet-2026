@@ -23,8 +23,16 @@ def run_diagnostics(settings_manager: SettingsManager | None = None, asset_manag
     results.append(_item("角色包校验", "pass" if validation.ok else "fail", validation.error_summary() or "Character pack OK."))
 
     api_config = settings.load_api_config()
-    results.append(_item("API 配置", "pass", f"provider={api_config.get('provider')} model={api_config.get('model')} key={api_config.get('api_key_masked')}"))
-    if settings.current_api_key():
+    active_provider = api_config.get("active_provider", api_config.get("provider", ""))
+    provider_conf = api_config.get("providers", {}).get(active_provider, {})
+    env_key_name = provider_conf.get("api_key_env", "")
+    raw_key = settings.current_api_key(env_key_name)
+    results.append(_item(
+        "API 配置",
+        "pass",
+        f"provider={active_provider} model={provider_conf.get('model', api_config.get('model'))} key={provider_conf.get('api_key_masked')}",
+    ))
+    if raw_key or api_config.get("local_mode"):
         ok, message = settings.test_api_connection(timeout=5)
         results.append(_item("API 测试连接", "pass" if ok else "warn", message))
     else:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from PySide6.QtCore import QThread, Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
@@ -30,12 +31,28 @@ from .utils import ensure_dir, resource_path
 class _WizardApiTestWorker(QThread):
     finished_with_result = Signal(bool, str)
 
-    def __init__(self, settings_manager: SettingsManager) -> None:
+    def __init__(
+        self,
+        settings_manager: SettingsManager,
+        profile: dict[str, Any],
+        api_key_override: str | None = None,
+        activate_profile_id: str | None = None,
+    ) -> None:
         super().__init__()
         self.settings_manager = settings_manager
+        self.profile = profile
+        self.api_key_override = api_key_override
+        self.activate_profile_id = activate_profile_id
 
     def run(self) -> None:
-        ok, message = self.settings_manager.test_api_connection(timeout=8)
+        from .llm.provider_manager import ProviderManager
+
+        pm = ProviderManager(api_config=self.settings_manager.load_api_config())
+        pm.model_profiles_path = self.settings_manager.model_profiles_path
+        pm.env_path = self.settings_manager.env_path
+        ok, message = pm.test_profile_model(self.profile, api_key_override=self.api_key_override, timeout=8)
+        if ok and self.activate_profile_id:
+            ok, message = self.settings_manager.activate_text_profile(self.activate_profile_id)
         self.finished_with_result.emit(ok, message)
 
 
@@ -47,6 +64,7 @@ class FirstRunWizard(QDialog):
         self.setup_manager = setup_manager
         self.settings_manager = SettingsManager(root=setup_manager.root)
         self.api_worker: _WizardApiTestWorker | None = None
+        self._validated_api_fingerprint: tuple[str, str, str, str, bool] | None = None
         self.page_titles = ["欢迎", "API 设置", "素材说明", "角色包", "完成"]
 
         self.setWindowTitle("达妮娅首次启动向导")
@@ -232,7 +250,7 @@ class FirstRunWizard(QDialog):
     def _next(self) -> None:
         self.stack.setCurrentIndex(min(self.stack.count() - 1, self.stack.currentIndex() + 1))
 
-    def _save_current_api_settings(self) -> tuple[str, bool, bool]:
+    def _save_current_api_settings(self) -> tuple[str, bool, bool, str]:
         if self.skip_api_radio.isChecked():
             meta = ProviderMeta.get(Provider.DEEPSEEK)
             self.settings_manager.save_api_settings(
@@ -241,9 +259,9 @@ class FirstRunWizard(QDialog):
                 model=str(meta.get("default_model", "")),
                 api_key=None,
                 local_mode=True,
-                activate=True,
+                activate=False,
             )
-            return "local_fallback", False, True
+            return "local_fallback", False, True, ProviderMeta.make_profile_id(Provider.DEEPSEEK)
 
         provider = self.provider_combo.currentText()
         self.settings_manager.save_api_settings(
@@ -252,33 +270,77 @@ class FirstRunWizard(QDialog):
             model=self.model_input.text().strip(),
             api_key=self.api_key_input.text().strip() or None,
             local_mode=False,
-            activate=True,
+            activate=False,
         )
-        return "api_cloud", bool(self.api_key_input.text().strip()), False
+        return "api_cloud", bool(self.api_key_input.text().strip()), False, ProviderMeta.make_profile_id(provider)
 
     def _test_connection(self) -> None:
         if self.api_worker is not None and self.api_worker.isRunning():
             return
-        self._save_current_api_settings()
+        _, _, _, target_id = self._save_current_api_settings()
         self.api_result.setText("正在后台测试连接...")
-        self.api_worker = _WizardApiTestWorker(self.settings_manager)
+        self.api_worker = _WizardApiTestWorker(
+            self.settings_manager,
+            profile=self._cloud_profile_from_form(),
+            api_key_override=self.api_key_input.text().strip() or None,
+            activate_profile_id=target_id,
+        )
         self.api_worker.finished_with_result.connect(self._on_api_test_finished)
         self.api_worker.finished.connect(self.api_worker.deleteLater)
         self.api_worker.start()
 
     def _on_api_test_finished(self, ok: bool, message: str) -> None:
+        if ok:
+            self._validated_api_fingerprint = self._api_form_fingerprint()
         self.api_result.setText(("通过：" if ok else "失败：") + message)
 
     def _finish_setup(self) -> None:
-        run_mode, api_configured, skipped_api = self._save_current_api_settings()
+        if self.configure_api_radio.isChecked() and self._validated_api_fingerprint != self._api_form_fingerprint():
+            self.api_result.setText("请先测试连接；只有测试通过的配置才会设为当前模型。")
+            self.stack.setCurrentIndex(1)
+            return
+        run_mode, api_configured, skipped_api, _target_id = self._save_current_api_settings()
         self.setup_manager.mark_first_run_complete(run_mode, api_configured=api_configured, skipped_api=skipped_api)
         self.accept()
 
     def _skip_wizard(self) -> None:
         self.skip_api_radio.setChecked(True)
-        run_mode, api_configured, skipped_api = self._save_current_api_settings()
+        run_mode, api_configured, skipped_api, _target_id = self._save_current_api_settings()
         self.setup_manager.mark_first_run_complete(run_mode, api_configured=api_configured, skipped_api=skipped_api)
         self.accept()
+
+    def _cloud_profile_from_form(self) -> dict[str, Any]:
+        provider = self.provider_combo.currentText()
+        base_url = self.base_url_input.text().strip()
+        model = self.model_input.text().strip()
+        meta = ProviderMeta.get(provider)
+        auth_header = self.settings_manager.resolve_auth_header(provider, base_url)
+        return {
+            "id": ProviderMeta.make_profile_id(provider),
+            "name": f"{ProviderMeta.get_display_name(provider)} ({model or meta.get('default_model', '')})",
+            "type": "text",
+            "provider": provider,
+            "api_style": ProviderMeta.get_api_style(provider),
+            "base_url": base_url or str(meta.get("base_url", "")),
+            "model": model or str(meta.get("default_model", "")),
+            "api_key_env": ProviderMeta.get_api_key_env(provider),
+            "auth_header": auth_header,
+            "enabled": True,
+            "capabilities": ["text"],
+            "source": "cloud",
+            "timeout": ProviderMeta.get_timeout(provider),
+            "max_tokens": ProviderMeta.get_max_tokens(provider),
+        }
+
+    def _api_form_fingerprint(self) -> tuple[str, str, str, str, bool]:
+        profile = self._cloud_profile_from_form()
+        return (
+            str(profile.get("provider", "")),
+            str(profile.get("base_url", "")),
+            str(profile.get("model", "")),
+            str(profile.get("auth_header", "")),
+            bool(self.api_key_input.text().strip()),
+        )
 
     def _open_runtime_path(self, *parts: str, create: bool = False) -> None:
         path = self.setup_manager.root.joinpath(*parts)

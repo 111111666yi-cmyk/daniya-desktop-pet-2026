@@ -54,7 +54,17 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
         "temperature": 0.8,
         "max_tokens": 360,
         "fallback_reply": "……脑子没连上。不过，我还在就是了。",
+        "fallback_replies": [
+            "……脑子没连上。不过，我还在就是了。",
+            "……先用本地模式陪你一下，别急。",
+            "……云端还没接上，我先顶一会儿。",
+        ],
         "api_error_fallback_reply": "唔……刚刚没连上，我先用本地脑袋陪你。",
+        "api_error_fallback_replies": [
+            "唔……刚刚没连上，我先用本地脑袋陪你。",
+            "……API 没接稳，我先留在这里。",
+            "……那边暂时没回音，我先用本地回复撑住。",
+        ],
     },
     "api": {
         "base_url": "https://api.deepseek.com",

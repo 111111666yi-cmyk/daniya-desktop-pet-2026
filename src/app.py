@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import traceback
 
-from PySide6.QtCore import QObject, QThread, QTimer, Signal
+from PySide6.QtCore import QObject, QThread, QTimer, Qt, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from .affinity_manager import AffinityManager
@@ -410,7 +410,15 @@ class AppController(QObject):
 
     def open_settings_center(self) -> None:
         try:
-            if self.settings_window is not None and self.settings_window.isVisible():
+            if self.settings_window is not None:
+                if self.settings_window.isMinimized():
+                    self.settings_window.showNormal()
+                else:
+                    self.settings_window.show()
+                self.settings_window.setWindowState(
+                    (self.settings_window.windowState() & ~Qt.WindowState.WindowMinimized)
+                    | Qt.WindowState.WindowActive
+                )
                 self.settings_window.raise_()
                 self.settings_window.activateWindow()
                 return

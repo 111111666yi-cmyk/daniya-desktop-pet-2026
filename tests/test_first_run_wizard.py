@@ -44,10 +44,10 @@ def test_first_run_wizard_saves_api_key_to_runtime_env(tmp_path):
     wizard.configure_api_radio.setChecked(True)
     wizard.api_key_input.setText("secret-key-for-test")
 
-    wizard._finish_setup()
+    wizard._save_current_api_settings()
 
     assert (tmp_path / ".env").read_text(encoding="utf-8").find("secret-key-for-test") >= 0
-    assert manager.load_first_run_done()["api_configured"] is True
+    assert manager.load_first_run_done().get("completed") is not True
 
 
 def test_first_run_wizard_saves_openai_compatible_key_to_runtime_env(tmp_path):
@@ -60,12 +60,11 @@ def test_first_run_wizard_saves_openai_compatible_key_to_runtime_env(tmp_path):
     wizard.model_input.setText("glm-4.7")
     wizard.api_key_input.setText("openai-compatible-secret")
 
-    wizard._finish_setup()
+    wizard._save_current_api_settings()
 
     env_text = (tmp_path / ".env").read_text(encoding="utf-8")
     assert "OPENAI_COMPATIBLE_API_KEY=openai-compatible-secret" in env_text
-    assert manager.load_first_run_done()["run_mode"] == "api_cloud"
-    assert manager.load_first_run_done()["api_configured"] is True
+    assert manager.load_first_run_done().get("completed") is not True
 
 
 def test_first_run_wizard_saves_mimo_openai_compatible_auth_header(tmp_path):
@@ -78,10 +77,24 @@ def test_first_run_wizard_saves_mimo_openai_compatible_auth_header(tmp_path):
     wizard.model_input.setText("mimo-v2.5")
     wizard.api_key_input.setText("mimo-secret")
 
-    wizard._finish_setup()
+    wizard._save_current_api_settings()
 
     profiles = wizard.settings_manager.load_model_profiles()
-    active = next(p for p in profiles["profiles"] if p["id"] == profiles["active_text_profile_id"])
-    assert active["provider"] == Provider.OPENAI_COMPATIBLE
-    assert active["auth_header"] == "api-key"
+    profile = next(p for p in profiles["profiles"] if p["id"] == "openai_compatible_default")
+    assert profile["provider"] == Provider.OPENAI_COMPATIBLE
+    assert profile["auth_header"] == "api-key"
+    assert profiles["active_text_profile_id"] == "deepseek_default"
     assert "OPENAI_COMPATIBLE_API_KEY=mimo-secret" in (tmp_path / ".env").read_text(encoding="utf-8")
+
+
+def test_first_run_wizard_blocks_unvalidated_api_finish(tmp_path):
+    _app()
+    manager = SetupStateManager(root=tmp_path)
+    wizard = FirstRunWizard(manager)
+    wizard.configure_api_radio.setChecked(True)
+    wizard.api_key_input.setText("secret-key-for-test")
+
+    wizard._finish_setup()
+
+    assert manager.load_first_run_done().get("completed") is not True
+    assert "请先测试连接" in wizard.api_result.text()

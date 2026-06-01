@@ -19,6 +19,10 @@ API Key values are written to the local `.env` file and are not committed to Git
 
 Open the right-click menu, then open Settings Center. Use the model/API section to change providers, test connection, save settings, or clear the current Key.
 
+Saving a provider only stores or updates its profile. It does not make that provider the live chat model. A profile becomes live only after `Set as current model` / direct switch validates the target and writes `active_text_profile_id`.
+
+The text model switcher keeps recent profile choices so users can move between DeepSeek, MiMo, and local or imported models without overwriting the other saved profiles. Disabled profiles remain stored but cannot be activated until re-enabled. Text model switching is isolated from future `vision`, `tts`, and `image` active profile slots.
+
 ## OpenAI-Compatible Providers
 
 For providers such as Zhipu, Kimi, or Doubao, use the provider's OpenAI-compatible Base URL, model name, and API Key. Exact availability depends on the provider account, quota, and network.

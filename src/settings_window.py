@@ -40,12 +40,36 @@ if TYPE_CHECKING:
 class _ApiTestWorker(QThread):
     finished_with_result = Signal(bool, str)
 
-    def __init__(self, settings_manager: SettingsManager) -> None:
+    def __init__(
+        self,
+        settings_manager: SettingsManager,
+        profile: dict[str, Any] | None = None,
+        api_key_override: str | None = None,
+    ) -> None:
         super().__init__()
         self.settings_manager = settings_manager
+        self.profile = profile
+        self.api_key_override = api_key_override
 
     def run(self) -> None:
-        ok, message = self.settings_manager.test_api_connection()
+        if self.profile is None:
+            ok, message = self.settings_manager.test_api_connection()
+        else:
+            from .chat_client import mask_key
+            from .llm.provider_manager import ProviderManager
+
+            pm = ProviderManager(api_config=self.settings_manager.load_api_config())
+            pm.model_profiles_path = self.settings_manager.model_profiles_path
+            pm.env_path = self.settings_manager.env_path
+            ok, message = pm.test_profile_model(
+                self.profile,
+                api_key_override=self.api_key_override,
+            )
+            provider = str(self.profile.get("provider", ""))
+            env_key_name = str(self.profile.get("api_key_env", ""))
+            raw_key = self.api_key_override or self.settings_manager.current_api_key(env_key_name)
+            if provider not in (Provider.OLLAMA,) and raw_key:
+                message += f" (key={mask_key(raw_key)})"
         self.finished_with_result.emit(ok, message)
 
 
@@ -146,10 +170,16 @@ class SettingsWindow(QDialog):
         self.ollama_health_worker: _OllamaHealthWorker | None = None
         self.setWindowTitle("设置中心")
         self.resize(860, 640)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        self.setWindowFlags(
+            self.windowFlags()
+            | Qt.WindowType.Window
+            | Qt.WindowMinimizeButtonHint
+            | Qt.WindowMaximizeButtonHint
+        )
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
+        self.tabs.setTabPosition(QTabWidget.TabPosition.South)
         layout.addWidget(self.tabs)
 
         self._build_model_tab()
@@ -176,6 +206,7 @@ class SettingsWindow(QDialog):
         self.active_profile_status.setWordWrap(True)
         self._refresh_active_status()
         scroll_layout.addWidget(self.active_profile_status)
+        self._build_profile_switcher(scroll_layout)
 
         # 云端 API 配置
         api_group = QGroupBox("云端 API 配置 (Cloud Service)")
@@ -347,6 +378,83 @@ class SettingsWindow(QDialog):
         hint.setWordWrap(True); hint.setStyleSheet("color: gray; margin-top: 8px;")
         parent_layout.addWidget(hint)
         parent_layout.addStretch(1)
+
+    def _build_profile_switcher(self, parent_layout: Any) -> None:
+        group = QGroupBox("文本模型切换")
+        layout = QVBoxLayout(group)
+        row = QHBoxLayout()
+        self.profile_switch_combo = QComboBox()
+        self.profile_switch_combo.setMinimumWidth(360)
+        self.profile_switch_btn = QPushButton("直接切换"); self.profile_switch_btn.setIcon(get_icon("chip"))
+        self.profile_enable_btn = QPushButton("启用"); self.profile_enable_btn.setIcon(get_icon("save"))
+        self.profile_disable_btn = QPushButton("停用"); self.profile_disable_btn.setIcon(get_icon("settings"))
+        row.addWidget(self.profile_switch_combo, 1)
+        row.addWidget(self.profile_switch_btn)
+        row.addWidget(self.profile_enable_btn)
+        row.addWidget(self.profile_disable_btn)
+        layout.addLayout(row)
+
+        self.profile_switch_status = QLabel("历史与已保存模型可在这里直接切换。")
+        self.profile_switch_status.setWordWrap(True)
+        layout.addWidget(self.profile_switch_status)
+
+        self.profile_switch_btn.clicked.connect(self._switch_selected_text_profile)
+        self.profile_enable_btn.clicked.connect(lambda: self._set_selected_text_profile_enabled(True))
+        self.profile_disable_btn.clicked.connect(lambda: self._set_selected_text_profile_enabled(False))
+        parent_layout.addWidget(group)
+        self._refresh_profile_switcher()
+
+    def _refresh_profile_switcher(self) -> None:
+        combo = getattr(self, "profile_switch_combo", None)
+        if combo is None:
+            return
+        current_data = combo.currentData()
+        combo.blockSignals(True)
+        combo.clear()
+
+        profiles_data = self.settings_manager.load_model_profiles()
+        active_id = profiles_data.get("active_text_profile_id", "")
+        profiles = [p for p in profiles_data.get("profiles", []) if _profile_has_text(p)]
+        by_id = {str(p.get("id", "")): p for p in profiles if p.get("id")}
+        history = profiles_data.get("profile_history", {}).get("text", [])
+        ordered_ids: list[str] = []
+        for profile_id in [active_id] + [str(item) for item in history] + [str(p.get("id", "")) for p in profiles]:
+            if profile_id and profile_id in by_id and profile_id not in ordered_ids:
+                ordered_ids.append(profile_id)
+
+        for profile_id in ordered_ids:
+            profile = by_id[profile_id]
+            marker = "当前" if profile_id == active_id else ("停用" if profile.get("enabled", True) is False else "可用")
+            source = "本地" if profile.get("source") == "local" else "云端"
+            name = str(profile.get("name") or profile_id)
+            model = str(profile.get("model") or "")
+            combo.addItem(f"[{marker}] {source} · {name} · {model}", profile_id)
+
+        if current_data:
+            index = combo.findData(current_data)
+            if index >= 0:
+                combo.setCurrentIndex(index)
+        combo.blockSignals(False)
+
+    def _switch_selected_text_profile(self) -> None:
+        profile_id = self.profile_switch_combo.currentData()
+        if not profile_id:
+            self.profile_switch_status.setText("状态：没有可切换的文本模型。")
+            self.profile_switch_status.setStyleSheet("color: red;")
+            return
+        self._do_switch_profile(str(profile_id), str(profile_id), self.profile_switch_status)
+
+    def _set_selected_text_profile_enabled(self, enabled: bool) -> None:
+        profile_id = self.profile_switch_combo.currentData()
+        if not profile_id:
+            self.profile_switch_status.setText("状态：没有选中的文本模型。")
+            self.profile_switch_status.setStyleSheet("color: red;")
+            return
+        ok, msg = self.settings_manager.set_profile_enabled(str(profile_id), enabled, slot="text")
+        self._refresh_active_status()
+        self._refresh_profile_switcher()
+        self.profile_switch_status.setText(f"状态：{msg}")
+        self.profile_switch_status.setStyleSheet("color: green;" if ok else "color: red;")
 
     def _build_local_model_section(self, parent_layout: Any) -> None:
         from .model_catalog import ModelCatalog
@@ -775,7 +883,7 @@ class SettingsWindow(QDialog):
         else:
             self.local_status.setStyleSheet("color: red;")
 
-    def _save_local_model_settings(self) -> None:
+    def _save_local_model_settings(self) -> str | None:
         service = self.local_service_combo.currentText()
         url = self.local_base_url.text().strip()
         model = self.local_model_list.currentText().strip()
@@ -787,17 +895,18 @@ class SettingsWindow(QDialog):
 
         provider = ProviderMeta.service_label_to_key(service)
 
-        # 保存并激活为本地 profile
-        self.settings_manager.save_and_activate_local_model_profile(
+        self.settings_manager.save_local_model_profile(
             provider=provider,
             base_url=url,
             model=model,
             service_label=service,
         )
-        self.controller.chat_client.reload()
-        self.local_status.setText(f"状态：已保存并激活 {provider} → {model}  ✓ 已生效")
+        target_id = ProviderMeta.make_profile_id(provider, model)
+        self.local_status.setText(f"状态：已保存 {provider} → {model}；点击「设为当前模型」后才会验证并生效。")
         self.local_status.setStyleSheet("color: green;")
         self._refresh_active_status()
+        self._refresh_profile_switcher()
+        return target_id
 
     def _refresh_active_status(self) -> None:
         """刷新顶部「当前生效模型」状态标签。"""
@@ -827,37 +936,40 @@ class SettingsWindow(QDialog):
 
     def _activate_cloud_profile(self) -> None:
         """保存云端 API 设置并切换为当前生效模型。"""
-        self._save_api_settings()
+        target_id = self._save_api_settings(notify=False, reload_client=False)
         provider = self._current_provider_key()
-        target_id = ProviderMeta.make_profile_id(provider)
-        self._do_switch_profile(target_id, f"云端 {provider}")
+        self._do_switch_profile(target_id, f"云端 {provider}", self.api_result)
 
     def _activate_local_profile(self) -> None:
         """保存本地模型设置并切换为当前生效模型。"""
-        self._save_local_model_settings()
+        target_id = self._save_local_model_settings()
+        if not target_id:
+            return
 
         service = self.local_service_combo.currentText()
         model = self.local_model_list.currentText().strip()
-        provider = ProviderMeta.service_label_to_key(service)
 
-        target_id = ProviderMeta.make_profile_id(provider, model)
-        self._do_switch_profile(target_id, f"本地 {service} → {model}")
+        self._do_switch_profile(target_id, f"本地 {service} → {model}", self.local_status)
 
-    def _do_switch_profile(self, target_id: str, label: str) -> None:
+    def _do_switch_profile(self, target_id: str, label: str, status_label: QLabel | None = None) -> bool:
         """执行模型切换，失败时回退。"""
-        from .llm.provider_manager import ProviderManager
-        pm = ProviderManager(api_config=self.settings_manager.load_api_config())
-        ok, msg = pm.switch_active_profile(target_id)
+        target_status = status_label or self.local_status
+        ok, msg = self.settings_manager.activate_text_profile(target_id)
 
         if ok:
             self._refresh_active_status()
+            self._refresh_profile_switcher()
+            self.local_mode_input.setChecked(False)
             self.controller.chat_client.reload()
-            self.local_status.setText(f"状态：已切换至 {label}  ✓ 已生效")
-            self.local_status.setStyleSheet("color: green;")
+            target_status.setText(f"状态：已切换至 {label}  ✓ 已生效")
+            target_status.setStyleSheet("color: green;")
+            return True
         else:
             self._refresh_active_status()
-            self.local_status.setText(f"状态：切换失败 ({msg}) — 已回退到上一个可用模型")
-            self.local_status.setStyleSheet("color: red;")
+            self._refresh_profile_switcher()
+            target_status.setText(f"状态：切换失败 ({msg}) — 当前生效模型未改变")
+            target_status.setStyleSheet("color: red;")
+            return False
 
     def _build_pet_tab(self) -> None:
         tab = QWidget()
@@ -1193,31 +1305,66 @@ class SettingsWindow(QDialog):
         self.auth_header_input.setCurrentText(str(prov_conf.get("auth_header") or meta.get("auth_header", "bearer")))
         self.api_key_input.setPlaceholderText(str(prov_conf.get("api_key_masked", "<empty>")))
 
-    def _save_api_settings(self) -> None:
+    def _save_api_settings(self, notify: bool = True, reload_client: bool = True) -> str:
         api_key = self.api_key_input.text()
+        provider = self._current_provider_key()
+        base_url = self.base_url_input.text().strip()
+        model = self.model_input.text().strip()
         self.settings_manager.save_api_settings(
-            provider=self._current_provider_key(),
-            base_url=self.base_url_input.text(),
-            model=self.model_input.text(),
+            provider=provider,
+            base_url=base_url,
+            model=model,
             api_key=api_key if api_key else None,
             auth_header=self.auth_header_input.currentText(),
             local_mode=self.local_mode_input.isChecked(),
         )
-        self.controller.chat_client.reload()
+        if reload_client:
+            self.controller.chat_client.reload()
         self.api_key_input.clear()
-        self.api_result.setText("API 设置已保存；API Key 已写入 .env 或保持原值。")
-        self.controller.window.speak("……API 设置保存好了。希望你没填错。")
-        self.controller.window.animation_manager.trigger_happy()
+        if notify:
+            self.api_result.setText("API 设置已保存；API Key 已写入 .env 或保持原值。点击「设为当前模型」后才会验证并生效。")
+            self.controller.window.speak("……API 设置保存好了。希望你没填错。")
+            self.controller.window.animation_manager.trigger_happy()
         self._refresh_active_status()
+        self._refresh_profile_switcher()
+        return ProviderMeta.make_profile_id(provider)
 
     def _test_api_connection(self) -> None:
         if self.api_worker is not None and self.api_worker.isRunning():
             return
         self.api_result.setText("正在后台测试连接...")
-        self.api_worker = _ApiTestWorker(self.settings_manager)
+        api_key = self.api_key_input.text().strip()
+        self.api_worker = _ApiTestWorker(
+            self.settings_manager,
+            profile=self._cloud_profile_from_form(),
+            api_key_override=api_key or None,
+        )
         self.api_worker.finished_with_result.connect(lambda ok, msg: self.api_result.setText(("通过：" if ok else "失败：") + msg))
         self.api_worker.finished.connect(self.api_worker.deleteLater)
         self.api_worker.start()
+
+    def _cloud_profile_from_form(self) -> dict[str, Any]:
+        provider = self._current_provider_key()
+        base_url = self.base_url_input.text().strip()
+        model = self.model_input.text().strip()
+        meta = ProviderMeta.get(provider)
+        auth_header = self.settings_manager.resolve_auth_header(provider, base_url, self.auth_header_input.currentText())
+        return {
+            "id": ProviderMeta.make_profile_id(provider),
+            "name": f"{ProviderMeta.get_display_name(provider)} ({model or meta.get('default_model', '')})",
+            "type": "text",
+            "provider": provider,
+            "api_style": ProviderMeta.get_api_style(provider),
+            "base_url": base_url or str(meta.get("base_url", "")),
+            "model": model or str(meta.get("default_model", "")),
+            "api_key_env": ProviderMeta.get_api_key_env(provider),
+            "auth_header": auth_header,
+            "enabled": True,
+            "capabilities": ["text"],
+            "source": "cloud",
+            "timeout": ProviderMeta.get_timeout(provider),
+            "max_tokens": ProviderMeta.get_max_tokens(provider),
+        }
 
     def _save_pet_settings(self) -> None:
         config = self.settings_manager.load_app_config()
@@ -1821,8 +1968,14 @@ class SettingsWindow(QDialog):
                      self.local_service_combo.currentText()))
             self.local_base_url.setText(url)
             self.local_status.setText(f"状态：已导入 {name} ({model})")
+            self._refresh_profile_switcher()
             dialog.accept()
 
         ok.clicked.connect(do_import)
         cancel.clicked.connect(dialog.reject)
         dialog.exec()
+
+
+def _profile_has_text(profile: dict[str, Any]) -> bool:
+    capabilities = profile.get("capabilities", [])
+    return str(profile.get("type", "")) == "text" or (isinstance(capabilities, list) and "text" in capabilities)
