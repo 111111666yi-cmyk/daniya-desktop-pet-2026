@@ -18,7 +18,14 @@ from src.character_pack_editor import CharacterPackEditor
 from src.diagnostics_panel import run_diagnostics
 from src.relationship_state_viewer import RelationshipStateViewer
 from src.settings_manager import SettingsManager
-from src.settings_window import SettingsWindow
+from src.settings_window import (
+    SettingsWindow,
+    _api_key_placeholder,
+    _format_data_status_summary,
+    _format_event_log_summary,
+    _format_relationship_summary,
+    _saved_api_key_status,
+)
 
 
 class FakeConfigManager:
@@ -138,6 +145,56 @@ def test_diagnostics_do_not_expose_full_api_key(tmp_path):
     assert any(item["name"] == "角色包校验" and item["status"] == "pass" for item in results)
 
 
+def test_api_key_placeholder_separates_saved_mask_from_input():
+    masked = "sk-0****44ef"
+
+    assert masked not in _api_key_placeholder(masked)
+    assert masked in _saved_api_key_status(masked)
+    assert "留空" in _api_key_placeholder(masked)
+
+
+def test_settings_status_summaries_hide_raw_engine_details(tmp_path):
+    rel_text = _format_relationship_summary(
+        {
+            "character_id": "daniya",
+            "relationship_stage": "default_stay",
+            "affection": 45,
+            "defense_level": 86,
+            "internal_debug": "hidden",
+        }
+    )
+    assert "关系阶段：default_stay" in rel_text
+    assert "relationship_stage" not in rel_text
+    assert "internal_debug" not in rel_text
+
+    event_text = _format_event_log_summary(
+        [
+            {
+                "timestamp": "2026-06-01T20:19:42",
+                "event_id": "user_drag",
+                "source": "physical_event",
+                "relationship_effect": {"defense_level": 1},
+                "lore_fragments_used": [],
+                "stage_before": "default_stay",
+                "stage_after": "default_stay",
+            }
+        ]
+    )
+    assert "拖拽互动" in event_text
+    assert "防御强度 +1" in event_text
+    assert "event=" not in event_text
+    assert "effect={" not in event_text
+
+    state_path = tmp_path / "relationship_state.json"
+    paths = {"relationship_state": state_path}
+    data_text = _format_data_status_summary(
+        {"exists": True, "relationship_state_readable": True, "relationship_state_error": None},
+        paths,
+    )
+    assert "关系状态：" in data_text
+    assert "relationship_state" not in data_text
+
+
 def test_open_settings_center_warning_includes_attribute_detail(monkeypatch):
     from src import app as app_module
 
@@ -204,6 +261,60 @@ def test_open_settings_center_restores_existing_minimized_window(monkeypatch):
 
     assert controller.settings_window is existing
     assert calls == ["showNormal", "setWindowState", "raise", "activate"]
+
+
+def test_open_settings_center_creates_independent_taskbar_window(monkeypatch):
+    from src import app as app_module
+
+    calls = []
+
+    class FinishedSignal:
+        def connect(self, _callback):
+            calls.append(("connect", None))
+
+    class FakeSettingsWindow:
+        def __init__(self, _controller, parent):
+            calls.append(("parent", parent))
+            self.finished = FinishedSignal()
+
+        def show(self):
+            calls.append(("show", None))
+
+        def raise_(self):
+            calls.append(("raise", None))
+
+        def activateWindow(self):
+            calls.append(("activate", None))
+
+    monkeypatch.setattr(app_module, "SettingsWindow", FakeSettingsWindow)
+
+    controller = SimpleNamespace(settings_window=None, window=object())
+    app_module.AppController.open_settings_center(controller)
+
+    assert calls == [("parent", None), ("connect", None), ("show", None), ("raise", None), ("activate", None)]
+    assert isinstance(controller.settings_window, FakeSettingsWindow)
+
+
+def test_story_mode_loads_chapters_from_character_pack(tmp_path):
+    from src.menu_manager import MenuManager
+
+    story_file = tmp_path / "story.yaml"
+    story_file.write_text(
+        """
+chapters:
+  - id: 7
+    title: 测试章节
+    body: 这是角色包里的剧情。
+    prompt: 继续讲。
+""".strip(),
+        encoding="utf-8",
+    )
+    controller = SimpleNamespace(
+        daniya_adapter=SimpleNamespace(character_pack=SimpleNamespace(root=tmp_path)),
+    )
+    manager = MenuManager(window=object(), controller=controller)
+
+    assert manager._load_story_chapters() == [(7, "测试章节", "这是角色包里的剧情。", "继续讲。", None)]
 
 
 def test_settings_window_opens_with_expected_tabs_in_subprocess(tmp_path):

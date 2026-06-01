@@ -1,0 +1,10 @@
+source: "template"
+version: 1
+purpose: "Optional story-mode chapters for a character pack."
+chapters:
+  - id: 0
+    title: "序章"
+    body: |-
+      在这里填写角色剧情模式的第一章。
+      剧情资产应放在角色包中，而不是写进 Python 代码。
+    prompt: "可以讲讲你的故事吗？"

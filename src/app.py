@@ -422,9 +422,11 @@ class AppController(QObject):
                 self.settings_window.raise_()
                 self.settings_window.activateWindow()
                 return
-            self.settings_window = SettingsWindow(self, self.window)
+            self.settings_window = SettingsWindow(self, None)
             self.settings_window.finished.connect(lambda _result: setattr(self, "settings_window", None))
             self.settings_window.show()
+            self.settings_window.raise_()
+            self.settings_window.activateWindow()
         except Exception as exc:
             self.settings_window = None
             traceback.print_exc()

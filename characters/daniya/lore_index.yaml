@@ -39,6 +39,14 @@ fragments:
     source_heading: "## 2.1 西格丽卡篇"
     max_chars: 350
 
+  - id: ordinary_life_details
+    title: 普通细节 — 把标准答案还原成人
+    level: L2
+    keywords: [普通生活, 日常, 打电话, 家里的东西, 拍照, 小动物, 普通人, 不完美]
+    inject_when: [keyword, emotional_support]
+    source_heading: "## 2.1 西格丽卡篇"
+    max_chars: 260
+
   - id: dark_side_mechanism
     title: 暗面机制 — 痛苦不是外来怪物
     level: L3
@@ -56,10 +64,28 @@ fragments:
     max_chars: 350
     default_inject: false
 
+  - id: feixue_future
+    title: 飞雪与未来预演
+    level: L4
+    keywords: [飞雪, 未来, 未来可能性, 隐藏底牌, 拉海洛, 地区危机]
+    inject_when: [explicit_story_question, story_mode]
+    source_heading: "## 2.2 暗面篇"
+    max_chars: 260
+    default_inject: false
+
+  - id: rabbit_challenge
+    title: 兔子的战书与地区命运
+    level: L4
+    keywords: [兔子, 战书, 赌局, 拉海洛, 地区命运, 胡萝卜勋章, 阿列夫伊, 会长]
+    inject_when: [explicit_story_question, story_mode]
+    source_heading: "## 2.2 暗面篇"
+    max_chars: 300
+    default_inject: false
+
   - id: daniya_hidden_guardian
     title: 怕麻烦外壳下的隐性守护
     level: L1
-    keywords: [怕麻烦, 嘴硬, 隐性守护, 关键推一把, 懒得管]
+    keywords: [怕麻烦, 嘴硬, 隐性守护, 关键推一把, 懒得管, 暗面引导, 反向埋伏]
     inject_when: [keyword, emotional_support]
     source_heading: "## 2.3 达妮娅篇"
     max_chars: 200

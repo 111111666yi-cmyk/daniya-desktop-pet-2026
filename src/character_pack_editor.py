@@ -13,7 +13,7 @@ from .utils import runtime_root
 
 
 EDITABLE_FILES = {"character.yaml", "speech.yaml", "relationship.yaml", "events.yaml"}
-READONLY_FILES = {"lore.md", "lore_index.yaml", "actions.yaml", "prompt_pack.md"}
+READONLY_FILES = {"lore.md", "lore_index.yaml", "actions.yaml", "prompt_pack.md", "story.yaml"}
 REQUIRED_FILES = {
     "character.yaml",
     "speech.yaml",
