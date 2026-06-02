@@ -1,5 +1,26 @@
 # v0.57 Manual QA Checklist
 
+## v0.60 Release Package Manual QA - 2026-06-02
+
+Test target: `release/DaniyaSummerPet-v0.60-win-x64.zip`, extracted to a local scratch QA directory. The packaged `DaniyaSummerPet.exe` was launched with isolated temporary AppData/LocalAppData so existing user runtime data was not modified.
+
+Important test isolation note: one older development instance was also running on the desktop (`pythonw.exe main.py`). Results below target the packaged release process only. The older instance was not killed.
+
+| Item | Result | Evidence / Notes |
+|---|---|---|
+| exe startup | PASS | Packaged exe process stayed alive beyond 15 seconds and displayed the desktop pet. |
+| first-run wizard | PASS | Clean AppData launch displayed `达妮娅首次启动向导`; skip/enter-main path worked. |
+| Z.AI API real reply | BLOCKED | No Z.AI/Zhipu/GLM provider entry and no Z.AI key were present in the tested release/runtime environment. |
+| no-key local fallback | PASS | Clean runtime with no saved key produced `source=local` fallback for `你好`. |
+| settings center | PASS | Opened from the release process right-click menu and displayed the v0.60 model/settings UI without freezing. |
+| right-click menu | PASS | Menu opened from the release process and submenus were clickable. |
+| drag / snap | PASS | Release pet dragged to the left edge, snapped at `L0`, and could be pulled back on-screen. |
+| long text bubble visual | NEEDS POLISH | P3 polish item. No live model/Z.AI response was available; local fallback stayed short, so real long-model-response visual QA remains unaccepted. This does not block the v0.60 release candidate. |
+| special trigger: 抱抱 | PASS | `抱抱` returned `source=special_response` with the expected local character response. |
+| 晚安，顺便提醒我明天喝水 | PASS | Did not create a reminder; `reminders.json` remained `[]`; no `reminder_due` misfire was observed. |
+| multi-monitor drag | BLOCKED | Current Windows session exposes only one monitor, so cross-monitor dragging could not be tested. |
+| first-run desktop shortcut option | NEEDS POLISH | The guide does not offer an optional `Daniya521` desktop shortcut checkbox. This is UX polish, not a startup blocker. |
+
 更新日期：2026-05-31
 
 本清单用于 v0.57 稳定版冻结验收。所有会破坏运行态的测试必须遵守 `docs/DESTRUCTIVE_TEST_POLICY.md`，优先使用临时 runtime、临时 AppData 或人工记录，不得直接删除真实 `data/`、`.env`、`assets/private/`、`models/`。

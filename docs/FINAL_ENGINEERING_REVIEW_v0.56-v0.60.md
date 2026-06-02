@@ -201,6 +201,30 @@ Manual acceptance items still requiring human confirmation:
 - Right-click menu feel
 - Long text bubble visual behavior
 
+## Manual Release Package QA - 2026-06-02
+
+Tested artifact: `release/DaniyaSummerPet-v0.60-win-x64.zip`
+Test method: extracted zip, launched packaged exe, and used real mouse interactions against the packaged process with isolated temporary AppData/LocalAppData.
+
+Results:
+
+- exe startup: PASS
+- first-run wizard: PASS
+- Z.AI API real reply: BLOCKED. No Z.AI/Zhipu/GLM provider/key was available in the tested runtime.
+- no-key local fallback: PASS
+- settings center: PASS
+- right-click menu: PASS
+- drag / snap: PASS
+- long text bubble visual: NEEDS POLISH/P3. Local fallback replies are short; no live model long reply was available for visual acceptance. This does not block the v0.60 release candidate.
+- special trigger `抱抱`: PASS
+- `晚安，顺便提醒我明天喝水`: PASS. No reminder was created and no `reminder_due` misfire was observed.
+- multi-monitor drag: BLOCKED. Only one display was exposed by Windows.
+
+Additional observations:
+
+- An older development instance (`pythonw.exe main.py`) was already running during QA; release results were taken against the packaged exe process only.
+- The first-run wizard currently does not offer an optional desktop shortcut checkbox. This should be tracked as P3/UX polish: add a non-forcing `Daniya521` shortcut checkbox with safe failure handling.
+
 ## Known Limits
 
 - A correct live cloud API reply was not marked PASS because no user-owned valid provider key was supplied for this final review. The no-key path and local fallback were verified by automated and packaging checks; live provider behavior still requires user-side manual QA with the actual key, quota, and network.

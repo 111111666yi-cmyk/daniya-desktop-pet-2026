@@ -1,5 +1,24 @@
 # v0.57 Release Freeze Checklist
 
+## v0.60 Release Package Manual QA Update - 2026-06-02
+
+Current package tested: `release/DaniyaSummerPet-v0.60-win-x64.zip`.
+
+- [x] Packaged exe starts from a clean isolated runtime.
+- [x] First-run wizard appears on clean runtime and can enter the main app.
+- [ ] Z.AI real API reply accepted. Status: BLOCKED; no Z.AI provider/key was available in the tested environment.
+- [x] No-key local fallback works.
+- [x] Settings Center opens from the packaged release process.
+- [x] Right-click menu and submenus open.
+- [x] Drag and left-edge snap work, and the pet can be pulled back on-screen.
+- [ ] Long text bubble visual accepted. Status: NEEDS POLISH/P3; no live long model reply was available. This does not block the v0.60 release candidate.
+- [x] `抱抱` special trigger works.
+- [x] `晚安，顺便提醒我明天喝水` does not misfire as `reminder_due`.
+- [ ] Multi-monitor drag accepted. Status: BLOCKED; only one monitor is exposed in this Windows session.
+- [ ] Optional desktop shortcut checkbox in first-run wizard. Status: NEEDS POLISH; proposed as non-forcing `Daniya521` shortcut creation with failure-safe behavior.
+
+Release decision from this QA pass: do not tag or publish GitHub Release until Z.AI/live-provider reply is accepted or explicitly waived by the user. Long text bubble visual behavior remains P3 polish and does not block the v0.60 release candidate.
+
 更新日期：2026-05-31
 
 v0.57 是稳定冻结阶段，不新增功能，不重构 UI，不修改状态机、Timer、Provider 架构或角色包结构。所有检查必须遵守 `docs/DESTRUCTIVE_TEST_POLICY.md`。
