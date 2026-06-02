@@ -10,7 +10,7 @@
 
 | 项 | 值 |
 |---|---|
-| 工程根目录 | `C:\Users\23775\Documents\daniya2026523` |
+| 工程根目录 | `<project-root>` |
 | Python | 3.10.11 (venv) |
 | Git 分支 | `master`，领先 origin/master 14 commits |
 | 操作系统 | Windows 11 |

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.60 Release Blocker Fix (2026-06-02)
+
+- Fixed the v0.60 release package story asset gap by adding `characters/daniya/story.yaml` to `pack.bat`; `characters/template/story.yaml` remains included through the public template package.
+- Tightened release zip scanning so the package must contain both story files and must not contain Daniya private assets, local user paths, forbidden runtime directories, or obvious API keys.
+- Ignored local audit report documents with `*_audit_report.docx` so `DaniyaSummerPet_v0.60_audit_report.docx` cannot be accidentally committed or packaged.
+- Sanitized historical docs that contained local `<local-user-path>` references while keeping the original audit content.
+- Kept `config/model_profiles.json` aligned with the v0.60 text profile history structure; removed unrelated runtime `config/app_config.json` noise and aligned public fallback reply arrays.
+
 ## v0.60 Stable Preview
 
 - Consolidates the v0.56-v0.60 hardening series into a stable public preview baseline.

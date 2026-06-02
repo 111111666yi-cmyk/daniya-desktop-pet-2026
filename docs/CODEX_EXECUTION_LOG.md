@@ -8,7 +8,7 @@
 
 时间：2026-05-31 16:40+
 操作：读取用户附件排查书
-命令：`Get-Content C:\Users\23775\.codex\attachments\9396154d-1f7e-4150-b8fd-b7c5b0dee32a\pasted-text.txt`
+命令：`Get-Content <local-user-path>\.codex\attachments\<attachment-id>\pasted-text.txt`
 结果：成功读取 v0.1-v0.55 全量排查书
 发现：用户明确要求第一阶段只读静态审计，生成 10 份文档后停止
 下一步：进入静态证据采集

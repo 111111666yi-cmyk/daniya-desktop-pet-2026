@@ -50,5 +50,13 @@
       "license_required": true,
       "api_key_env": ""
     }
-  ]
+  ],
+  "profile_history": {
+    "text": [
+      "deepseek_default"
+    ],
+    "vision": [],
+    "tts": [],
+    "image": []
+  }
 }

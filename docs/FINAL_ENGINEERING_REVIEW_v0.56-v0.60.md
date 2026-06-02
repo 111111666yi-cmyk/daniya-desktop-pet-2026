@@ -166,6 +166,41 @@ Confirmed absent from the v0.60 zip:
 
 No real API keys were detected by the release zip scanner. The final review and user setup docs are included in the release zip.
 
+## Post-Audit Release Blocker Fix
+
+Date: 2026-06-02
+Fix baseline: `862beda`
+
+This follow-up is limited to v0.60 release blockers. It does not enter v0.61, add features, push, tag, or publish a GitHub Release.
+
+Resolved before the final v0.60 package decision:
+
+- `DaniyaSummerPet_v0.60_audit_report.docx` is ignored by `*_audit_report.docx` and remains local-only.
+- Runtime window-position noise in `config/app_config.json` was reverted. Public fallback reply arrays are kept in `config/app_config.json` and `config/app_config.example.json`. The public `config/model_profiles.json` now includes the v0.60 `profile_history` shape.
+- `pack.bat` now includes `characters/daniya/story.yaml` in the PyInstaller data set. `characters/template/story.yaml` remains included by the public template package.
+- `tools/check_release_zip.py` now fails if either story file is missing, if `characters/daniya/assets/` enters the zip, if forbidden runtime/build paths enter the zip, if obvious API keys are detected, or if text files contain local user paths.
+- Historical docs with local user paths were sanitized without deleting their audit content.
+
+Verification for this follow-up:
+
+- Sensitive tracked paths: PASS
+- Character pack checks: PASS
+- Config template checks: PASS
+- Documentation link checks: PASS
+- `characters/daniya` validation: PASS
+- `characters/template` validation: PASS
+- Test suite: `237 passed, 3 skipped`
+- Packaging: PASS after post-audit documentation update
+- Release zip scan: PASS after stricter story/local-path validation
+- Release zip entry count: `453`
+
+Manual acceptance items still requiring human confirmation:
+
+- Correct live cloud API reply with a valid user-owned API key
+- Real multi-monitor physical dragging
+- Right-click menu feel
+- Long text bubble visual behavior
+
 ## Known Limits
 
 - A correct live cloud API reply was not marked PASS because no user-owned valid provider key was supplied for this final review. The no-key path and local fallback were verified by automated and packaging checks; live provider behavior still requires user-side manual QA with the actual key, quota, and network.

@@ -1,5 +1,22 @@
 # KNOWN_ISSUES
 
+## v0.60 Release Blocker Follow-Up (2026-06-02)
+
+Resolved in the v0.60 blocker fix after baseline `862beda`:
+
+- Release package story assets: `characters/daniya/story.yaml` is now explicitly packaged; `characters/template/story.yaml` remains covered by the public template package.
+- Release zip validation: the scanner now requires both story files and rejects Daniya private assets, forbidden runtime/build paths, local user paths, and obvious API key patterns.
+- Local audit report risk: `*_audit_report.docx` is ignored so `DaniyaSummerPet_v0.60_audit_report.docx` remains local-only.
+- Historical docs local paths: the known `<local-user-path>` / `<local-file-uri>` references in tracked docs were sanitized.
+- Config diff cleanup: unrelated runtime `config/app_config.json` window-position noise was reverted; public fallback reply arrays and `config/model_profiles.json` profile history defaults are kept.
+
+Still manual before tag or GitHub Release:
+
+- Valid real-provider API response with a user-owned key and quota.
+- Multi-monitor physical drag behavior.
+- Right-click menu feel.
+- Long text bubble visual behavior.
+
 更新日期：2026-05-31
 审计阶段：第二阶段，动态验证后
 

@@ -68,6 +68,20 @@ The GitHub `Release Check` workflow performs the package build and zip scan manu
 - Zip name: `DaniyaSummerPet-v0.60-win-x64.zip`
 - Do not create or push the `v0.60` tag until the final local report is accepted.
 
+## v0.60 Post-Audit Release Blocker Checklist
+
+Baseline for the blocker fix: `862beda`.
+
+- Ignore local audit report files with `*_audit_report.docx`: required before commit.
+- Revert unexplained runtime `config/app_config.json` changes before release; keep only public default fallback reply structures.
+- Keep public `config/model_profiles.json` aligned with v0.60 profile history defaults.
+- Ensure `pack.bat` includes `characters/daniya/story.yaml`.
+- Ensure the release zip contains `characters/daniya/story.yaml` and `characters/template/story.yaml`.
+- Ensure the release zip excludes `characters/daniya/assets/`, `assets/private/`, `data/`, `models/`, `.env`, `config/api_config.json`, `config/multimodal_config.json`, `characters/test_dummy/`, real API keys, private assets, and user chat records.
+- Sanitize docs so tracked files do not contain local user paths.
+- Re-run `pack.bat` and `tools\check_release_zip.py` after docs are updated.
+- Keep live API reply, multi-monitor drag, right-click feel, and long text bubble visual behavior as manual confirmation items.
+
 ## Allowed Public Files
 
 Allowed after review:

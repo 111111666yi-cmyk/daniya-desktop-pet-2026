@@ -30,7 +30,17 @@
     "temperature": 0.8,
     "max_tokens": 360,
     "fallback_reply": "Daniya is offline right now, but local fallback is available.",
-    "api_error_fallback_reply": "The API request failed, so local fallback is being used."
+    "fallback_replies": [
+      "Daniya is offline right now, but local fallback is available.",
+      "The cloud service is unavailable, so local fallback is active.",
+      "No API reply was received; Daniya is staying with the local fallback."
+    ],
+    "api_error_fallback_reply": "The API request failed, so local fallback is being used.",
+    "api_error_fallback_replies": [
+      "The API request failed, so local fallback is being used.",
+      "The provider did not return a usable response; local fallback is active.",
+      "The model connection is unavailable right now, so Daniya is using local fallback."
+    ]
   },
   "api": {
     "base_url": "https://api.deepseek.com",
