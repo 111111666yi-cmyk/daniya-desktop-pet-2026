@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.65 (2026-06-03) - Focus and Game Mode
+
+- Added `src/focus_mode.py` coordinating manual focus states and local process game whitelist matching for automated silencing.
+- Integrated event suppression checks to prevent idle popups, chimes, and non-essential alert signals from executing when focus is active.
+- Added focus mode documentation `docs/focus_mode.md`.
+- Added tests `tests/test_focus_mode.py` verifying manual state changes, process iteration matching, automatic entry and exit, and state transition signals.
+
 ## v0.64 (2026-06-03) - Privacy-Safe Clipboard Interaction
 
 - Added `src/clipboard_interaction.py` supporting PySide6 QClipboard data listening, local regular expression filtering of API keys, Bearer tokens, credentials, phone numbers, and ID cards.
