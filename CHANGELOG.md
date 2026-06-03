@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.62 (2026-06-03) - Safe File Organizer Assistant
+
+- Added `src/file_organizer.py` supporting dry-run previews, duplicate file renaming, and rollback mapping.
+- Implemented folder pruning to bypass `.git`, `.venv`, `models`, `backups`, and `.env` files automatically.
+- Added file organizer documentation `docs/file_organizer.md`.
+- Added tests `tests/test_file_organizer.py` verifying empty structures, renaming collision avoidance, folder pruning, dry-runs, move execution, and rollback/undo capabilities.
+
 ## v0.61 (2026-06-03) - Natural Language Reminder System
 
 - Added `src/natural_reminder_parser.py` supporting rules-based extraction of Chinese relative, absolute, and recurring time expressions.
