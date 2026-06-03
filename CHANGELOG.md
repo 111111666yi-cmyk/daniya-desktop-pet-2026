@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.63 (2026-06-03) - System Status Awareness
+
+- Added `src/system_status.py` providing low-overhead local hardware (CPU, Memory, Battery, Disk) and network connection checks.
+- Integrated time-based alert cooldown logic (default 300s) to prevent bubble alert notification flooding.
+- Added system status documentation `docs/system_status.md`.
+- Added tests `tests/test_system_status.py` verifying high CPU load alerts, high memory alerts, discharging low battery alerts, offline network status, alert silencing when disabled, and cooldown behavior.
+
 ## v0.62 (2026-06-03) - Safe File Organizer Assistant
 
 - Added `src/file_organizer.py` supporting dry-run previews, duplicate file renaming, and rollback mapping.
