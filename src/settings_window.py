@@ -82,7 +82,8 @@ class _DiagnosticsWorker(QThread):
         self.controller = controller
 
     def run(self) -> None:
-        results = run_diagnostics(self.settings_manager, getattr(self.controller, "asset_manager", None))
+        chat_client = getattr(self.controller, "chat_client", None)
+        results = run_diagnostics(self.settings_manager, getattr(self.controller, "asset_manager", None), chat_client=chat_client)
         self.finished_with_text.emit(format_diagnostics(results))
 
 

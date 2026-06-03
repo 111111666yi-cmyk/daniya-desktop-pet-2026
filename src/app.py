@@ -515,6 +515,13 @@ class AppController(QObject):
             return
 
     def quit(self) -> None:
+        # Wait for any running chat worker or physical event workers to finish safely
+        if hasattr(self, "worker") and self.worker is not None and self.worker.isRunning():
+            self.worker.wait(1500)
+        if hasattr(self, "_phys_workers"):
+            for w in list(self._phys_workers):
+                if w.isRunning():
+                    w.wait(1500)
         self.qapp.quit()
 
 

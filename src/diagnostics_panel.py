@@ -13,11 +13,31 @@ from .settings_manager import SettingsManager
 from .utils import runtime_root
 
 
-def run_diagnostics(settings_manager: SettingsManager | None = None, asset_manager: AssetManager | None = None) -> list[dict[str, str]]:
+def run_diagnostics(
+    settings_manager: SettingsManager | None = None,
+    asset_manager: AssetManager | None = None,
+    chat_client: Any | None = None,
+) -> list[dict[str, str]]:
     root = runtime_root()
     settings = settings_manager or SettingsManager(root=root)
     assets = asset_manager or AssetManager({})
     results: list[dict[str, str]] = []
+
+    # LLM Runtime diagnostics
+    if chat_client is not None and getattr(chat_client, "provider_manager", None) is not None:
+        pm = chat_client.provider_manager
+        last_provider = getattr(pm, "last_provider", "无")
+        last_model = getattr(pm, "last_model", "无")
+        fallback_used = getattr(pm, "fallback_used", False)
+        fallback_reason = getattr(pm, "fallback_reason", "无")
+        last_error_type = getattr(pm, "last_error_type", "无")
+        last_error_traceback = getattr(pm, "last_error_traceback", "无")
+
+        status = "warn" if fallback_used else "pass"
+        msg = f"当前/最近云端Provider: {last_provider}, Model: {last_model}, Fallback: {'是' if fallback_used else '否'}, 错误类型: {last_error_type}, 原因: {fallback_reason}\n[堆栈日志]:\n{last_error_traceback}"
+        results.append(_item("LLM 运行时状态", status, msg))
+    else:
+        results.append(_item("LLM 运行时状态", "pass", "未接收到活跃对话客户端，暂无运行时错误记录。"))
 
     validation = validate_character_pack("daniya")
     results.append(_item("角色包校验", "pass" if validation.ok else "fail", validation.error_summary() or "Character pack OK."))

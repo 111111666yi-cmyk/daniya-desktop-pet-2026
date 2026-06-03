@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +51,12 @@ class ProviderManager:
         self.profiles_data = self.load_profiles()
         self.last_source = "无"
         self.last_error = "无"
+        self.last_error_type = "无"
+        self.last_error_traceback = "无"
+        self.last_provider = "无"
+        self.last_model = "无"
+        self.fallback_used = False
+        self.fallback_reason = "无"
         self._fallback_index = 0
 
     # ── config ──────────────────────────────────────────────
@@ -99,6 +106,9 @@ class ProviderManager:
         api_key = self._get_api_key(profile.get("api_key_env", ""))
         auth_header = self._auth_header_for_profile(profile)
 
+        self.last_provider = provider
+        self.last_model = model
+
         try:
             if provider == Provider.OLLAMA:
                 response = ollama_api.chat(
@@ -139,25 +149,48 @@ class ProviderManager:
 
             self.last_source = f"{provider} ({model})"
             self.last_error = "无"
+            self.last_error_type = "无"
+            self.last_error_traceback = "无"
+            self.fallback_used = False
+            self.fallback_reason = "无"
             print(f"[Daniya] Chat response: provider={provider}, model={model}, source={profile.get('source', 'cloud')}, fallback_used=False")
             return response, "api"
 
         except AuthError as e:
             self.last_error = f"auth: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except RateLimitError as e:
             self.last_error = f"rate_limit: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except ServerError as e:
             self.last_error = f"server_error: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except NetworkError as e:
             self.last_error = f"network: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except MalformedResponse as e:
             self.last_error = f"malformed: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except ModelNotFoundError as e:
             self.last_error = f"model_not_found: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except BoundaryError as e:
             self.last_error = f"boundary: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except Exception as e:
             self.last_error = str(e)
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
+
+        self.fallback_used = True
+        self.fallback_reason = self.last_error
 
         print(f"[Daniya] Chat response: provider={provider}, model={model}, source=local, fallback_used=True, error_summary=\"{self.last_error}\"")
         self.last_source = "local_fallback"
