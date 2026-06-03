@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.64 (2026-06-03) - Privacy-Safe Clipboard Interaction
+
+- Added `src/clipboard_interaction.py` supporting PySide6 QClipboard data listening, local regular expression filtering of API keys, Bearer tokens, credentials, phone numbers, and ID cards.
+- Integrated text length bounds to prevent automatic transmission of texts over 1000 characters without explicit confirmation.
+- Added clipboard privacy documentation `docs/clipboard_privacy.md`.
+- Added tests `tests/test_clipboard_interaction.py` verifying sensitive token blocking, mobile and ID filtering, length truncation thresholds, duplicate detection, and disabled status checks.
+
 ## v0.63 (2026-06-03) - System Status Awareness
 
 - Added `src/system_status.py` providing low-overhead local hardware (CPU, Memory, Battery, Disk) and network connection checks.
