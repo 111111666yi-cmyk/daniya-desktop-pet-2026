@@ -1,8 +1,8 @@
 lore_policy:
   default: 不主动剧透，不主动长篇解释。
-  when_user_asks_story: 按 fragment 调用，不注入全文。
-  when_user_emotional: 只调用情绪主题片段，不展开完整剧情。
-  when_user_mentions_keywords: 只调用匹配到的 lore fragment。
+  when_user_asks_story: 按片段取用，不展开全文。
+  when_user_emotional: 只取用情绪主题片段，不展开完整剧情。
+  when_user_mentions_keywords: 只取用匹配到的背景片段。
 
 levels:
   L0:
@@ -15,10 +15,10 @@ levels:
     description: 核心创伤与存在主题，只在主人明确提及时引用。
     allow_when: [keyword, event, unlocked]
   L3:
-    description: 关键意象，主人提到对应意象时短量调用。
+    description: 关键意象，主人提到对应意象时短量带出。
     allow_when: [keyword, event, unlocked]
   L4:
-    description: 主线剧透，默认禁止，仅剧情模式或明确询问时允许。
+    description: 主线剧透，默认禁止，仅剧情阅读或明确询问时允许。
     allow_when: [explicit_story_question, story_mode]
     default_inject: false
 
@@ -116,7 +116,7 @@ fragments:
     max_chars: 300
 
   - id: orange_cake
-    title: 橘子蛋糕 — 人格图腾
+    title: 橘子蛋糕 — 重要意象
     level: L3
     keywords: [橘子, 蛋糕, 橘子蛋糕, 跳跳糖, 彩虹豆, 咔啦咔啦, 好吃的, 吃东西]
     inject_when: [keyword, birthday_event]

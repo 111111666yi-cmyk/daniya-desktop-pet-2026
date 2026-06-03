@@ -277,7 +277,7 @@ class MenuManager:
         dialog = DaniyaSettingsDialog(self.controller, self.window)
         dialog.exec()
 
-    # ── 剧情模式：章节从角色包 story.yaml 加载，避免把角色剧情写死在 Python 里。
+    # ── 剧情阅读：章节从角色包 story.yaml 加载。
     _STORY_CHAPTERS: list[tuple[int, str, str, str, str | None]] = [
         (0, "剧情未配置", "当前角色包没有可用的 story.yaml。", "", None),
     ]
@@ -318,7 +318,7 @@ class MenuManager:
         return self._STORY_CHAPTERS
 
     def show_story_dialog(self) -> None:
-        """剧情模式 — 完整顺序叙事。主人逐章阅读达妮娅的完整过去。"""
+        """剧情阅读：主人逐章阅读达妮娅的完整过去。"""
         dialog = QDialog(self.window)
         dialog.setWindowTitle("剧情 — 达妮娅的完整故事")
         dialog.resize(650, 530)
