@@ -29,7 +29,7 @@
   - **位置持久化**: 保存最新位置至 `data/window_state.json`。
 
 - **`idle_behavior.py` (IdleBehavior)**:
-  无操作检测。每隔 2 秒检测最后活动时间，若超出 `idle_behavior_seconds`（默认 90s），触发小幅度随机动作或气泡文本。
+  无操作检测。默认关闭；用户开启后，每隔 2 秒检测最后活动时间，若超出 `idle_behavior_seconds`（默认 600s），才触发小幅度动作或气泡文本。
   - **打断规避**: 如果 LLM 对话中、打字机打字中、设置中心打开中或提醒框显示中，则不触发。
 
 - **`behavior_engine.py` (PetBehaviorEngine)**:
@@ -48,8 +48,8 @@
   "snap_margin_px": 24,              // 吸附检测阈值（像素）
   "keep_on_screen_enabled": true,    // 强制保留在屏幕可见区
   "drag_return_enabled": true,       // 允许松手后自动平滑回弹
-  "idle_behavior_enabled": true,     // 是否开启空闲阶段小动作
-  "idle_behavior_seconds": 90,       // 判定为空闲的秒数
+  "idle_behavior_enabled": false,    // 是否开启空闲阶段小动作
+  "idle_behavior_seconds": 600,      // 判定为空闲的秒数，低于 600 会被配置层拉回
   "double_click_enabled": true,      // 是否启用双击互动
   "long_press_ms": 600               // 长按判定毫秒数
 }

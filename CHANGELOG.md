@@ -28,12 +28,25 @@
 - Added file organizer documentation `docs/file_organizer.md`.
 - Added tests `tests/test_file_organizer.py` verifying empty structures, renaming collision avoidance, folder pruning, dry-runs, move execution, and rollback/undo capabilities.
 
+## v0.62 (2026-06-03) - Memory Control, Provider Memory Injection, and Z.AI Provider
+
+- Added a visible Settings Center action to clear automatic memory and manual memory notes without resetting relationship state.
+- Verified Provider prompt construction keeps profile and memory memo context before all text Provider channels.
+- Added support for Z.AI standard Provider (GLM-5.1, `https://api.z.ai/api/paas/v4`, `ZAI_API_KEY`) following standard developer guidelines.
+
 ## v0.61 (2026-06-03) - Natural Language Reminder System
 
 - Added `src/natural_reminder_parser.py` supporting rules-based extraction of Chinese relative, absolute, and recurring time expressions.
 - Added `src/natural_reminder_service.py` to bridge natural language inputs with `ReminderManager`.
 - Added natural language reminders documentation `docs/natural_reminders.md`.
 - Added tests `tests/test_natural_reminder_parser.py` and `tests/test_natural_reminder_service.py` verifying relative, absolute, recurring, and ambiguous time formats.
+
+## v0.61 (2026-06-03) - Quiet Defaults and Public Surface Audit
+
+- Made the default desktop pet experience quieter: idle chat, hourly chime, edge peek, and idle behavior are disabled by default, while user settings can still enable them.
+- Raised the idle behavior lower bound to 600 seconds so enabling it does not create high-frequency unexpected movement.
+- Added a public-surface audit check for forbidden character copy, local user paths, template repository URLs, quiet default settings, and visible memory controls.
+- Cleaned the README clone instructions to use the actual public repository URL.
 
 ## v0.60 Release Blocker Fix (2026-06-02)
 

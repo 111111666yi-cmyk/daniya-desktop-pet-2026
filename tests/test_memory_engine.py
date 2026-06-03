@@ -1,6 +1,6 @@
 from core.character_loader import load_character
 from core.event_engine import match_event
-from core.memory_engine import data_root, load_event_log, load_user_memory, update_memory_from_interaction
+from core.memory_engine import clear_user_memory, data_root, load_event_log, load_user_memory, update_memory_from_interaction
 
 
 def test_memory_records_key_phrase_and_unlocked_lore():
@@ -25,3 +25,13 @@ def test_bad_memory_json_is_rebuilt():
 def test_event_log_defaults_to_list():
     assert load_event_log() == []
 
+
+def test_clear_user_memory_resets_visible_runtime_memory():
+    update_memory_from_interaction("抱抱，我不会先走，生日", {"id": "birthday_sovereignty"})
+
+    memory = clear_user_memory()
+
+    assert memory["important_user_phrases"] == []
+    assert memory["unlocked_lore"] == []
+    assert memory["last_events"] == []
+    assert load_user_memory()["important_user_phrases"] == []

@@ -12,8 +12,8 @@ Current version: **DaniyaSummerPet v0.60**
 
 ```bat
 # 克隆仓库
-git clone https://github.com/<your-username>/daniya2026523.git
-cd daniya2026523
+git clone https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026.git
+cd daniya-desktop-pet-2026
 
 # 运行安装脚本（创建虚拟环境 + 安装依赖 + 创建桌面快捷方式）
 install.bat

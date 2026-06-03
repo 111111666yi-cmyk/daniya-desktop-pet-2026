@@ -35,7 +35,7 @@ class BehaviorConfig:
     @property
     def idle_behavior_seconds(self) -> int:
         try:
-            return int(self.app_config.get("idle_behavior_seconds", 600))
+            return max(600, int(self.app_config.get("idle_behavior_seconds", 600)))
         except (TypeError, ValueError):
             return 600
 

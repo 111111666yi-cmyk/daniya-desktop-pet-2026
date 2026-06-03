@@ -3,6 +3,7 @@
     "deepseek",
     "openai_compatible",
     "openai",
+    "zai",
     "claude",
     "local_openai_compatible",
     "local_fallback"

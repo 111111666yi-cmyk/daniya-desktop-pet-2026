@@ -31,7 +31,7 @@ class IdleManager(QObject):
         self.last_activity = datetime.now()
 
     def check_idle(self) -> None:
-        if not bool(self.app_config.get("idle_chat_enabled", True)):
+        if not bool(self.app_config.get("idle_chat_enabled", False)):
             return
         minutes = max(1, int(self.app_config.get("idle_chat_minutes", 10)))
         now = datetime.now()

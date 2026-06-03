@@ -4,7 +4,7 @@
 
 | ID | Level | Item | Status / Rationale |
 |---|---|---|---|
-| QA60-ZAI-001 | P1 | Z.AI real API reply not accepted | BLOCKED: tested release runtime has no Z.AI/Zhipu/GLM provider entry and no Z.AI key. Do not mark live-provider QA PASS until a real configured provider reply is observed. |
+| QA60-ZAI-001 | P1 | Z.AI real API reply not accepted | MANUAL REQUIRED: v0.61 source now has a standard `zai` text Provider entry, but live-provider QA still requires a user-owned `ZAI_API_KEY`, quota, and one observed real reply. Do not mark live-provider QA PASS until that evidence exists. |
 | QA60-BUBBLE-001 | P3 | Long text bubble visual not accepted | NEEDS POLISH: local fallback replies are short; a live model or dedicated long local response is needed for visual acceptance. This does not block the v0.60 release candidate. |
 | QA60-MONITOR-001 | P2 | Multi-monitor drag not accepted | BLOCKED: current Windows session exposes only one monitor. |
 | QA60-SHORTCUT-001 | P3 | First-run wizard optional desktop shortcut creation | SOURCE FIXED / NEEDS PACKAGE QA: a non-default checkbox now creates a `daniya521` desktop shortcut and failure does not block setup completion. Rebuild and manually verify before closing. |

@@ -23,6 +23,7 @@ from src.settings_window import (
     _api_key_placeholder,
     _format_data_status_summary,
     _format_event_log_summary,
+    _format_user_memory_summary,
     _format_relationship_summary,
     _saved_api_key_status,
 )
@@ -224,6 +225,20 @@ def test_settings_status_summaries_hide_raw_engine_details(tmp_path):
     assert "关系状态：" in data_text
     assert "relationship_state" not in data_text
 
+    memory_text = _format_user_memory_summary(
+        {"user_name": "主人", "relationship": "桌宠与主人", "style": "简短"},
+        {
+            "user_preferences": {"likes_short_reply": True},
+            "important_user_phrases": ["我不会先走"],
+            "unlocked_lore": ["birthday_sovereignty"],
+            "last_events": ["birthday_sovereignty"],
+        },
+        ["[2026-06-03 00:00:00] 喜欢安静陪伴"],
+    )
+    assert "主人档案" in memory_text
+    assert "我不会先走" in memory_text
+    assert "喜欢安静陪伴" in memory_text
+
 
 def test_open_settings_center_warning_includes_attribute_detail(monkeypatch):
     from src import app as app_module
@@ -358,6 +373,7 @@ def test_settings_window_opens_with_expected_tabs_in_subprocess(tmp_path):
     script = r"""
 import os, sys
 from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QPushButton
 from src.config_manager import ConfigManager
 from src.asset_manager import AssetManager
 from src.app import AppController
@@ -373,6 +389,8 @@ assert tabs[2] == '\u89d2\u8272\u4e0e\u8d44\u6e90'
 assert tabs[3] == '\u5173\u7cfb\u4e0e\u4e8b\u4ef6'
 assert tabs[4] == '\u7cfb\u7edf'
 assert controller.settings_window.pack_editor_text.isReadOnly() is False
+buttons = [button.text() for button in controller.settings_window.findChildren(QPushButton)]
+assert '\u6e05\u7a7a\u8bb0\u5fc6' in buttons
 print('SETTINGS_WINDOW_OK', flush=True)
 os._exit(0)
 """

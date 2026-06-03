@@ -25,7 +25,7 @@ The text model switcher keeps recent profile choices so users can move between D
 
 ## OpenAI-Compatible Providers
 
-For providers such as Zhipu, Kimi, or Doubao, use the provider's OpenAI-compatible Base URL, model name, and API Key. Exact availability depends on the provider account, quota, and network.
+For providers such as Z.AI/GLM, Kimi, or Doubao, use the provider's OpenAI-compatible Base URL, model name, and API Key. Exact availability depends on the provider account, quota, and network. Z.AI is also available as the standard `zai` text provider with `ZAI_API_KEY`.
 
 ### Xiaomi MiMo
 

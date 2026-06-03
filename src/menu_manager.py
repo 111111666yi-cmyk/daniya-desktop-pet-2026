@@ -174,7 +174,7 @@ class MenuManager:
 
         edge_action = pet_features.addAction("左右边缘探头")
         edge_action.setCheckable(True)
-        edge_action.setChecked(bool(pet_config.get("edge_peek_enabled", True)))
+        edge_action.setChecked(bool(pet_config.get("edge_peek_enabled", False)))
         edge_action.triggered.connect(
             lambda checked=False: self.controller.set_pet_feature("edge_peek_enabled", bool(checked))
         )

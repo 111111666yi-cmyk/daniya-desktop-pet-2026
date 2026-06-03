@@ -382,7 +382,7 @@ class PetWindow(QWidget):
 
     def _tick_edge_peek(self) -> None:
         pet_config = self.app_config.get("pet", {})
-        if not bool(pet_config.get("edge_peek_enabled", True)):
+        if not bool(pet_config.get("edge_peek_enabled", False)):
             self.dock_side = None
             return
 
@@ -519,7 +519,7 @@ class PetWindow(QWidget):
 
     def _dock_if_near_edge(self) -> None:
         pet_config = self.app_config.get("pet", {})
-        if not bool(pet_config.get("edge_peek_enabled", True)):
+        if not bool(pet_config.get("edge_peek_enabled", False)):
             self.dock_side = None
             return
         self.dock_side = self._nearest_edge_side(56)

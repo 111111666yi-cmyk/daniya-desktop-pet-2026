@@ -38,7 +38,7 @@ def _build_default_api_config() -> dict[str, Any]:
         },
     }
     # 只为云端 Provider 生成默认 entry
-    for key in (Provider.DEEPSEEK, Provider.OPENAI, Provider.CLAUDE, Provider.LOCAL_OPENAI_COMPATIBLE):
+    for key in (Provider.DEEPSEEK, Provider.OPENAI, Provider.CLAUDE, Provider.ZAI, Provider.LOCAL_OPENAI_COMPATIBLE):
         meta = ProviderMeta.get(key)
         config["providers"][key] = {
             "base_url": meta["base_url"],
@@ -57,7 +57,7 @@ DEFAULT_API_CONFIG: dict[str, Any] = _build_default_api_config()
 
 def _build_default_model_profiles() -> dict[str, Any]:
     """从 ProviderRegistry 自动生成默认 model_profiles，避免硬编码。"""
-    cloud_keys = (Provider.DEEPSEEK, Provider.OPENAI)
+    cloud_keys = (Provider.DEEPSEEK, Provider.OPENAI, Provider.ZAI)
     local_entries = [
         ("ollama_qwen25_05b", "Qwen2.5 0.5B - Ollama", Provider.OLLAMA, "ollama", "qwen2.5:0.5b"),
     ]

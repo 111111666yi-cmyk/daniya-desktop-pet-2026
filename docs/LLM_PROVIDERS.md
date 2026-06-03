@@ -8,6 +8,7 @@ v0.49.1 架构 — 边界模块 + ProviderRegistry + ProviderManager 路由。
 |---|---|---|---|
 | `deepseek` | 云端 | `/chat/completions` | `openai_api.py` |
 | `openai` | 云端 | `/chat/completions` | `openai_api.py` |
+| `zai` | 云端 | `/chat/completions` | `openai_api.py` |
 | `claude` | 云端 | `/messages` | `anthropic_api.py` |
 | `ollama` | 本地 | `/api/chat` | `ollama_api.py` |
 | `lm_studio` | 本地 | `/chat/completions` | `openai_api.py` |
