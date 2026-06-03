@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.61 (2026-06-03) - Natural Language Reminder System
+
+- Added `src/natural_reminder_parser.py` supporting rules-based extraction of Chinese relative, absolute, and recurring time expressions.
+- Added `src/natural_reminder_service.py` to bridge natural language inputs with `ReminderManager`.
+- Added natural language reminders documentation `docs/natural_reminders.md`.
+- Added tests `tests/test_natural_reminder_parser.py` and `tests/test_natural_reminder_service.py` verifying relative, absolute, recurring, and ambiguous time formats.
+
 ## v0.60 Release Blocker Fix (2026-06-02)
 
 - Fixed the v0.60 release package story asset gap by adding `characters/daniya/story.yaml` to `pack.bat`; `characters/template/story.yaml` remains included through the public template package.
