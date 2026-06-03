@@ -216,8 +216,8 @@ _PACK_FILE_DESCRIPTIONS = {
     "lore.md": "完整剧情与人格背景正文，只按需检索。",
     "lore_index.yaml": "剧情标签、触发词、剧透等级和检索规则。",
     "actions.yaml": "动作状态到素材的映射。",
-    "prompt_pack.md": "提示词拼装说明和角色包提示片段。",
-    "story.yaml": "剧情模式章节，属于角色包内容，不写死在 Python 里。",
+    "prompt_pack.md": "说话方式参考和角色片段。",
+    "story.yaml": "剧情阅读章节，属于角色包内容。",
 }
 
 
@@ -284,6 +284,47 @@ def _format_event_log_summary(events: list[Any]) -> str:
             lore_text = f"；调用剧情片段 {len(lore_used)} 个"
         lines.append(f"{timestamp}｜{event_name}｜{effect}{stage_text}{lore_text}")
     return "\n".join(lines)
+
+
+def _format_user_memory_summary(profile: dict[str, str], memory: dict[str, Any], notes: list[str]) -> str:
+    lines = [
+        "主人档案",
+        f"- 称呼：{profile.get('user_name', '主人')}",
+        f"- 关系：{profile.get('relationship', '桌宠与主人')}",
+        f"- 偏好风格：{profile.get('style', '')}",
+        "",
+        "自动记忆",
+    ]
+    preferences = memory.get("user_preferences")
+    if isinstance(preferences, dict) and preferences:
+        for key, value in sorted(preferences.items()):
+            lines.append(f"- 偏好 {key}: {value}")
+    phrases = memory.get("important_user_phrases")
+    if isinstance(phrases, list) and phrases:
+        lines.append("- 重要表达：" + "、".join(str(item) for item in phrases[-10:]))
+    unlocked_lore = memory.get("unlocked_lore")
+    if isinstance(unlocked_lore, list) and unlocked_lore:
+        lines.append("- 已解锁剧情：" + "、".join(str(item) for item in unlocked_lore[-10:]))
+    last_events = memory.get("last_events")
+    if isinstance(last_events, list) and last_events:
+        lines.append("- 最近事件：" + "、".join(str(item) for item in last_events[-10:]))
+    if len(lines) == 6:
+        lines.append("- 暂无自动记忆。")
+    lines.extend(["", "手动备忘"])
+    if notes:
+        lines.extend(f"- {note}" for note in notes[-12:])
+    else:
+        lines.append("- 暂无手动备忘。")
+    return "\n".join(lines)
+
+
+def _read_recent_text_lines(path: Path, limit: int) -> list[str]:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    cleaned = [line.strip() for line in lines if line.strip()]
+    return cleaned[-limit:]
 
 
 def _format_data_status_summary(status: dict[str, Any], paths: dict[str, Path]) -> str:
@@ -1180,6 +1221,12 @@ class SettingsWindow(QDialog):
         self.idle_minutes = QSpinBox()
         self.idle_minutes.setRange(1, 240)
         self.idle_minutes.setValue(int(app_config.get("idle_chat_minutes", 10)))
+        self.idle_behavior = QCheckBox("启用空闲小动作")
+        self.idle_behavior.setChecked(bool(app_config.get("idle_behavior_enabled", False)))
+        self.idle_behavior_seconds = QSpinBox()
+        self.idle_behavior_seconds.setRange(300, 3600)
+        self.idle_behavior_seconds.setSuffix(" 秒")
+        self.idle_behavior_seconds.setValue(int(app_config.get("idle_behavior_seconds", 600)))
         self.hourly_chime = QCheckBox("整点报时")
         self.hourly_chime.setChecked(bool(app_config.get("hourly_chime_enabled", True)))
         self.reminder_enabled = QCheckBox("提醒功能")
@@ -1192,6 +1239,8 @@ class SettingsWindow(QDialog):
         form.addRow("透明度", self.opacity)
         form.addRow("闲聊", self.idle_chat)
         form.addRow("闲聊间隔", self.idle_minutes)
+        form.addRow("空闲小动作", self.idle_behavior)
+        form.addRow("小动作等待", self.idle_behavior_seconds)
         form.addRow("整点报时", self.hourly_chime)
         form.addRow("提醒", self.reminder_enabled)
         form.addRow("昼夜作息", self.day_night)
@@ -1418,6 +1467,24 @@ class SettingsWindow(QDialog):
         rel_layout.addWidget(self.relationship_raw_text)
         layout.addWidget(rel_group)
 
+        memory_group = QGroupBox("记忆备忘录")
+        memory_layout = QVBoxLayout(memory_group)
+        self.memory_text = QTextEdit()
+        self.memory_text.setReadOnly(True)
+        memory_buttons = QHBoxLayout()
+        memory_refresh = QPushButton("刷新记忆"); memory_refresh.setIcon(get_icon("refresh"))
+        memory_refresh.clicked.connect(self._refresh_memory)
+        self.memory_note_input = QLineEdit()
+        self.memory_note_input.setPlaceholderText("写一条希望达妮娅记住的事")
+        memory_add = QPushButton("记住这条"); memory_add.setIcon(get_icon("save"))
+        memory_add.clicked.connect(self._add_memory_note)
+        memory_buttons.addWidget(memory_refresh)
+        memory_buttons.addWidget(self.memory_note_input, 1)
+        memory_buttons.addWidget(memory_add)
+        memory_layout.addLayout(memory_buttons)
+        memory_layout.addWidget(self.memory_text)
+        layout.addWidget(memory_group)
+
         evt_group = QGroupBox("事件日志")
         evt_layout = QVBoxLayout(evt_group)
         self.events_text = QTextEdit()
@@ -1442,6 +1509,7 @@ class SettingsWindow(QDialog):
 
         self.tabs.addTab(tab, get_icon("download"), "关系与事件")
         self._refresh_relationship()
+        self._refresh_memory()
         self._refresh_events()
 
     def _build_system_tab(self) -> None:
@@ -1514,7 +1582,7 @@ class SettingsWindow(QDialog):
             "【窗口】\n"
             "10. 设置中心是独立窗口，可最小化后从任务栏找回；右键角色仍可再次唤起并恢复原窗口。\n"
             "【角色与资源】\n"
-            "11. 前台只显示摘要；原始 YAML、日志和路径放在「显示原始」按钮里，避免误把工程数据当成可读内容。\n"
+            "11. 前台只显示摘要；原始 YAML、日志和路径放在「显示原始」按钮里，避免误把原始配置数据当成可读内容。\n"
             "12. 可编辑文件只有 character/speech/relationship/events 四类 YAML；lore、story、actions 默认只读，避免误改核心剧情资产。\n"
             "【关系与事件】\n"
             "13. 关系数值不是攻略条，而是达妮娅防御、信任、共情负荷和留下倾向的运行状态。\n"
@@ -1641,6 +1709,8 @@ class SettingsWindow(QDialog):
         config.setdefault("window", {})["opacity_percent"] = self.opacity.value()
         config["idle_chat_enabled"] = self.idle_chat.isChecked()
         config["idle_chat_minutes"] = self.idle_minutes.value()
+        config["idle_behavior_enabled"] = self.idle_behavior.isChecked()
+        config["idle_behavior_seconds"] = self.idle_behavior_seconds.value()
         config["hourly_chime_enabled"] = self.hourly_chime.isChecked()
         config["reminder_enabled"] = self.reminder_enabled.isChecked()
         config["day_night_enabled"] = self.day_night.isChecked()
@@ -1763,6 +1833,25 @@ class SettingsWindow(QDialog):
             self.events_text.setPlainText(_format_event_log_summary(events))
         if hasattr(self, "events_raw_text"):
             self.events_raw_text.setPlainText("\n".join(raw_event_lines) or "暂无事件记录。")
+
+    def _refresh_memory(self) -> None:
+        status = self.relationship_viewer.status()
+        memory = status.get("user_memory")
+        if not isinstance(memory, dict):
+            memory = {}
+        profile = self.controller.profile_manager.load()
+        notes = _read_recent_text_lines(self.controller.notes_manager.path, limit=12)
+        if hasattr(self, "memory_text"):
+            self.memory_text.setPlainText(_format_user_memory_summary(profile, memory, notes))
+
+    def _add_memory_note(self) -> None:
+        text = self.memory_note_input.text().strip()
+        if not text:
+            QMessageBox.information(self, "记忆备忘录", "先写一条要记住的内容。")
+            return
+        self.controller.add_note(text)
+        self.memory_note_input.clear()
+        self._refresh_memory()
 
     def _toggle_relationship_raw(self) -> None:
         visible = not self.relationship_raw_text.isVisible()

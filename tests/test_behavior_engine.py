@@ -38,8 +38,8 @@ class TestBehaviorConfig:
         assert cfg.snap_margin_px == 24
         assert cfg.keep_on_screen_enabled is True
         assert cfg.drag_return_enabled is True
-        assert cfg.idle_behavior_enabled is True
-        assert cfg.idle_behavior_seconds == 90
+        assert cfg.idle_behavior_enabled is False
+        assert cfg.idle_behavior_seconds == 600
         assert cfg.double_click_enabled is True
         assert cfg.long_press_ms == 600
 
@@ -74,7 +74,7 @@ class TestBehaviorConfig:
         }
         cfg = BehaviorConfig(bad_values)
         assert cfg.snap_margin_px == 24
-        assert cfg.idle_behavior_seconds == 90
+        assert cfg.idle_behavior_seconds == 600
         assert cfg.long_press_ms == 600
 
 

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -7,6 +11,7 @@ from PySide6.QtCore import QThread, Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
@@ -222,6 +227,12 @@ class FirstRunWizard(QDialog):
             "完成后会启动桌宠。之后可通过右键菜单打开设置中心，继续配置 API、本地模型、角色资源和数据诊断。\n\n"
             "如果需要重新查看本向导，可在设置中心的“系统”页点击“重新打开首次启动向导”。"
         ))
+        self.create_shortcut_check = QCheckBox("创建桌面快捷方式：daniya521")
+        self.create_shortcut_check.setChecked(False)
+        layout.addWidget(self.create_shortcut_check)
+        self.shortcut_result = QLabel("")
+        self.shortcut_result.setWordWrap(True)
+        layout.addWidget(self.shortcut_result)
         layout.addStretch(1)
         return page
 
@@ -300,6 +311,7 @@ class FirstRunWizard(QDialog):
             self.stack.setCurrentIndex(1)
             return
         run_mode, api_configured, skipped_api, _target_id = self._save_current_api_settings()
+        self._create_shortcut_if_requested()
         self.setup_manager.mark_first_run_complete(run_mode, api_configured=api_configured, skipped_api=skipped_api)
         self.accept()
 
@@ -356,3 +368,86 @@ class FirstRunWizard(QDialog):
             QMessageBox.warning(self, "无法打开", f"路径不存在：{path}")
             return
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
+
+    def _create_shortcut_if_requested(self) -> None:
+        if not self.create_shortcut_check.isChecked():
+            self.shortcut_result.setText("")
+            return
+        ok, message = self._create_desktop_shortcut()
+        self.shortcut_result.setText(message)
+        if not ok:
+            print(f"[Daniya] Desktop shortcut creation skipped/failed: {message}")
+
+    def _create_desktop_shortcut(self) -> tuple[bool, str]:
+        if os.name != "nt":
+            return False, "桌面快捷方式仅支持 Windows。"
+
+        target, working_dir = self._shortcut_launch_target()
+        icon_path = resource_path("assets", "placeholder", "app.ico")
+        script_path = Path(tempfile.gettempdir()) / f"daniya_shortcut_{os.getpid()}.ps1"
+        script = """
+param(
+    [string]$TargetPath,
+    [string]$WorkingDirectory,
+    [string]$IconLocation,
+    [string]$ShortcutName
+)
+$desktop = [Environment]::GetFolderPath('Desktop')
+if ([string]::IsNullOrWhiteSpace($desktop)) {
+    throw 'Desktop path unavailable'
+}
+$shortcutPath = [System.IO.Path]::Combine($desktop, ($ShortcutName + '.lnk'))
+$shell = New-Object -ComObject WScript.Shell
+$shortcut = $shell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = $TargetPath
+$shortcut.WorkingDirectory = $WorkingDirectory
+if ($IconLocation -and (Test-Path -LiteralPath $IconLocation)) {
+    $shortcut.IconLocation = $IconLocation
+}
+$shortcut.Save()
+Write-Output $shortcutPath
+""".strip()
+        try:
+            script_path.write_text(script, encoding="utf-8")
+            result = subprocess.run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    str(script_path),
+                    str(target),
+                    str(working_dir),
+                    str(icon_path),
+                    "daniya521",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+        except Exception as exc:
+            return False, f"创建桌面快捷方式失败：{exc.__class__.__name__}: {exc}"
+        finally:
+            try:
+                script_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout or "").strip()
+            return False, f"创建桌面快捷方式失败：{detail or 'PowerShell 返回错误'}"
+        created_path = result.stdout.strip() or "桌面"
+        return True, f"已创建桌面快捷方式：{created_path}"
+
+    def _shortcut_launch_target(self) -> tuple[Path, Path]:
+        if getattr(sys, "frozen", False):
+            exe_path = Path(sys.executable).resolve()
+            return exe_path, exe_path.parent
+
+        run_bat = resource_path("run.bat")
+        if run_bat.exists():
+            return run_bat.resolve(), run_bat.parent.resolve()
+
+        return Path(sys.executable).resolve(), Path.cwd().resolve()

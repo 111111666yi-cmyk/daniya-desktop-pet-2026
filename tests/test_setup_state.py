@@ -16,17 +16,24 @@ def test_setup_state_manager(tmp_path):
     config = manager.load_setup_config()
     assert config["first_run_setup"] is True
     assert config["run_mode"] == "api_cloud"
+    assert manager.setup_config_path == tmp_path / "data" / "setup_config.json"
+    assert manager.setup_config_path.exists()
+    assert not manager.legacy_setup_config_path.exists()
 
 
 def test_setup_state_migrates_legacy_config(tmp_path):
     manager = SetupStateManager(root=tmp_path)
-    manager.save_setup_config({"first_run_setup": True, "run_mode": "fast"})
+    manager.legacy_setup_config_path.write_text(
+        '{"first_run_setup": true, "run_mode": "fast"}',
+        encoding="utf-8",
+    )
 
     assert manager.is_first_run_complete()
     first_run = manager.load_first_run_done()
     assert first_run["completed"] is True
     assert first_run["run_mode"] == "fast"
     assert first_run["skipped_api"] is True
+    assert manager.setup_config_path.exists()
 
 
 def test_setup_state_bad_first_run_file_is_not_complete(tmp_path):

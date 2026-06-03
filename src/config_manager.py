@@ -14,8 +14,8 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "version": APP_VERSION,
     "current_character": "daniya",
     "window": {
-        "start_x": 1180,
-        "start_y": 680,
+        "start_x": 0,
+        "start_y": 0,
         "always_on_top": True,
         "show_input": False,
     },
@@ -91,8 +91,8 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "snap_margin_px": 24,
     "keep_on_screen_enabled": True,
     "drag_return_enabled": True,
-    "idle_behavior_enabled": True,
-    "idle_behavior_seconds": 90,
+    "idle_behavior_enabled": False,
+    "idle_behavior_seconds": 600,
     "double_click_enabled": True,
     "long_press_ms": 600,
 }
@@ -292,11 +292,11 @@ class ConfigManager:
             config["snap_margin_px"] = 24
         config["keep_on_screen_enabled"] = bool(config.get("keep_on_screen_enabled", True))
         config["drag_return_enabled"] = bool(config.get("drag_return_enabled", True))
-        config["idle_behavior_enabled"] = bool(config.get("idle_behavior_enabled", True))
+        config["idle_behavior_enabled"] = bool(config.get("idle_behavior_enabled", False))
         try:
-            config["idle_behavior_seconds"] = int(config.get("idle_behavior_seconds", 90))
+            config["idle_behavior_seconds"] = int(config.get("idle_behavior_seconds", 600))
         except (TypeError, ValueError):
-            config["idle_behavior_seconds"] = 90
+            config["idle_behavior_seconds"] = 600
         config["double_click_enabled"] = bool(config.get("double_click_enabled", True))
         try:
             config["long_press_ms"] = int(config.get("long_press_ms", 600))

@@ -223,9 +223,6 @@ class PetWindow(QWidget):
             self.behavior_engine.snap_controller.get_current_snap_state()
         )
 
-        window_config = self.app_config.setdefault("window", {})
-        window_config["start_x"] = final_pos.x()
-        window_config["start_y"] = final_pos.y()
         print(
             "[Daniya] window geometry "
             f"requested=({requested.x()},{requested.y()}) "

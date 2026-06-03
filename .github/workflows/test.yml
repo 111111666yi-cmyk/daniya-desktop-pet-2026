@@ -36,3 +36,6 @@ jobs:
 
       - name: Check config templates
         run: python tools/check_config_templates.py
+
+      - name: Check docs links
+        run: python tools/check_docs_links.py

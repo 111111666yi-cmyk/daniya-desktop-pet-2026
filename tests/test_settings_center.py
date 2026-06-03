@@ -44,6 +44,22 @@ class FakeConfigManager:
         self.config = deepcopy(value)
 
 
+def test_application_lifecycle_keeps_process_alive_when_windows_are_hidden():
+    from src.app import _configure_application_lifecycle
+
+    class FakeApplication:
+        def __init__(self) -> None:
+            self.quit_on_last_window_closed = None
+
+        def setQuitOnLastWindowClosed(self, value: bool) -> None:
+            self.quit_on_last_window_closed = value
+
+    app = FakeApplication()
+    _configure_application_lifecycle(app)
+
+    assert app.quit_on_last_window_closed is False
+
+
 def test_settings_manager_saves_api_config_without_plain_key(tmp_path):
     fake = FakeConfigManager()
     manager = SettingsManager(fake, root=tmp_path)
@@ -83,6 +99,20 @@ def test_character_pack_editor_backs_up_valid_save_and_rolls_back_invalid_pack(t
     ok, message, backup = editor.save_yaml_safely("lore.md", "bad")
     assert ok is False
     assert backup is None
+
+
+def test_character_pack_editor_default_root_uses_public_character_pack(monkeypatch, tmp_path):
+    from src import character_pack_editor as editor_module
+
+    runtime = tmp_path / "runtime"
+    public_character_root = tmp_path / "public_characters"
+    monkeypatch.setattr(editor_module, "runtime_root", lambda: runtime)
+    monkeypatch.setattr(editor_module, "default_character_root", lambda: public_character_root)
+
+    editor = CharacterPackEditor()
+
+    assert editor.root == runtime
+    assert editor.character_root == public_character_root
 
 
 def test_relationship_viewer_exports_and_resets_with_backup(tmp_path, monkeypatch):
@@ -321,6 +351,10 @@ def test_settings_window_opens_with_expected_tabs_in_subprocess(tmp_path):
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["DANIYA_RELATION_DATA_DIR"] = str(tmp_path / "relation")
+    runtime_root = tmp_path / "runtime"
+    runtime_root.mkdir()
+    shutil.copytree(Path("characters"), runtime_root / "characters")
+    env["DANIYA_RUNTIME_ROOT"] = str(runtime_root)
     script = r"""
 import os, sys
 from PySide6.QtWidgets import QApplication
@@ -359,6 +393,7 @@ def test_settings_window_saves_local_model_settings_and_syncs_in_subprocess(tmp_
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["DANIYA_RELATION_DATA_DIR"] = str(tmp_path / "relation")
+    env["DANIYA_RUNTIME_ROOT"] = str(tmp_path / "runtime")
     script = r"""
 import os, sys, json
 from PySide6.QtWidgets import QApplication

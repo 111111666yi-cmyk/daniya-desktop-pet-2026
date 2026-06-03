@@ -1,8 +1,9 @@
 {
   "version": "v0.60",
+  "current_character": "daniya",
   "window": {
-    "start_x": 100,
-    "start_y": 100,
+    "start_x": 0,
+    "start_y": 0,
     "always_on_top": true,
     "show_input": true,
     "opacity_percent": 100
@@ -44,7 +45,8 @@
   },
   "api": {
     "base_url": "https://api.deepseek.com",
-    "model": "deepseek-chat"
+    "model": "deepseek-chat",
+    "local_mode": false
   },
   "typewriter": {
     "char_interval_ms": 35,
@@ -62,5 +64,14 @@
   "reminder_enabled": true,
   "day_night_enabled": true,
   "night_start_hour": 23,
-  "night_end_hour": 7
+  "night_end_hour": 7,
+  "behavior_enabled": true,
+  "snap_to_edge_enabled": true,
+  "snap_margin_px": 24,
+  "keep_on_screen_enabled": true,
+  "drag_return_enabled": true,
+  "idle_behavior_enabled": false,
+  "idle_behavior_seconds": 600,
+  "double_click_enabled": true,
+  "long_press_ms": 600
 }

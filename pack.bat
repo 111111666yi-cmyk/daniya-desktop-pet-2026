@@ -7,12 +7,14 @@ cd /d "%~dp0"
 set "APP_NAME=DaniyaSummerPet"
 set "VERSION=v0.60"
 set "PACKAGE_NAME=DaniyaSummerPet-v0.60-win-x64"
-set "PYTHON_EXE=python"
+if not defined PYTHON_EXE set "PYTHON_EXE=python"
 set "PKG_STAGING=%TEMP%\%APP_NAME%_package_%RANDOM%_%RANDOM%"
 set "SAFE_CONFIG=%PKG_STAGING%\config"
 set "SAFE_DOCS=%PKG_STAGING%\docs"
 
-if exist ".venv\Scripts\python.exe" (
+if defined DANIYA_PACK_PYTHON (
+    set "PYTHON_EXE=%DANIYA_PACK_PYTHON%"
+) else if exist ".venv\Scripts\python.exe" (
     set "PYTHON_EXE=.venv\Scripts\python.exe"
 )
 
@@ -68,6 +70,7 @@ if not exist "config\app_config.example.json" (
     exit /b 1
 )
 copy /Y "config\app_config.example.json" "%SAFE_CONFIG%\app_config.json" >nul
+copy /Y "config\app_config.example.json" "%SAFE_CONFIG%\app_config.example.json" >nul
 
 if not exist "config\api_config.example.json" (
     echo [Daniya] Missing config\api_config.example.json. Cannot package safely.
@@ -87,11 +90,25 @@ for %%F in (bookmarks.json model_catalog.json profile.json provider_capabilities
     if exist "config\%%F" copy /Y "config\%%F" "%SAFE_CONFIG%\%%F" >nul
 )
 
-robocopy "docs" "%SAFE_DOCS%" /E /XD "v0.51_patch_audit" "screenshots" "debug" "debug_logs" "tmp" "__pycache__" /XF "*.tmp" "*.log" "debug_*" >nul
-if %ERRORLEVEL% GEQ 8 (
-    echo [Daniya] Failed to prepare public docs.
-    pause
-    exit /b 1
+for %%F in (
+    index.md
+    installation.md
+    first_run_guide.md
+    api_config.md
+    troubleshooting.md
+    help.md
+    character_pack_guide.md
+    asset_policy.md
+    release_checklist.md
+    dev_workflow.md
+    behavior_engine.md
+    SETTINGS_CENTER.md
+    SECURITY_AUDIT.md
+    local_models.md
+    LLM_PROVIDERS.md
+    CUSTOM_API_PROVIDER_GUIDE.md
+) do (
+    if exist "docs\%%F" copy /Y "docs\%%F" "%SAFE_DOCS%\%%F" >nul
 )
 
 echo [Daniya] Running PyInstaller...
@@ -109,6 +126,7 @@ echo [Daniya] Running PyInstaller...
   --add-data "characters\daniya\events.yaml;characters\daniya" ^
   --add-data "characters\daniya\lore.md;characters\daniya" ^
   --add-data "characters\daniya\lore_index.yaml;characters\daniya" ^
+  --add-data "characters\daniya\prompt_pack.md;characters\daniya" ^
   --add-data "characters\daniya\relationship.yaml;characters\daniya" ^
   --add-data "characters\daniya\speech.yaml;characters\daniya" ^
   --add-data "characters\daniya\story.yaml;characters\daniya" ^

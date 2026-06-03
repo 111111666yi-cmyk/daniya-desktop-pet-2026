@@ -87,8 +87,8 @@
   "snap_margin_px": 24,
   "keep_on_screen_enabled": true,
   "drag_return_enabled": true,
-  "idle_behavior_enabled": true,
-  "idle_behavior_seconds": 90,
+  "idle_behavior_enabled": false,
+  "idle_behavior_seconds": 600,
   "double_click_enabled": true,
   "long_press_ms": 600
 }

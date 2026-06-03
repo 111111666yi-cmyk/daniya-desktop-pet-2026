@@ -1,3 +1,4 @@
+import json
 import sys
 
 from PySide6.QtCore import QPoint, QRect
@@ -17,8 +18,9 @@ def _close_window(app, window):
     app.processEvents()
 
 
-def test_pet_window_offscreen_position_falls_back_to_visible_right(monkeypatch):
+def test_pet_window_offscreen_position_falls_back_to_visible_right(monkeypatch, tmp_path):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    monkeypatch.setattr("src.utils.runtime_root", lambda: tmp_path)
     app = _app()
     config = {
         "window": {"start_x": 999999, "start_y": 999999, "always_on_top": False, "show_input": True},
@@ -33,8 +35,11 @@ def test_pet_window_offscreen_position_falls_back_to_visible_right(monkeypatch):
         assert window.isVisible()
         assert window.geometry().intersected(bounds).width() >= window.width() * 0.85
         assert window.geometry().intersected(bounds).height() >= window.height() * 0.85
-        assert config["window"]["start_x"] == window.x()
-        assert config["window"]["start_y"] == window.y()
+        assert config["window"]["start_x"] == 999999
+        assert config["window"]["start_y"] == 999999
+        state = json.loads((tmp_path / "data" / "window_state.json").read_text(encoding="utf-8"))
+        assert state["x"] == window.x()
+        assert state["y"] == window.y()
         assert window.image_label.pixmap() is not None
         assert not window.image_label.pixmap().isNull()
     finally:

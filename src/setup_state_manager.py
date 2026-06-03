@@ -15,21 +15,23 @@ class SetupStateManager:
         self.root = root or runtime_root()
         self.config_dir = ensure_dir(self.root / "config")
         self.data_dir = ensure_dir(self.root / "data")
-        self.setup_config_path = self.config_dir / "setup_config.json"
+        self.legacy_setup_config_path = self.config_dir / "setup_config.json"
+        self.setup_config_path = self.data_dir / "setup_config.json"
         self.first_run_done_path = self.data_dir / "first_run_done.json"
 
     def load_setup_config(self) -> dict[str, Any]:
         """读取当前的 setup_config.json，如果不存在则返回默认空字典。"""
-        if not self.setup_config_path.exists():
+        path = self.setup_config_path if self.setup_config_path.exists() else self.legacy_setup_config_path
+        if not path.exists():
             return {}
         try:
-            return json.loads(self.setup_config_path.read_text(encoding="utf-8"))
+            return json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return {}
 
     def save_setup_config(self, config: dict[str, Any]) -> None:
         """保存配置到 setup_config.json。"""
-        self.config_dir.mkdir(parents=True, exist_ok=True)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
         tmp = self.setup_config_path.with_suffix(".tmp")
         tmp.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
         tmp.replace(self.setup_config_path)

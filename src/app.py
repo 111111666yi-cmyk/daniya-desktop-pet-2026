@@ -243,9 +243,11 @@ class AppController(QObject):
             QTimer.singleShot(2000, lambda: self._check_affinity_upgrade(upgraded))
 
     def save_window_position(self, x: int, y: int) -> None:
-        self.app_config.setdefault("window", {})["start_x"] = x
-        self.app_config.setdefault("window", {})["start_y"] = y
-        self.config_manager.save_app_config(self.app_config)
+        self.window.behavior_engine.snap_controller.save_window_state(
+            x,
+            y,
+            self.window.behavior_engine.snap_controller.get_current_snap_state(),
+        )
 
     def on_drag_completed(self, x: int, y: int) -> None:
         # [CHANGE-003+005] 拖拽事件防抖：500ms 内不重复触发，拖拽结束才执行一次
@@ -473,9 +475,13 @@ class AppController(QObject):
             self.window.animation_manager.trigger_happy()
             self.window.speak(line)
 
+def _configure_application_lifecycle(app: QApplication) -> None:
+    app.setQuitOnLastWindowClosed(False)
+
+
 def run() -> None:
     app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(True)
+    _configure_application_lifecycle(app)
 
     app.setStyleSheet("""
         QDialog, QMainWindow {

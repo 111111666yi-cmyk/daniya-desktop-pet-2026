@@ -26,6 +26,22 @@ LOCAL_PATH_RE = re.compile(
     re.IGNORECASE,
 )
 REQUIRED_ENTRY_SUFFIXES = (
+    "DaniyaSummerPet.exe",
+    "README.md",
+    "LICENSE",
+    ".env.example",
+    "config/app_config.json",
+    "config/app_config.example.json",
+    "config/api_config.example.json",
+    "config/model_profiles.json",
+    "characters/daniya/actions.yaml",
+    "characters/daniya/character.yaml",
+    "characters/daniya/events.yaml",
+    "characters/daniya/lore.md",
+    "characters/daniya/lore_index.yaml",
+    "characters/daniya/prompt_pack.md",
+    "characters/daniya/relationship.yaml",
+    "characters/daniya/speech.yaml",
     "characters/daniya/story.yaml",
     "characters/template/story.yaml",
 )
