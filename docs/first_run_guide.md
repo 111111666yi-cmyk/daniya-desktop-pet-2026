@@ -8,7 +8,7 @@ v0.58 起，首次启动向导用于帮助新用户完成最小配置。它不�
 
 - `data/first_run_done.json` 不存在。
 - `data/first_run_done.json` 损坏或不是有效完成状态。
-- 旧版 `config/setup_config.json` 存在且标记已完成时，会自动迁移到 `data/first_run_done.json`。
+- 旧版 `config/setup_config.json` 存在且标记已完成时，会自动迁移到 `data/first_run_done.json`；新的 setup 状态写入 ignored 的 `data/setup_config.json`，不再写 tracked config。
 - 用户在设置中心的“系统”页点击“重新打开首次启动向导”。
 
 打包版 Windows exe 的该文件位于 `%APPDATA%\DaniyaSummerPet\data\first_run_done.json`；源码运行时位于 ignored `data/`。
@@ -19,7 +19,7 @@ v0.58 起，首次启动向导用于帮助新用户完成最小配置。它不�
 2. API 设置：可跳过 API，也可选择 Provider、填写 Base URL、Model、API Key，并后台测试连接。
 3. 素材说明：解释 `assets/private/`、placeholder、normal1/normal2 与 manifest 用途。
 4. 角色包说明：解释 `characters/daniya/`、`characters/template/` 和 local-only `characters/test_dummy/`。
-5. 完成：提示启动桌宠、设置中心、README 与本地 fallback。
+5. 完成：提示启动桌宠、设置中心、README 与本地 fallback；可选创建 `daniya521` 桌面快捷方式，默认不勾选，失败不阻止启动。
 
 ## API Key
 

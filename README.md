@@ -1,8 +1,8 @@
 # Daniya Summer Desktop Pet · 达妮娅夏日桌宠
 
-Current release track: **DaniyaSummerPet v0.60 Stable Preview**
+Current version: **DaniyaSummerPet v0.60**
 
-达妮娅是一款基于 Python + PySide6 的开源桌宠应用。提供透明置顶窗口、拖拽移动、右键菜单、输入框对话、气泡消息、打字机效果、云端/本地 AI 对话、角色关系引擎、设置中心等功能。
+达妮娅是一款基于 Python + PySide6 的开源桌宠应用。提供透明置顶窗口、拖拽移动、右键菜单、输入框对话、气泡消息、打字机效果、云端/本地 AI 对话、角色关系、记忆备忘录和设置中心等功能。
 
 这是一个非官方同人作品。本仓库不分发官方游戏资源、私有角色素材、用户关系数据或 API Key。
 
@@ -32,7 +32,7 @@ install.bat
 ### 3. 日常使用
 
 - **对话**：右键输入框发送消息，达妮娅会通过 AI 回复
-- **设置中心**：右键菜单 → 对话 → 设置中心，管理 API、模型、桌宠行为、角色资源
+- **设置中心**：右键菜单 → 对话 → 设置中心，管理 API、模型、桌宠行为、角色资源、关系状态和记忆备忘录
 - **本地模型**：设置中心 → 模型与引擎 → 本地部署，可浏览推荐模型目录并一键拉取
 
 ## 系统要求
@@ -52,7 +52,7 @@ install.bat
 | `assets/icons/` | UI 图标（来自 Nieobie/Game-Icon-Pack） |
 | `data/` | 运行时数据（关系状态、事件日志，Git忽略） |
 | `docs/` | 项目文档 |
-| `tests/` | 测试用例（206 通过，3 个跳过） |
+| `tests/` | pytest 测试用例 |
 
 ## API 配置
 
@@ -134,6 +134,8 @@ Source/development mode stores runtime data under `data/`. Packaged Windows rele
 
 v0.58 adds a five-page first-run guide for welcome, API setup, private assets, character packs, and final startup. Users can skip API and use local fallback, or save a provider/base URL/model/API Key to the local `.env`.
 
+The Settings Center also exposes relationship state, recent events, and a memory memo view. User profile, relationship memory, unlocked story fragments, and manual notes are local runtime data and are not committed to Git.
+
 The completion marker is stored in `data/first_run_done.json` in source mode and `%APPDATA%\DaniyaSummerPet\data\first_run_done.json` in the Windows package. Open Settings Center -> System -> Reopen first-run wizard to view it again without clearing existing settings.
 
 See `docs/first_run_guide.md` and `docs/troubleshooting.md`.
@@ -182,7 +184,7 @@ Read:
 - v0.55.3: AppData runtime patch.
 - v0.58: first-run onboarding guide.
 - v0.59: automated local checks and CI preparation.
-- v0.60: Stable Preview release preparation.
+- v0.60: release preparation.
 
 ## License
 

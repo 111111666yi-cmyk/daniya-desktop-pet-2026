@@ -7,7 +7,8 @@
 | QA60-ZAI-001 | P1 | Z.AI real API reply not accepted | BLOCKED: tested release runtime has no Z.AI/Zhipu/GLM provider entry and no Z.AI key. Do not mark live-provider QA PASS until a real configured provider reply is observed. |
 | QA60-BUBBLE-001 | P3 | Long text bubble visual not accepted | NEEDS POLISH: local fallback replies are short; a live model or dedicated long local response is needed for visual acceptance. This does not block the v0.60 release candidate. |
 | QA60-MONITOR-001 | P2 | Multi-monitor drag not accepted | BLOCKED: current Windows session exposes only one monitor. |
-| QA60-SHORTCUT-001 | P3 | First-run wizard does not offer optional desktop shortcut creation | Suggested improvement: add a non-forcing checkbox for creating a `Daniya521` desktop shortcut; creation failure must not block startup or corrupt setup state. |
+| QA60-SHORTCUT-001 | P3 | First-run wizard optional desktop shortcut creation | SOURCE FIXED / NEEDS PACKAGE QA: a non-default checkbox now creates a `daniya521` desktop shortcut and failure does not block setup completion. Rebuild and manually verify before closing. |
+| QA60-WINDOW-001 | P1 | Pet/settings window lifecycle can make the app disappear | SOURCE FIXED / NEEDS PACKAGE QA: the app now disables quit-on-last-window-closed behavior, so Settings Center minimize/close and pet hidden/tray states should not terminate the process. Rebuild and manually verify before closing. |
 | QA60-INSTANCE-001 | P3 | Old development instance can coexist with packaged release instance during QA | Documented test risk: make sure manual QA targets the packaged exe process, not an already-running `pythonw.exe main.py` development instance. |
 
 ## v0.60 Release Blocker Follow-Up (2026-06-02)
