@@ -38,6 +38,12 @@ def test_model_profiles_initialization_and_loading(tmp_path):
     assert deepseek_profile["provider"] == "deepseek"
     assert deepseek_profile["source"] == "cloud"
 
+    zai_profile = next(p for p in loaded["profiles"] if p["id"] == "zai_default")
+    assert zai_profile["provider"] == Provider.ZAI
+    assert zai_profile["base_url"] == "https://api.z.ai/api/paas/v4"
+    assert zai_profile["model"] == "glm-5.1"
+    assert zai_profile["api_key_env"] == "ZAI_API_KEY"
+
 
 def test_model_profiles_broken_json_fallback(tmp_path):
     fake = FakeConfigManager()

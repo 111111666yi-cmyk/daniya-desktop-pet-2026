@@ -42,6 +42,7 @@ class Provider:
     GEMINI: str = "gemini"
     MISTRAL: str = "mistral"
     GROQ: str = "groq"
+    ZAI: str = "zai"
     CUSTOM: str = "custom_cloud"
 
     # 本地
@@ -59,6 +60,12 @@ class Provider:
         "gemini": "gemini",
         "mistral": "mistral",
         "groq": "groq",
+        "z.ai": "zai",
+        "z-ai": "zai",
+        "zai": "zai",
+        "zhipu": "zai",
+        "zhipu ai": "zai",
+        "glm": "zai",
         "openai-compatible local": "local_openai_compatible",
         "openai-compatible": "openai_compatible",
         "llama.cpp server": "llama_cpp",
@@ -70,7 +77,7 @@ class Provider:
 
     @classmethod
     def all_cloud(cls) -> list[str]:
-        return [cls.DEEPSEEK, cls.OPENAI, cls.CLAUDE, cls.GEMINI, cls.MISTRAL, cls.GROQ, cls.CUSTOM]
+        return [cls.DEEPSEEK, cls.OPENAI, cls.CLAUDE, cls.GEMINI, cls.MISTRAL, cls.GROQ, cls.ZAI, cls.CUSTOM]
 
     @classmethod
     def all_local(cls) -> list[str]:
@@ -156,6 +163,19 @@ _PROVIDER_META: dict[str, dict[str, Any]] = {
         "base_url": "https://api.groq.com/openai/v1",
         "default_model": "llama-4-maverick-17b-128e-instruct",
         "api_key_env": "GROQ_API_KEY",
+        "auth_header": "bearer",
+        "api_style": "openai_compatible",
+        "source": "cloud",
+        "timeout": 30,
+        "max_tokens": 4096,
+        "capabilities": ["text"],
+    },
+    Provider.ZAI: {
+        "key": Provider.ZAI,
+        "display_name": "Z.AI (GLM)",
+        "base_url": "https://api.z.ai/api/paas/v4",
+        "default_model": "glm-5.1",
+        "api_key_env": "ZAI_API_KEY",
         "auth_header": "bearer",
         "api_style": "openai_compatible",
         "source": "cloud",

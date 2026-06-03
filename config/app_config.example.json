@@ -1,5 +1,6 @@
 {
   "version": "v0.60",
+  "quiet_defaults_migration": "v0.61-quiet-defaults",
   "current_character": "daniya",
   "window": {
     "start_x": 0,
@@ -15,6 +16,7 @@
     "max_pet_height": 160,
     "size_presets": [80, 96, 112, 128, 144, 160],
     "idle_animation_interval_ms": 10000,
+    "edge_peek_enabled": false,
     "click_to_call_enabled": false,
     "states": {
       "idle": "idle",
@@ -58,8 +60,8 @@
   "affinity": {
     "click_cooldown_seconds": 5
   },
-  "hourly_chime_enabled": true,
-  "idle_chat_enabled": true,
+  "hourly_chime_enabled": false,
+  "idle_chat_enabled": false,
   "idle_chat_minutes": 10,
   "reminder_enabled": true,
   "day_night_enabled": true,

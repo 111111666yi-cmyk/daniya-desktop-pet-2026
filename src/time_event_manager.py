@@ -19,7 +19,7 @@ class TimeEventManager(QObject):
         QTimer.singleShot(2_000, self.check_time)
 
     def check_time(self) -> None:
-        if not bool(self.app_config.get("hourly_chime_enabled", True)):
+        if not bool(self.app_config.get("hourly_chime_enabled", False)):
             return
         now = datetime.now()
         if now.minute != 0:

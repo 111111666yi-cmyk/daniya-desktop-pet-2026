@@ -19,3 +19,7 @@ class NotesManager:
         with self.path.open("a", encoding="utf-8") as file:
             file.write(f"[{timestamp}] {content}\n")
         return True
+
+    def clear(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text("", encoding="utf-8")

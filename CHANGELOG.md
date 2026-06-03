@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased - v0.61-v0.65 Review Hardening
+
+- Added a public-surface audit check for forbidden character copy, local user paths, template repository URLs, quiet default settings, and visible memory controls.
+- Made the default desktop pet experience quieter: idle chat, hourly chime, edge peek, and idle behavior are disabled by default, while user settings can still enable them.
+- Raised the idle behavior lower bound to 600 seconds so enabling it does not create high-frequency unexpected movement.
+- Added a visible Settings Center action to clear automatic memory and manual memory notes without resetting relationship state.
+- Verified Provider prompt construction keeps profile and memory memo context before all text Provider channels.
+- Cleaned the README clone instructions to use the actual public repository URL.
+
 ## v0.60 Release Blocker Fix (2026-06-02)
 
 - Fixed the v0.60 release package story asset gap by adding `characters/daniya/story.yaml` to `pack.bat`; `characters/template/story.yaml` remains included through the public template package.

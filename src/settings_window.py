@@ -1217,18 +1217,18 @@ class SettingsWindow(QDialog):
         self.opacity.setSuffix("%")
         self.opacity.setValue(int(window.get("opacity_percent", 100)))
         self.idle_chat = QCheckBox("启用闲聊")
-        self.idle_chat.setChecked(bool(app_config.get("idle_chat_enabled", True)))
+        self.idle_chat.setChecked(bool(app_config.get("idle_chat_enabled", False)))
         self.idle_minutes = QSpinBox()
         self.idle_minutes.setRange(1, 240)
         self.idle_minutes.setValue(int(app_config.get("idle_chat_minutes", 10)))
         self.idle_behavior = QCheckBox("启用空闲小动作")
         self.idle_behavior.setChecked(bool(app_config.get("idle_behavior_enabled", False)))
         self.idle_behavior_seconds = QSpinBox()
-        self.idle_behavior_seconds.setRange(300, 3600)
+        self.idle_behavior_seconds.setRange(600, 3600)
         self.idle_behavior_seconds.setSuffix(" 秒")
         self.idle_behavior_seconds.setValue(int(app_config.get("idle_behavior_seconds", 600)))
         self.hourly_chime = QCheckBox("整点报时")
-        self.hourly_chime.setChecked(bool(app_config.get("hourly_chime_enabled", True)))
+        self.hourly_chime.setChecked(bool(app_config.get("hourly_chime_enabled", False)))
         self.reminder_enabled = QCheckBox("提醒功能")
         self.reminder_enabled.setChecked(bool(app_config.get("reminder_enabled", True)))
         self.day_night = QCheckBox("昼夜作息")
@@ -1478,9 +1478,12 @@ class SettingsWindow(QDialog):
         self.memory_note_input.setPlaceholderText("写一条希望达妮娅记住的事")
         memory_add = QPushButton("记住这条"); memory_add.setIcon(get_icon("save"))
         memory_add.clicked.connect(self._add_memory_note)
+        memory_clear = QPushButton("清空记忆"); memory_clear.setIcon(get_icon("settings"))
+        memory_clear.clicked.connect(self._clear_memory)
         memory_buttons.addWidget(memory_refresh)
         memory_buttons.addWidget(self.memory_note_input, 1)
         memory_buttons.addWidget(memory_add)
+        memory_buttons.addWidget(memory_clear)
         memory_layout.addLayout(memory_buttons)
         memory_layout.addWidget(self.memory_text)
         layout.addWidget(memory_group)
@@ -1853,6 +1856,23 @@ class SettingsWindow(QDialog):
         self.memory_note_input.clear()
         self._refresh_memory()
 
+    def _clear_memory(self) -> None:
+        result = QMessageBox.question(
+            self,
+            "清空记忆",
+            "会清空自动记忆和手动备忘，但不会重置关系状态。继续吗？",
+        )
+        if result != QMessageBox.StandardButton.Yes:
+            return
+        from core.memory_engine import clear_user_memory
+
+        clear_user_memory()
+        self.controller.notes_manager.clear()
+        if hasattr(self.controller, "chat_client"):
+            self.controller.chat_client.reload()
+        self._refresh_memory()
+        QMessageBox.information(self, "记忆备忘录", "已清空自动记忆和手动备忘。")
+
     def _toggle_relationship_raw(self) -> None:
         visible = not self.relationship_raw_text.isVisible()
         self.relationship_raw_text.setVisible(visible)
@@ -1969,8 +1989,8 @@ class SettingsWindow(QDialog):
              "https://console.mistral.ai/api-keys", "欧洲领先 AI，开源友好"),
             ("Groq", "groq", "https://api.groq.com/openai/v1", "llama-4-maverick-17b-128e-instruct",
              "https://console.groq.com/keys", "Llama 4 Maverick，开源旗舰级推理速度"),
-            ("智谱 GLM", "custom_cloud", "https://open.bigmodel.cn/api/paas/v4", "glm-4.5-flash",
-             "https://open.bigmodel.cn/", "2026年 GLM-4.5，清华系中文能力最强"),
+            ("Z.AI (GLM)", "zai", "https://api.z.ai/api/paas/v4", "glm-5.1",
+             "https://docs.z.ai/", "OpenAI-compatible GLM API，需要 ZAI_API_KEY"),
             ("硅基流动 (SiliconFlow)", "custom_cloud", "https://api.siliconflow.cn/v1", "Qwen/Qwen3-235B-A22B",
              "https://siliconflow.cn/", "Qwen3-235B，国产开源最强旗舰"),
             ("月之暗面 Kimi", "custom_cloud", "https://api.moonshot.cn/v1", "kimi-k2.5",

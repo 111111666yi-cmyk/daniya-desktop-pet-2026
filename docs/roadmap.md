@@ -2,6 +2,105 @@
 
 The project advances through explicit version stages. Each stage should be implemented, tested, and accepted independently.
 
+## v0.60 - Stable Preview Hardening
+
+Goal:
+- Consolidate the v0.56-v0.60 hardening work into a stable public preview baseline.
+- Keep runtime data, private assets, model files, local reports, and API keys out of Git and release packages.
+
+Not in scope:
+- Tagging or publishing a GitHub Release before manual acceptance.
+- Claiming real-provider QA without a real configured key and quota.
+
+Acceptance:
+- Local checks, tests, packaging, and release zip scanning pass.
+- Public character copy no longer exposes old owner title, internal engineering wording, or default story spoilers.
+- Manual-required GUI and real-provider items are documented instead of falsely marked pass.
+
+Status: branch pushed; release/tag still gated by manual acceptance.
+
+## v0.61 - Public Surface And Quiet Defaults
+
+Goal:
+- Remove public copy that feels like internal engineering commentary or god-view narration.
+- Make the first-run and default desktop pet behavior quiet unless the user explicitly enables active behavior.
+- Give users visible control over automatic memory and manual memory notes.
+
+Not in scope:
+- Publishing a tag or GitHub Release.
+- Claiming real-provider QA without a real configured key and quota.
+
+Acceptance:
+- `tools/check_public_surface.py` passes.
+- Idle chat, hourly chime, edge peek, and idle behavior default to off.
+- Idle behavior cannot be configured below 600 seconds through normal config paths.
+- Settings Center exposes visible memory review, add, refresh, and clear actions.
+
+Status: in progress.
+
+## v0.62 - Provider And Memory Continuity Review
+
+Goal:
+- Ensure user profile, automatic memory, unlocked story memory, and manual notes flow through cloud and local text Provider channels.
+- Keep API keys in `.env` or environment variables, never in tracked config or release packages.
+
+Not in scope:
+- Adding TTS, image, video, or new future-stage model capabilities.
+
+Acceptance:
+- Provider prompt construction includes profile and memory context before DeepSeek/OpenAI-compatible/Ollama text calls.
+- Real Z.AI/API acceptance remains manual until a user-owned key and quota are available.
+- Sensitive-file checks and release zip checks remain green.
+
+Status: in progress.
+
+## v0.63 - Runtime Behavior And GUI Acceptance
+
+Goal:
+- Verify the pet does not move or speak unexpectedly under default settings.
+- Re-test right-click menu feel, long bubble layout, Settings Center lifecycle, and story reading flow.
+
+Not in scope:
+- Rewriting the UI framework.
+- Shipping new character art or unauthorized assets.
+
+Acceptance:
+- Default runtime behavior is passive until user interaction or explicit setting changes.
+- Long text bubble and story reading are manually accepted.
+- Multi-monitor drag is tested on a real multi-monitor machine before final release claims.
+
+Status: planned/manual acceptance required.
+
+## v0.64 - Public Repository And Package Audit
+
+Goal:
+- Keep the GitHub repository and release package free of local reports, local paths, runtime data, private assets, models, API keys, and stale internal audit logs.
+
+Not in scope:
+- Uploading release zip artifacts without explicit user confirmation.
+
+Acceptance:
+- Public docs link check passes.
+- Public-surface check passes.
+- Release zip scan passes after a fresh package build.
+- GitHub Actions are green for the branch state being reviewed.
+
+Status: planned.
+
+## v0.65 - Final Sign-Off Gate
+
+Goal:
+- Convert v0.61-v0.64 evidence into a final human-readable review report and release decision.
+
+Not in scope:
+- Tagging, releasing, or merging without explicit confirmation.
+
+Acceptance:
+- Final report lists automated pass/fail evidence and manual-required items.
+- Z.AI/API, GUI feel, long bubble, and multi-monitor items are either signed off with evidence or explicitly left as manual required.
+
+Status: planned.
+
 ## v0.41 - Action Resource System
 
 Goal:
@@ -165,4 +264,4 @@ Acceptance:
 - Release checklist is complete.
 - No secrets, private assets, models, runtime data, or unauthorized assets are included.
 
-Status: current stable release.
+Status: historical public release baseline.

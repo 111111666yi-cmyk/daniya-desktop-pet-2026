@@ -10,8 +10,11 @@ from .utils import bundled_root, ensure_dir, runtime_root
 from .version import APP_VERSION
 
 
+QUIET_DEFAULTS_MIGRATION = "v0.61-quiet-defaults"
+
 DEFAULT_APP_CONFIG: dict[str, Any] = {
     "version": APP_VERSION,
+    "quiet_defaults_migration": QUIET_DEFAULTS_MIGRATION,
     "current_character": "daniya",
     "window": {
         "start_x": 0,
@@ -35,7 +38,7 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
             "E_QQ_pet_drag_system": True,
         },
         "hover_animation_enabled": False,
-        "edge_peek_enabled": True,
+        "edge_peek_enabled": False,
         "edge_dock_visible_px": 32,
         "edge_dock_hover_visible_px": 52,
         "click_to_call_enabled": False,
@@ -80,8 +83,8 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "affinity": {
         "click_cooldown_seconds": 5,
     },
-    "hourly_chime_enabled": True,
-    "idle_chat_enabled": True,
+    "hourly_chime_enabled": False,
+    "idle_chat_enabled": False,
     "idle_chat_minutes": 10,
     "day_night_enabled": True,
     "night_start_hour": 23,
@@ -152,6 +155,7 @@ class ConfigManager:
         loaded = self.load_json(self.config_dir / "app_config.json", DEFAULT_APP_CONFIG)
         if not isinstance(loaded, dict):
             loaded = {}
+        loaded = self._apply_quiet_defaults_migration(loaded)
         return self._normalize_app_config(deep_merge(DEFAULT_APP_CONFIG, loaded))
 
     def save_app_config(self, config: dict[str, Any]) -> None:
@@ -210,6 +214,9 @@ class ConfigManager:
             pass
 
     def _normalize_app_config(self, config: dict[str, Any]) -> dict[str, Any]:
+        config["quiet_defaults_migration"] = str(
+            config.get("quiet_defaults_migration", QUIET_DEFAULTS_MIGRATION)
+        )
         if "current_character" not in config or not config["current_character"]:
             config["current_character"] = "daniya"
         pet = config.setdefault("pet", {})
@@ -264,7 +271,7 @@ class ConfigManager:
             enabled_modules[key] = bool(enabled_modules.get(key, True))
         pet["enabled_action_modules"] = enabled_modules
         pet["hover_animation_enabled"] = bool(pet.get("hover_animation_enabled", False))
-        pet["edge_peek_enabled"] = bool(pet.get("edge_peek_enabled", True))
+        pet["edge_peek_enabled"] = bool(pet.get("edge_peek_enabled", False))
         pet["click_to_call_enabled"] = bool(pet.get("click_to_call_enabled", False))
         try:
             dock_visible_px = int(pet.get("edge_dock_visible_px", 32))
@@ -297,6 +304,7 @@ class ConfigManager:
             config["idle_behavior_seconds"] = int(config.get("idle_behavior_seconds", 600))
         except (TypeError, ValueError):
             config["idle_behavior_seconds"] = 600
+        config["idle_behavior_seconds"] = max(600, config["idle_behavior_seconds"])
         config["double_click_enabled"] = bool(config.get("double_click_enabled", True))
         try:
             config["long_press_ms"] = int(config.get("long_press_ms", 600))
@@ -304,6 +312,26 @@ class ConfigManager:
             config["long_press_ms"] = 600
 
         return config
+
+    def _apply_quiet_defaults_migration(self, loaded: dict[str, Any]) -> dict[str, Any]:
+        if loaded.get("quiet_defaults_migration") == QUIET_DEFAULTS_MIGRATION:
+            return loaded
+
+        loaded["idle_chat_enabled"] = False
+        loaded["hourly_chime_enabled"] = False
+        loaded["idle_behavior_enabled"] = False
+        pet = loaded.get("pet")
+        if not isinstance(pet, dict):
+            pet = {}
+            loaded["pet"] = pet
+        pet["edge_peek_enabled"] = False
+        try:
+            idle_seconds = int(loaded.get("idle_behavior_seconds", 600))
+        except (TypeError, ValueError):
+            idle_seconds = 600
+        loaded["idle_behavior_seconds"] = max(600, idle_seconds)
+        loaded["quiet_defaults_migration"] = QUIET_DEFAULTS_MIGRATION
+        return loaded
 
 
 def deep_merge(default: dict[str, Any], loaded: dict[str, Any]) -> dict[str, Any]:
