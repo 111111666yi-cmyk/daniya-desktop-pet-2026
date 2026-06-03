@@ -91,5 +91,6 @@
   "idle_behavior_enabled": false,
   "idle_behavior_seconds": 600,
   "double_click_enabled": true,
-  "long_press_ms": 600
+  "long_press_ms": 600,
+  "natural_reminder_enabled": true
 }

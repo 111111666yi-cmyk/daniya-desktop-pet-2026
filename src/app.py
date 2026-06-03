@@ -21,6 +21,7 @@ from .notes_manager import NotesManager
 from .pet_window import PetWindow
 from .profile_manager import ProfileManager
 from .reminder_manager import ReminderManager
+from .natural_reminder_service import NaturalReminderService
 from .settings_window import SettingsWindow
 from .time_event_manager import TimeEventManager
 
@@ -126,6 +127,8 @@ class AppController(QObject):
         self.chat_client = ChatClient(self.config_manager, self.history_manager, self.profile_manager)
         self.notes_manager = NotesManager(self.config_manager)
         self.reminder_manager = ReminderManager(self.config_manager)
+        self.natural_reminder_service = NaturalReminderService(self.reminder_manager)
+        self.pending_reminder_result = None
         self.time_event_manager = TimeEventManager(self.app_config)
         self.day_night_manager = DayNightManager(self.app_config)
         self.mini_games = MiniGames()
@@ -183,11 +186,78 @@ class AppController(QObject):
         self.window.show_at_config_position()
         self.config_manager.save_app_config(self.app_config)
 
-    def send_message(self, user_text: str) -> None:
+    def send_message(self, user_text: str, base_time: datetime | None = None) -> None:
         self.idle_manager.mark_activity()
         if self.worker is not None and self.worker.isRunning():
             self.window.speak("……等一下，我还在想刚才那句呢。")
             return
+
+        # 1. Process pending reminder confirmation
+        if not self.app_config.get("natural_reminder_enabled", True):
+            self.pending_reminder_result = None
+        else:
+            clean_text = user_text.strip().lower()
+            confirm_keywords = {"确认", "确定", "好", "对", "没问题", "ok", "yes", "行", "确定是"}
+            cancel_keywords = {"取消", "不", "不要", "算了", "no", "cancel"}
+
+            if self.pending_reminder_result is not None:
+                if clean_text in confirm_keywords:
+                    result = self.pending_reminder_result
+                    self.pending_reminder_result = None
+                    if result.scheduled_at:
+                        time_str = result.scheduled_at.strftime("%Y-%m-%d %H:%M")
+                        success, msg = self.reminder_manager.add(time_str, result.reminder_text)
+                        if success:
+                            self.window.speak(f"……记下了。会在【{time_str}】提醒你【{result.reminder_text}】。到时候别装作看不见。")
+                        else:
+                            self.window.speak(msg)
+                    else:
+                        self.window.speak("……时间还是不明确哦。什么时候叫你？比如说“十分钟后”。")
+                        self.pending_reminder_result = result
+                    return
+                elif clean_text in cancel_keywords:
+                    self.pending_reminder_result = None
+                    self.window.speak("……好吧，那我就不记下了。")
+                    return
+                else:
+                    # Try parsing as a new reminder to see if user provides the missing time
+                    from .natural_reminder_parser import parse_natural_reminder
+                    trigger_words = {"提醒我", "叫我", "记得", "提醒", "到时叫"}
+                    temp_text = user_text if any(w in user_text for w in trigger_words) else f"提醒我{user_text}"
+                    new_res = parse_natural_reminder(temp_text, base_time=base_time)
+                    if new_res.ok and new_res.scheduled_at:
+                        has_new_trigger = any(w in user_text for w in trigger_words)
+                        r_text = self.pending_reminder_result.reminder_text if not has_new_trigger else (new_res.reminder_text or self.pending_reminder_result.reminder_text)
+                        new_res.reminder_text = r_text
+
+                        if not new_res.need_confirm:
+                            self.pending_reminder_result = None
+                            time_str = new_res.scheduled_at.strftime("%Y-%m-%d %H:%M")
+                            success, msg = self.reminder_manager.add(time_str, r_text)
+                            if success:
+                                self.window.speak(f"……记下了。会在【{time_str}】提醒你【{r_text}】。到时候别装作看不见。")
+                            else:
+                                self.window.speak(msg)
+                            return
+                        else:
+                            self.pending_reminder_result = new_res
+                            time_str = new_res.scheduled_at.strftime("%Y-%m-%d %H:%M")
+                            self.window.speak(f"……时间还是有点模糊。确定要在【{time_str}】提醒你【{r_text}】吗？确认的话跟我说“确认”哦。")
+                            return
+                    else:
+                        # Cancel pending reminder and fall through to normal chat
+                        self.pending_reminder_result = None
+
+        # 2. Check for new natural reminder
+        if self.app_config.get("natural_reminder_enabled", True):
+            is_rem, reply, parse_res = self.natural_reminder_service.process_chat_message(user_text, base_time=base_time)
+            if is_rem:
+                if parse_res and parse_res.need_confirm:
+                    self.pending_reminder_result = parse_res
+                self.window.speak(reply)
+                return
+
+        # 3. Normal LLM Chat
         self.window.set_input_enabled(False)
         self.window.set_thinking_state(True)
         # [CHANGE-002] 使用适配器代替直连 chat_client
