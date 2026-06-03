@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import traceback
+from collections import deque
 
 from PySide6.QtCore import QObject, QThread, QTimer, Qt, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox
@@ -181,6 +182,8 @@ class AppController(QObject):
         self._drag_debounce.setSingleShot(True)
         self._drag_debounce.setInterval(500)  # 500ms 防抖
         self._drag_debounce.timeout.connect(self._fire_drag_event)
+        self._pending_phys_events: deque[str] = deque(maxlen=32)
+        self._phys_busy = False
 
     def show(self) -> None:
         self.window.show_at_config_position()
@@ -359,6 +362,7 @@ class AppController(QObject):
         self.daniya_adapter.state_manager = self.window
 
         # 4. Update window references and reload manifest/assets
+        self.window.clear_render_cache()
         self.window.asset_manager = self.asset_manager
         self.window.animation_manager.asset_manager = self.asset_manager
         self.window.animation_manager.reload_manifest()
@@ -517,10 +521,25 @@ class AppController(QObject):
     # -- [CHANGE-005] 物理事件后台调度 --
 
     def _fire_physical_event(self, event_name: str) -> None:
-        """在后台线程中触发物理事件，避免阻塞 GUI 主线程。"""
+        """在后台线程中串行触发物理事件，避免阻塞 GUI 主线程。"""
+        self._pending_phys_events.append(event_name)
+        if not self._phys_busy:
+            self._drain_next_physical_event()
+
+    def _drain_next_physical_event(self) -> None:
+        if not self._pending_phys_events:
+            self._phys_busy = False
+            return
+        self._phys_busy = True
+        event_name = self._pending_phys_events.popleft()
         w = PhysicalEventWorker(self.daniya_adapter, event_name)
         self._phys_workers.append(w)
-        w.finished.connect(lambda: self._cleanup_phys_worker(w))
+
+        def _done() -> None:
+            self._cleanup_phys_worker(w)
+            self._drain_next_physical_event()
+
+        w.finished.connect(_done)
         w.start()
 
     def _fire_drag_event(self) -> None:
@@ -550,6 +569,10 @@ def _configure_application_lifecycle(app: QApplication) -> None:
 
 
 def run() -> None:
+    from .logging_setup import configure_logging, install_excepthook
+    configure_logging()
+    install_excepthook()
+
     app = QApplication(sys.argv)
     _configure_application_lifecycle(app)
 

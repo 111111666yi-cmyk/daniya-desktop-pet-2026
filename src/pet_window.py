@@ -43,6 +43,7 @@ class PetWindow(QWidget):
         self._last_render_debug: tuple[Any, ...] | None = None
         self._tray_icon: QSystemTrayIcon | None = None
         self._minimized_to_tray = False
+        self._scaled_pixmap_cache: dict[tuple[str, int, float], tuple[QPixmap, int, int]] = {}
 
         self._setup_tray()
         self._configure_window()
@@ -233,24 +234,43 @@ class PetWindow(QWidget):
     def set_pet_state(self, state: str) -> None:
         self.animation_manager.set_state(state)
 
-    def render_pet_pixmap(self, path: Path, visual_scale: float = 1.0) -> None:
-        pixmap = QPixmap(str(path))
-        if pixmap.isNull():
-            print(f"[Daniya] pixmap loaded path={path} loaded=false")
-            return
+    def clear_render_cache(self) -> None:
+        self._scaled_pixmap_cache.clear()
 
-        target_height = self.asset_manager.target_height()
-        logical_height = max(1, target_height)
-        dpr = self._current_device_pixel_ratio()
+    def _get_scaled_pixmap(self, path: Path, logical_height: int, dpr: float) -> tuple[QPixmap, int, int]:
+        key = (str(path), logical_height, round(dpr, 2))
+        cached = self._scaled_pixmap_cache.get(key)
+        if cached is not None and not cached[0].isNull():
+            return cached
+        original = QPixmap(str(path))
+        if original.isNull():
+            return original, 0, 0
         physical_height = max(1, int(round(logical_height * dpr)))
-        physical_width = max(1, int(round(pixmap.width() * physical_height / max(1, pixmap.height()))))
-        scaled = pixmap.scaled(
+        physical_width = max(
+            1,
+            int(round(original.width() * physical_height / max(1, original.height())))
+        )
+        scaled = original.scaled(
             physical_width,
             physical_height,
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
         scaled.setDevicePixelRatio(dpr)
+        val = (scaled, original.width(), original.height())
+        self._scaled_pixmap_cache[key] = val
+        if len(self._scaled_pixmap_cache) > 128:
+            self._scaled_pixmap_cache.pop(next(iter(self._scaled_pixmap_cache)))
+        return val
+
+    def render_pet_pixmap(self, path: Path, visual_scale: float = 1.0) -> None:
+        dpr = self._current_device_pixel_ratio()
+        base_height = self.asset_manager.target_height()
+        logical_height = max(1, int(round(base_height * max(0.1, visual_scale))))
+
+        scaled, orig_w, orig_h = self._get_scaled_pixmap(path, logical_height, dpr)
+        if scaled.isNull():
+            return
 
         logical_width = max(1, int(round(scaled.width() / dpr)))
         logical_display_height = max(1, int(round(scaled.height() / dpr)))
@@ -261,7 +281,14 @@ class PetWindow(QWidget):
         self.image_label.setFixedSize(container_size, container_size)
         self.image_label.setPixmap(scaled)
 
-        self._print_render_debug(path, pixmap, target_height, dpr, scaled, logical_width, logical_display_height)
+        class MockOriginal:
+            def __init__(self, w: int, h: int) -> None:
+                self._w = w
+                self._h = h
+            def width(self) -> int: return self._w
+            def height(self) -> int: return self._h
+
+        self._print_render_debug(path, MockOriginal(orig_w, orig_h), base_height, dpr, scaled, logical_width, logical_display_height)
         # Remove resize_to_content() to prevent micro-jumping
         if self.isVisible():
             self.move(self._clamped_position(self.pos()))
@@ -300,6 +327,7 @@ class PetWindow(QWidget):
         self.show()
 
     def set_pet_height(self, height: int) -> int:
+        self.clear_render_cache()
         actual = self.asset_manager.set_target_height(height)
         self.animation_manager.refresh()
         self._resize_to_content()
