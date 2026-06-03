@@ -38,8 +38,11 @@
 
 - Added `src/natural_reminder_parser.py` supporting rules-based extraction of Chinese relative, absolute, and recurring time expressions.
 - Added `src/natural_reminder_service.py` to bridge natural language inputs with `ReminderManager`.
+- Wired natural language reminder processing into `AppController.send_message` main chat input processing pipeline.
+- Hardened natural language reminder controls by adding the `natural_reminder_enabled` configuration switch (defaulting to `true`).
+- Ensured that when `natural_reminder_enabled` is set to `false`, the natural reminder service and any pending confirmation states are bypassed entirely, falling back cleanly to standard LLM chat.
 - Added natural language reminders documentation `docs/natural_reminders.md`.
-- Added tests `tests/test_natural_reminder_parser.py` and `tests/test_natural_reminder_service.py` verifying relative, absolute, recurring, and ambiguous time formats.
+- Added integration tests `tests/test_natural_reminder_wiring.py` covering relative, absolute, recurring, ambiguous confirmation flows, cancellation, and switch-disabled fallback behaviors.
 
 ## v0.61 (2026-06-03) - Quiet Defaults and Public Surface Audit
 

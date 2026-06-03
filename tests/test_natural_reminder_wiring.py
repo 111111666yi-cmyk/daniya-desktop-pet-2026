@@ -86,3 +86,47 @@ def test_natural_reminder_relative_wiring(mock_app_env, monkeypatch) -> None:
     assert controller.pending_reminder_result is None
     assert "不记下了" in spoken_text[-1]
     assert len(controller.reminder_manager.records()) == 3
+
+    # 6. Test with switch natural_reminder_enabled set to False
+    controller.app_config["natural_reminder_enabled"] = False
+
+    # Send a clear reminder text. It should bypass parsing and go to LLM (i.e. start worker).
+    controller.worker = None
+    controller.send_message("十分钟后提醒我喝水", base_time=base_time)
+    assert controller.worker is not None  # Bypassed reminder service, fell back to ChatWorker
+    assert len(controller.reminder_manager.records()) == 3  # No new records added
+
+    # Send an ambiguous reminder text. It should not enter pending state.
+    controller.worker = None
+    controller.pending_reminder_result = None
+    controller.send_message("一会儿提醒我喝水", base_time=base_time)
+    assert controller.worker is not None
+    assert controller.pending_reminder_result is None
+
+    # If there was a pending result and switch is set to False, sending a message clears it
+    controller.app_config["natural_reminder_enabled"] = True
+    spoken_text.clear()
+    controller.send_message("一会儿提醒我睡觉", base_time=base_time)
+    assert controller.pending_reminder_result is not None
+
+    controller.app_config["natural_reminder_enabled"] = False
+    controller.worker = None
+    controller.send_message("确认", base_time=base_time)
+    assert controller.pending_reminder_result is None
+    assert controller.worker is not None  # Bypassed and went to ChatWorker
+
+    # 7. Technical question check when enabled
+    controller.app_config["natural_reminder_enabled"] = True
+    controller.worker = None
+    controller.pending_reminder_result = None
+    controller.send_message("Python中的定时器怎么实现", base_time=base_time)
+    assert controller.worker is not None  # Goes to LLM
+    assert controller.pending_reminder_result is None
+
+    # Technical question check when disabled
+    controller.app_config["natural_reminder_enabled"] = False
+    controller.worker = None
+    controller.pending_reminder_result = None
+    controller.send_message("Python中的定时器怎么实现", base_time=base_time)
+    assert controller.worker is not None  # Goes to LLM
+    assert controller.pending_reminder_result is None

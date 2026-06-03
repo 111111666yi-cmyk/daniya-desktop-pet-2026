@@ -98,6 +98,7 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "idle_behavior_seconds": 600,
     "double_click_enabled": True,
     "long_press_ms": 600,
+    "natural_reminder_enabled": True,
 }
 
 DEFAULT_SYSTEM_PROMPT = """你是达妮娅的 Q 版夏日桌宠形态。
@@ -311,6 +312,7 @@ class ConfigManager:
         except (TypeError, ValueError):
             config["long_press_ms"] = 600
 
+        config["natural_reminder_enabled"] = bool(config.get("natural_reminder_enabled", True))
         return config
 
     def _apply_quiet_defaults_migration(self, loaded: dict[str, Any]) -> dict[str, Any]:
