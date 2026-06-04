@@ -216,9 +216,15 @@ for /r "release\!PACKAGE_NAME!" %%F in (*.log *.spec *.broken-*) do del /q "%%F"
 for /d /r "release\!PACKAGE_NAME!" %%D in (__pycache__) do rmdir /s /q "%%D" 2>nul
 
 echo [Daniya] Creating zip package...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path 'release\!PACKAGE_NAME!' -DestinationPath 'release\!PACKAGE_NAME!.zip' -Force"
+"%PYTHON_EXE%" -c "import shutil; shutil.make_archive(r'release\!PACKAGE_NAME!', 'zip', root_dir=r'release', base_dir=r'!PACKAGE_NAME!')"
 if errorlevel 1 (
     echo [Daniya] Zip creation failed.
+    pause
+    exit /b 1
+)
+"%PYTHON_EXE%" -c "import zipfile; z=r'release\!PACKAGE_NAME!.zip'; archive=zipfile.ZipFile(z); bad=archive.testzip(); archive.close(); raise SystemExit(1 if bad else 0)"
+if errorlevel 1 (
+    echo [Daniya] Zip validation failed.
     pause
     exit /b 1
 )
@@ -235,7 +241,7 @@ if not exist "%~1" exit /b 0
 for /L %%R in (1,1,3) do (
     rmdir /s /q "%~1" 2>nul
     if not exist "%~1" exit /b 0
-    timeout /t 1 /nobreak >nul
+    ping -n 2 127.0.0.1 >nul
 )
 echo [Daniya] Failed to remove directory: %~1
 exit /b 1
@@ -243,9 +249,9 @@ exit /b 1
 :remove_file
 if not exist "%~1" exit /b 0
 for /L %%R in (1,1,3) do (
-    del /q "%~1" 2>nul
+    del /f /q "%~1" 2>nul
     if not exist "%~1" exit /b 0
-    timeout /t 1 /nobreak >nul
+    ping -n 2 127.0.0.1 >nul
 )
 echo [Daniya] Failed to remove file: %~1
 exit /b 1
