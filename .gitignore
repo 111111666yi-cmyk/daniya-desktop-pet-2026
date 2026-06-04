@@ -43,6 +43,7 @@ __pycache__/
 .vscode/
 .DS_Store
 Thumbs.db
+nul
 
 # Claude / AI assistant session files
 .agents/
@@ -54,3 +55,7 @@ scratch/
 docs/v0.51_patch_audit/
 run_verify.py
 drag_debug.log
+*_audit_report.docx
+DaniyaSummerPet_v*.docx
+.repo_audit_tracked_files.txt
+*.pdf

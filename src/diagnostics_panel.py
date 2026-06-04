@@ -13,18 +13,46 @@ from .settings_manager import SettingsManager
 from .utils import runtime_root
 
 
-def run_diagnostics(settings_manager: SettingsManager | None = None, asset_manager: AssetManager | None = None) -> list[dict[str, str]]:
+def run_diagnostics(
+    settings_manager: SettingsManager | None = None,
+    asset_manager: AssetManager | None = None,
+    chat_client: Any | None = None,
+) -> list[dict[str, str]]:
     root = runtime_root()
     settings = settings_manager or SettingsManager(root=root)
     assets = asset_manager or AssetManager({})
     results: list[dict[str, str]] = []
 
+    # LLM Runtime diagnostics
+    if chat_client is not None and getattr(chat_client, "provider_manager", None) is not None:
+        pm = chat_client.provider_manager
+        last_provider = getattr(pm, "last_provider", "无")
+        last_model = getattr(pm, "last_model", "无")
+        fallback_used = getattr(pm, "fallback_used", False)
+        fallback_reason = getattr(pm, "fallback_reason", "无")
+        last_error_type = getattr(pm, "last_error_type", "无")
+        last_error_traceback = getattr(pm, "last_error_traceback", "无")
+
+        status = "warn" if fallback_used else "pass"
+        msg = f"当前/最近云端Provider: {last_provider}, Model: {last_model}, Fallback: {'是' if fallback_used else '否'}, 错误类型: {last_error_type}, 原因: {fallback_reason}\n[堆栈日志]:\n{last_error_traceback}"
+        results.append(_item("LLM 运行时状态", status, msg))
+    else:
+        results.append(_item("LLM 运行时状态", "pass", "未接收到活跃对话客户端，暂无运行时错误记录。"))
+
     validation = validate_character_pack("daniya")
     results.append(_item("角色包校验", "pass" if validation.ok else "fail", validation.error_summary() or "Character pack OK."))
 
     api_config = settings.load_api_config()
-    results.append(_item("API 配置", "pass", f"provider={api_config.get('provider')} model={api_config.get('model')} key={api_config.get('api_key_masked')}"))
-    if settings.current_api_key():
+    active_provider = api_config.get("active_provider", api_config.get("provider", ""))
+    provider_conf = api_config.get("providers", {}).get(active_provider, {})
+    env_key_name = provider_conf.get("api_key_env", "")
+    raw_key = settings.current_api_key(env_key_name)
+    results.append(_item(
+        "API 配置",
+        "pass",
+        f"provider={active_provider} model={provider_conf.get('model', api_config.get('model'))} key={provider_conf.get('api_key_masked')}",
+    ))
+    if raw_key or api_config.get("local_mode"):
         ok, message = settings.test_api_connection(timeout=5)
         results.append(_item("API 测试连接", "pass" if ok else "warn", message))
     else:

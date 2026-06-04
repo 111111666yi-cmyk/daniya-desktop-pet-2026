@@ -6,14 +6,19 @@ from typing import Any
 
 import yaml
 
-from core.character_loader import safe_load_character, validate_character_pack, character_pack_path
+from core.character_loader import (
+    default_character_root,
+    safe_load_character,
+    validate_character_pack,
+    character_pack_path,
+)
 
 from .backup_manager import BackupManager
 from .utils import runtime_root
 
 
 EDITABLE_FILES = {"character.yaml", "speech.yaml", "relationship.yaml", "events.yaml"}
-READONLY_FILES = {"lore.md", "lore_index.yaml", "actions.yaml", "prompt_pack.md"}
+READONLY_FILES = {"lore.md", "lore_index.yaml", "actions.yaml", "prompt_pack.md", "story.yaml"}
 REQUIRED_FILES = {
     "character.yaml",
     "speech.yaml",
@@ -27,7 +32,7 @@ class CharacterPackEditor:
     def __init__(self, character_id: str = "daniya", root: Path | None = None, backup_manager: BackupManager | None = None) -> None:
         self.character_id = character_id
         self.root = root or runtime_root()
-        self.character_root = self.root / "characters"
+        self.character_root = self.root / "characters" if root is not None else default_character_root()
         self.pack_path = character_pack_path(character_id, root=self.character_root)
         self.backup_manager = backup_manager or BackupManager(self.root)
     def status(self) -> dict[str, Any]:

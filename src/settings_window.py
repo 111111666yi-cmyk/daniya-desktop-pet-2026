@@ -40,12 +40,36 @@ if TYPE_CHECKING:
 class _ApiTestWorker(QThread):
     finished_with_result = Signal(bool, str)
 
-    def __init__(self, settings_manager: SettingsManager) -> None:
+    def __init__(
+        self,
+        settings_manager: SettingsManager,
+        profile: dict[str, Any] | None = None,
+        api_key_override: str | None = None,
+    ) -> None:
         super().__init__()
         self.settings_manager = settings_manager
+        self.profile = profile
+        self.api_key_override = api_key_override
 
     def run(self) -> None:
-        ok, message = self.settings_manager.test_api_connection()
+        if self.profile is None:
+            ok, message = self.settings_manager.test_api_connection()
+        else:
+            from .chat_client import mask_key
+            from .llm.provider_manager import ProviderManager
+
+            pm = ProviderManager(api_config=self.settings_manager.load_api_config())
+            pm.model_profiles_path = self.settings_manager.model_profiles_path
+            pm.env_path = self.settings_manager.env_path
+            ok, message = pm.test_profile_model(
+                self.profile,
+                api_key_override=self.api_key_override,
+            )
+            provider = str(self.profile.get("provider", ""))
+            env_key_name = str(self.profile.get("api_key_env", ""))
+            raw_key = self.api_key_override or self.settings_manager.current_api_key(env_key_name)
+            if provider not in (Provider.OLLAMA,) and raw_key:
+                message += f" (key={mask_key(raw_key)})"
         self.finished_with_result.emit(ok, message)
 
 
@@ -58,7 +82,8 @@ class _DiagnosticsWorker(QThread):
         self.controller = controller
 
     def run(self) -> None:
-        results = run_diagnostics(self.settings_manager, getattr(self.controller, "asset_manager", None))
+        chat_client = getattr(self.controller, "chat_client", None)
+        results = run_diagnostics(self.settings_manager, getattr(self.controller, "asset_manager", None), chat_client=chat_client)
         self.finished_with_text.emit(format_diagnostics(results))
 
 
@@ -128,6 +153,225 @@ class _OllamaPullWorker(QThread):
             self.finished_with_result.emit(False, f"拉取出错: {exc}")
 
 
+_RELATIONSHIP_LABELS = {
+    "character_id": "角色",
+    "relationship_stage": "关系阶段",
+    "week": "当前周目",
+    "weekly_action_points": "本周行动点",
+    "max_weekly_action_points": "行动点上限",
+    "affection": "好感",
+    "familiarity": "熟悉",
+    "trust": "信任",
+    "dependency": "依赖",
+    "heartbeat": "心跳",
+    "jealousy": "吃醋",
+    "boundary": "边界感",
+    "empathy_load": "共情负荷",
+    "softness_leak": "软化泄露",
+    "defense_level": "防御强度",
+    "stay_tendency": "留下倾向",
+    "last_update_reason": "最近变化",
+}
+
+_RELATIONSHIP_ORDER = [
+    "character_id",
+    "relationship_stage",
+    "week",
+    "weekly_action_points",
+    "max_weekly_action_points",
+    "affection",
+    "familiarity",
+    "trust",
+    "dependency",
+    "heartbeat",
+    "jealousy",
+    "boundary",
+    "empathy_load",
+    "softness_leak",
+    "defense_level",
+    "stay_tendency",
+    "last_update_reason",
+]
+
+_EVENT_LABELS = {
+    "user_drag": "拖拽互动",
+    "user_click": "点击互动",
+    "idle_chat": "空闲对话",
+    "user_message": "主动对话",
+    "birthday": "生日事件",
+    "reminder": "提醒事件",
+    "local": "本地记录",
+}
+
+_DATA_FILE_LABELS = {
+    "relationship_state": "关系状态",
+    "event_log": "事件日志",
+    "user_memory": "用户记忆",
+}
+
+_PACK_FILE_DESCRIPTIONS = {
+    "character.yaml": "角色身份、核心人格、能力、禁用行为。",
+    "speech.yaml": "说话方式、特殊回应、语言过滤规则。",
+    "relationship.yaml": "关系阶段、数值字段、升级条件。",
+    "events.yaml": "点击、拖拽、回归、生日等事件规则。",
+    "lore.md": "完整剧情与人格背景正文，只按需检索。",
+    "lore_index.yaml": "剧情标签、触发词、剧透等级和检索规则。",
+    "actions.yaml": "动作状态到素材的映射。",
+    "prompt_pack.md": "说话方式参考和角色片段。",
+    "story.yaml": "剧情阅读章节，属于角色包内容。",
+}
+
+
+def _api_key_placeholder(masked_key: str | None) -> str:
+    if masked_key and masked_key != "<empty>":
+        return "输入新的 API Key；留空则继续使用已保存 Key"
+    return "输入 API Key；保存后会写入本地 .env"
+
+
+def _saved_api_key_status(masked_key: str | None) -> str:
+    if masked_key and masked_key != "<empty>":
+        return f"已保存 Key：{masked_key}（这里只显示脱敏值）"
+    return "未保存 Key；输入后点击「保存 API 设置」"
+
+
+def _format_relationship_summary(state: dict[str, Any]) -> str:
+    if not state:
+        return "关系状态不可读或为空。"
+    lines = []
+    for key in _RELATIONSHIP_ORDER:
+        if key in state:
+            lines.append(f"{_RELATIONSHIP_LABELS[key]}：{state[key]}")
+    hidden = [key for key in state if key not in _RELATIONSHIP_ORDER]
+    if hidden:
+        lines.append(f"其他内部字段：{len(hidden)} 项，可导出关系状态查看原始 JSON。")
+    return "\n".join(lines)
+
+
+def _format_relationship_effect(effect: Any) -> str:
+    if not isinstance(effect, dict) or not effect:
+        return "关系无明显变化"
+    parts = []
+    for key, value in effect.items():
+        label = _RELATIONSHIP_LABELS.get(key, key)
+        if isinstance(value, (int, float)):
+            parts.append(f"{label} {value:+g}")
+        else:
+            parts.append(f"{label}: {value}")
+    return "，".join(parts)
+
+
+def _format_event_log_summary(events: list[Any]) -> str:
+    valid_events = [event for event in events if isinstance(event, dict)]
+    if not valid_events:
+        return "暂无事件记录。"
+    lines = []
+    for event in valid_events[-20:]:
+        event_id = event.get("event_id")
+        source = event.get("source")
+        if not event_id or event_id == "None":
+            event_name = _EVENT_LABELS.get(str(source), "普通记录")
+        else:
+            event_name = _EVENT_LABELS.get(str(event_id), str(event_id))
+        timestamp = str(event.get("timestamp") or "未知时间")
+        effect = _format_relationship_effect(event.get("relationship_effect"))
+        stage_before = event.get("stage_before")
+        stage_after = event.get("stage_after")
+        stage_text = ""
+        if stage_before and stage_after and stage_before != stage_after:
+            stage_text = f"；阶段 {stage_before} → {stage_after}"
+        lore_used = event.get("lore_fragments_used")
+        lore_text = ""
+        if isinstance(lore_used, list) and lore_used:
+            lore_text = f"；调用剧情片段 {len(lore_used)} 个"
+        lines.append(f"{timestamp}｜{event_name}｜{effect}{stage_text}{lore_text}")
+    return "\n".join(lines)
+
+
+def _format_user_memory_summary(profile: dict[str, str], memory: dict[str, Any], notes: list[str]) -> str:
+    lines = [
+        "用户档案",
+        f"- 称呼：{profile.get('user_name', '你')}",
+        f"- 关系：{profile.get('relationship', '陪伴角色与用户')}",
+        f"- 偏好风格：{profile.get('style', '')}",
+        "",
+        "自动记忆",
+    ]
+    preferences = memory.get("user_preferences")
+    if isinstance(preferences, dict) and preferences:
+        for key, value in sorted(preferences.items()):
+            lines.append(f"- 偏好 {key}: {value}")
+    phrases = memory.get("important_user_phrases")
+    if isinstance(phrases, list) and phrases:
+        lines.append("- 重要表达：" + "、".join(str(item) for item in phrases[-10:]))
+    unlocked_lore = memory.get("unlocked_lore")
+    if isinstance(unlocked_lore, list) and unlocked_lore:
+        lines.append("- 已解锁剧情：" + "、".join(str(item) for item in unlocked_lore[-10:]))
+    last_events = memory.get("last_events")
+    if isinstance(last_events, list) and last_events:
+        lines.append("- 最近事件：" + "、".join(str(item) for item in last_events[-10:]))
+    if len(lines) == 6:
+        lines.append("- 暂无自动记忆。")
+    lines.extend(["", "手动备忘"])
+    if notes:
+        lines.extend(f"- {note}" for note in notes[-12:])
+    else:
+        lines.append("- 暂无手动备忘。")
+    return "\n".join(lines)
+
+
+def _read_recent_text_lines(path: Path, limit: int) -> list[str]:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    cleaned = [line.strip() for line in lines if line.strip()]
+    return cleaned[-limit:]
+
+
+def _format_data_status_summary(status: dict[str, Any], paths: dict[str, Path]) -> str:
+    lines = [f"数据目录：{'可用' if status.get('exists') else '尚未创建'}"]
+    for key, path in paths.items():
+        exists = path.exists()
+        readable = status.get(key + "_readable")
+        error = status.get(key + "_error")
+        label = _DATA_FILE_LABELS.get(key, key)
+        if error:
+            state = f"异常（{error}）"
+        elif exists and readable:
+            state = "可读"
+        elif exists:
+            state = "存在但不可读"
+        else:
+            state = "暂无记录，运行后会自动生成"
+        lines.append(f"{label}：{state}")
+    lines.append("需要排查时可点「导出备份」或展开原始详情。")
+    return "\n".join(lines)
+
+
+def _format_pack_file_summary(name: str, text: str, editable: bool) -> str:
+    description = _PACK_FILE_DESCRIPTIONS.get(name, "角色包文件。")
+    lines = [
+        f"当前文件：{name}",
+        f"用途：{description}",
+        f"权限：{'可在此编辑，保存前会自动备份并校验' if editable else '只读；如需修改请先确认角色包规则'}",
+        f"内容规模：{len(text.splitlines())} 行，约 {len(text)} 字。",
+    ]
+    if name.endswith((".yaml", ".yml")):
+        keys = []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if line and not line.startswith((" ", "-")) and ":" in stripped:
+                keys.append(stripped.split(":", 1)[0])
+            if len(keys) >= 8:
+                break
+        if keys:
+            lines.append("主要段落：" + "、".join(keys))
+    if name == "story.yaml":
+        count = sum(1 for line in text.splitlines() if line.strip().startswith("- id:"))
+        lines.append(f"剧情章节：{count} 章。")
+    return "\n".join(lines)
+
+
 class SettingsWindow(QDialog):
     def __init__(self, controller: "AppController", parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -146,10 +390,16 @@ class SettingsWindow(QDialog):
         self.ollama_health_worker: _OllamaHealthWorker | None = None
         self.setWindowTitle("设置中心")
         self.resize(860, 640)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        self.setWindowFlags(
+            self.windowFlags()
+            | Qt.WindowType.Window
+            | Qt.WindowMinimizeButtonHint
+            | Qt.WindowMaximizeButtonHint
+        )
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
+        self.tabs.setTabPosition(QTabWidget.TabPosition.South)
         layout.addWidget(self.tabs)
 
         self._build_model_tab()
@@ -176,6 +426,7 @@ class SettingsWindow(QDialog):
         self.active_profile_status.setWordWrap(True)
         self._refresh_active_status()
         scroll_layout.addWidget(self.active_profile_status)
+        self._build_profile_switcher(scroll_layout)
 
         # 云端 API 配置
         api_group = QGroupBox("云端 API 配置 (Cloud Service)")
@@ -219,21 +470,33 @@ class SettingsWindow(QDialog):
         self.provider_input.setCurrentText(active_display)
         self.base_url_input = QLineEdit(str(prov_conf.get("base_url", "")))
         self.model_input = QLineEdit(str(prov_conf.get("model", "")))
+        self.auth_header_input = QComboBox()
+        self.auth_header_input.addItems(["bearer", "api-key", "x-api-key", "none"])
+        self.auth_header_input.setCurrentText(str(prov_conf.get("auth_header") or ProviderMeta.get_auth_header(active)))
         self.api_key_input = QLineEdit()
         self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.api_key_input.setPlaceholderText(str(prov_conf.get("api_key_masked", "<empty>")))
+        self.saved_api_key_label = QLabel()
+        self.saved_api_key_label.setWordWrap(True)
 
         # 小眼睛切换明文/密码
-        self.api_key_toggle_btn = QPushButton("显"); self.api_key_toggle_btn.setFixedWidth(32)
+        self.api_key_toggle_btn = QPushButton("显")
+        self.api_key_toggle_btn.setFixedWidth(32)
         self.api_key_toggle_btn.setCheckable(True)
-        self.api_key_toggle_btn.toggled.connect(
-            lambda checked: self.api_key_input.setEchoMode(
-                QLineEdit.EchoMode.Normal if checked else QLineEdit.EchoMode.Password))
-        key_row = QHBoxLayout(); key_row.addWidget(self.api_key_input); key_row.addWidget(self.api_key_toggle_btn)
+        self.api_key_toggle_btn.toggled.connect(self._toggle_api_key_visibility)
+        key_widget = QWidget()
+        key_col = QVBoxLayout(key_widget)
+        key_col.setContentsMargins(0, 0, 0, 0)
+        key_row = QHBoxLayout()
+        key_row.setContentsMargins(0, 0, 0, 0)
+        key_row.addWidget(self.api_key_input)
+        key_row.addWidget(self.api_key_toggle_btn)
+        key_col.addLayout(key_row)
+        key_col.addWidget(self.saved_api_key_label)
+        self._update_saved_api_key_label(active, prov_conf)
 
         self.local_mode_input = QCheckBox("启用本地 fallback 模式")
         self.local_mode_input.setChecked(bool(self.api.get("local_mode", False)))
-        self.api_result = QLabel("选择 Provider → 填写 API Key → 测试连接 → 保存后点击「设为当前模型」生效。\n留空 API Key 保存则不改当前 key。")
+        self.api_result = QLabel("选择 Provider → 输入新 Key 或留空沿用旧 Key → 测试连接 → 保存后点击「设为当前模型」生效。")
         self.api_result.setWordWrap(True)
 
         self.provider_input.currentTextChanged.connect(self._on_provider_changed)
@@ -241,7 +504,8 @@ class SettingsWindow(QDialog):
         form.addRow("Provider", self.provider_input)
         form.addRow("Base URL", self.base_url_input)
         form.addRow("Model", self.model_input)
-        form.addRow("API Key", key_row)
+        form.addRow("Auth Header", self.auth_header_input)
+        form.addRow("API Key", key_widget)
         form.addRow("本地模式", self.local_mode_input)
         parent_layout.addLayout(form)
 
@@ -343,6 +607,83 @@ class SettingsWindow(QDialog):
         hint.setWordWrap(True); hint.setStyleSheet("color: gray; margin-top: 8px;")
         parent_layout.addWidget(hint)
         parent_layout.addStretch(1)
+
+    def _build_profile_switcher(self, parent_layout: Any) -> None:
+        group = QGroupBox("文本模型切换")
+        layout = QVBoxLayout(group)
+        row = QHBoxLayout()
+        self.profile_switch_combo = QComboBox()
+        self.profile_switch_combo.setMinimumWidth(360)
+        self.profile_switch_btn = QPushButton("直接切换"); self.profile_switch_btn.setIcon(get_icon("chip"))
+        self.profile_enable_btn = QPushButton("启用"); self.profile_enable_btn.setIcon(get_icon("save"))
+        self.profile_disable_btn = QPushButton("停用"); self.profile_disable_btn.setIcon(get_icon("settings"))
+        row.addWidget(self.profile_switch_combo, 1)
+        row.addWidget(self.profile_switch_btn)
+        row.addWidget(self.profile_enable_btn)
+        row.addWidget(self.profile_disable_btn)
+        layout.addLayout(row)
+
+        self.profile_switch_status = QLabel("历史与已保存模型可在这里直接切换。")
+        self.profile_switch_status.setWordWrap(True)
+        layout.addWidget(self.profile_switch_status)
+
+        self.profile_switch_btn.clicked.connect(self._switch_selected_text_profile)
+        self.profile_enable_btn.clicked.connect(lambda: self._set_selected_text_profile_enabled(True))
+        self.profile_disable_btn.clicked.connect(lambda: self._set_selected_text_profile_enabled(False))
+        parent_layout.addWidget(group)
+        self._refresh_profile_switcher()
+
+    def _refresh_profile_switcher(self) -> None:
+        combo = getattr(self, "profile_switch_combo", None)
+        if combo is None:
+            return
+        current_data = combo.currentData()
+        combo.blockSignals(True)
+        combo.clear()
+
+        profiles_data = self.settings_manager.load_model_profiles()
+        active_id = profiles_data.get("active_text_profile_id", "")
+        profiles = [p for p in profiles_data.get("profiles", []) if _profile_has_text(p)]
+        by_id = {str(p.get("id", "")): p for p in profiles if p.get("id")}
+        history = profiles_data.get("profile_history", {}).get("text", [])
+        ordered_ids: list[str] = []
+        for profile_id in [active_id] + [str(item) for item in history] + [str(p.get("id", "")) for p in profiles]:
+            if profile_id and profile_id in by_id and profile_id not in ordered_ids:
+                ordered_ids.append(profile_id)
+
+        for profile_id in ordered_ids:
+            profile = by_id[profile_id]
+            marker = "当前" if profile_id == active_id else ("停用" if profile.get("enabled", True) is False else "可用")
+            source = "本地" if profile.get("source") == "local" else "云端"
+            name = str(profile.get("name") or profile_id)
+            model = str(profile.get("model") or "")
+            combo.addItem(f"[{marker}] {source} · {name} · {model}", profile_id)
+
+        if current_data:
+            index = combo.findData(current_data)
+            if index >= 0:
+                combo.setCurrentIndex(index)
+        combo.blockSignals(False)
+
+    def _switch_selected_text_profile(self) -> None:
+        profile_id = self.profile_switch_combo.currentData()
+        if not profile_id:
+            self.profile_switch_status.setText("状态：没有可切换的文本模型。")
+            self.profile_switch_status.setStyleSheet("color: red;")
+            return
+        self._do_switch_profile(str(profile_id), str(profile_id), self.profile_switch_status)
+
+    def _set_selected_text_profile_enabled(self, enabled: bool) -> None:
+        profile_id = self.profile_switch_combo.currentData()
+        if not profile_id:
+            self.profile_switch_status.setText("状态：没有选中的文本模型。")
+            self.profile_switch_status.setStyleSheet("color: red;")
+            return
+        ok, msg = self.settings_manager.set_profile_enabled(str(profile_id), enabled, slot="text")
+        self._refresh_active_status()
+        self._refresh_profile_switcher()
+        self.profile_switch_status.setText(f"状态：{msg}")
+        self.profile_switch_status.setStyleSheet("color: green;" if ok else "color: red;")
 
     def _build_local_model_section(self, parent_layout: Any) -> None:
         from .model_catalog import ModelCatalog
@@ -771,7 +1112,7 @@ class SettingsWindow(QDialog):
         else:
             self.local_status.setStyleSheet("color: red;")
 
-    def _save_local_model_settings(self) -> None:
+    def _save_local_model_settings(self) -> str | None:
         service = self.local_service_combo.currentText()
         url = self.local_base_url.text().strip()
         model = self.local_model_list.currentText().strip()
@@ -783,17 +1124,18 @@ class SettingsWindow(QDialog):
 
         provider = ProviderMeta.service_label_to_key(service)
 
-        # 保存并激活为本地 profile
-        self.settings_manager.save_and_activate_local_model_profile(
+        self.settings_manager.save_local_model_profile(
             provider=provider,
             base_url=url,
             model=model,
             service_label=service,
         )
-        self.controller.chat_client.reload()
-        self.local_status.setText(f"状态：已保存并激活 {provider} → {model}  ✓ 已生效")
+        target_id = ProviderMeta.make_profile_id(provider, model)
+        self.local_status.setText(f"状态：已保存 {provider} → {model}；点击「设为当前模型」后才会验证并生效。")
         self.local_status.setStyleSheet("color: green;")
         self._refresh_active_status()
+        self._refresh_profile_switcher()
+        return target_id
 
     def _refresh_active_status(self) -> None:
         """刷新顶部「当前生效模型」状态标签。"""
@@ -823,37 +1165,40 @@ class SettingsWindow(QDialog):
 
     def _activate_cloud_profile(self) -> None:
         """保存云端 API 设置并切换为当前生效模型。"""
-        self._save_api_settings()
+        target_id = self._save_api_settings(notify=False, reload_client=False)
         provider = self._current_provider_key()
-        target_id = ProviderMeta.make_profile_id(provider)
-        self._do_switch_profile(target_id, f"云端 {provider}")
+        self._do_switch_profile(target_id, f"云端 {provider}", self.api_result)
 
     def _activate_local_profile(self) -> None:
         """保存本地模型设置并切换为当前生效模型。"""
-        self._save_local_model_settings()
+        target_id = self._save_local_model_settings()
+        if not target_id:
+            return
 
         service = self.local_service_combo.currentText()
         model = self.local_model_list.currentText().strip()
-        provider = ProviderMeta.service_label_to_key(service)
 
-        target_id = ProviderMeta.make_profile_id(provider, model)
-        self._do_switch_profile(target_id, f"本地 {service} → {model}")
+        self._do_switch_profile(target_id, f"本地 {service} → {model}", self.local_status)
 
-    def _do_switch_profile(self, target_id: str, label: str) -> None:
+    def _do_switch_profile(self, target_id: str, label: str, status_label: QLabel | None = None) -> bool:
         """执行模型切换，失败时回退。"""
-        from .llm.provider_manager import ProviderManager
-        pm = ProviderManager(api_config=self.settings_manager.load_api_config())
-        ok, msg = pm.switch_active_profile(target_id)
+        target_status = status_label or self.local_status
+        ok, msg = self.settings_manager.activate_text_profile(target_id)
 
         if ok:
             self._refresh_active_status()
+            self._refresh_profile_switcher()
+            self.local_mode_input.setChecked(False)
             self.controller.chat_client.reload()
-            self.local_status.setText(f"状态：已切换至 {label}  ✓ 已生效")
-            self.local_status.setStyleSheet("color: green;")
+            target_status.setText(f"状态：已切换至 {label}  ✓ 已生效")
+            target_status.setStyleSheet("color: green;")
+            return True
         else:
             self._refresh_active_status()
-            self.local_status.setText(f"状态：切换失败 ({msg}) — 已回退到上一个可用模型")
-            self.local_status.setStyleSheet("color: red;")
+            self._refresh_profile_switcher()
+            target_status.setText(f"状态：切换失败 ({msg}) — 当前生效模型未改变")
+            target_status.setStyleSheet("color: red;")
+            return False
 
     def _build_pet_tab(self) -> None:
         tab = QWidget()
@@ -873,12 +1218,18 @@ class SettingsWindow(QDialog):
         self.opacity.setSuffix("%")
         self.opacity.setValue(int(window.get("opacity_percent", 100)))
         self.idle_chat = QCheckBox("启用闲聊")
-        self.idle_chat.setChecked(bool(app_config.get("idle_chat_enabled", True)))
+        self.idle_chat.setChecked(bool(app_config.get("idle_chat_enabled", False)))
         self.idle_minutes = QSpinBox()
         self.idle_minutes.setRange(1, 240)
         self.idle_minutes.setValue(int(app_config.get("idle_chat_minutes", 10)))
+        self.idle_behavior = QCheckBox("启用空闲小动作")
+        self.idle_behavior.setChecked(bool(app_config.get("idle_behavior_enabled", False)))
+        self.idle_behavior_seconds = QSpinBox()
+        self.idle_behavior_seconds.setRange(600, 3600)
+        self.idle_behavior_seconds.setSuffix(" 秒")
+        self.idle_behavior_seconds.setValue(int(app_config.get("idle_behavior_seconds", 600)))
         self.hourly_chime = QCheckBox("整点报时")
-        self.hourly_chime.setChecked(bool(app_config.get("hourly_chime_enabled", True)))
+        self.hourly_chime.setChecked(bool(app_config.get("hourly_chime_enabled", False)))
         self.reminder_enabled = QCheckBox("提醒功能")
         self.reminder_enabled.setChecked(bool(app_config.get("reminder_enabled", True)))
         self.day_night = QCheckBox("昼夜作息")
@@ -889,6 +1240,8 @@ class SettingsWindow(QDialog):
         form.addRow("透明度", self.opacity)
         form.addRow("闲聊", self.idle_chat)
         form.addRow("闲聊间隔", self.idle_minutes)
+        form.addRow("空闲小动作", self.idle_behavior)
+        form.addRow("小动作等待", self.idle_behavior_seconds)
         form.addRow("整点报时", self.hourly_chime)
         form.addRow("提醒", self.reminder_enabled)
         form.addRow("昼夜作息", self.day_night)
@@ -956,14 +1309,23 @@ class SettingsWindow(QDialog):
         btn_row = QHBoxLayout()
         reload_btn = QPushButton("重载动作资源"); reload_btn.setIcon(get_icon("refresh"))
         test_btn = QPushButton("测试动作"); test_btn.setIcon(get_icon("chip"))
+        self.action_details_btn = QPushButton("显示原始详情")
+        self.action_details_btn.setIcon(get_icon("info"))
         reload_btn.clicked.connect(self._reload_actions)
         test_btn.clicked.connect(self._test_action)
+        self.action_details_btn.clicked.connect(self._toggle_action_details)
         btn_row.addWidget(self.action_combo)
         btn_row.addWidget(test_btn)
         btn_row.addWidget(reload_btn)
+        btn_row.addWidget(self.action_details_btn)
         btn_row.addStretch(1)
+        self.action_raw_details = QTextEdit()
+        self.action_raw_details.setReadOnly(True)
+        self.action_raw_details.setVisible(False)
+        self.action_raw_details.setMaximumHeight(160)
         actions_layout.addLayout(btn_row)
         actions_layout.addWidget(self.action_status)
+        actions_layout.addWidget(self.action_raw_details)
         layout.addWidget(actions_group)
 
         # 下半部分：角色包编辑器
@@ -972,23 +1334,32 @@ class SettingsWindow(QDialog):
         self.character_status = QLabel("")
         self.character_status.setWordWrap(True)
         self.pack_file_combo = QComboBox()
-        self.pack_file_combo.addItems(["character.yaml", "speech.yaml", "relationship.yaml", "events.yaml", "lore.md", "lore_index.yaml", "actions.yaml"])
+        self.pack_file_combo.addItems(["character.yaml", "speech.yaml", "relationship.yaml", "events.yaml", "lore.md", "lore_index.yaml", "actions.yaml", "story.yaml"])
         self.pack_file_combo.currentTextChanged.connect(self._load_pack_file)
+        self.pack_summary_text = QTextEdit()
+        self.pack_summary_text.setReadOnly(True)
+        self.pack_summary_text.setMaximumHeight(120)
         self.pack_editor_text = QTextEdit()
+        self.pack_editor_text.setVisible(False)
         pack_btn_row = QHBoxLayout()
         save = QPushButton("备份并保存 YAML"); save.setIcon(get_icon("save"))
         validate = QPushButton("重新校验"); validate.setIcon(get_icon("info"))
         open_file = QPushButton("打开文件"); open_file.setIcon(get_icon("document"))
+        self.pack_raw_toggle_btn = QPushButton("显示原始文件")
+        self.pack_raw_toggle_btn.setIcon(get_icon("info"))
         save.clicked.connect(self._save_pack_file)
         validate.clicked.connect(self._refresh_character_status)
         open_file.clicked.connect(self._open_pack_file)
+        self.pack_raw_toggle_btn.clicked.connect(self._toggle_pack_raw_file)
         pack_btn_row.addWidget(self.pack_file_combo)
         pack_btn_row.addWidget(save)
         pack_btn_row.addWidget(validate)
         pack_btn_row.addWidget(open_file)
+        pack_btn_row.addWidget(self.pack_raw_toggle_btn)
         pack_btn_row.addStretch(1)
         pack_layout.addWidget(self.character_status)
         pack_layout.addLayout(pack_btn_row)
+        pack_layout.addWidget(self.pack_summary_text)
         pack_layout.addWidget(self.pack_editor_text)
         layout.addWidget(pack_group)
 
@@ -1077,29 +1448,72 @@ class SettingsWindow(QDialog):
         refresh = QPushButton("刷新"); refresh.setIcon(get_icon("refresh"))
         export = QPushButton("导出关系状态"); export.setIcon(get_icon("upload"))
         reset = QPushButton("备份后重置"); reset.setIcon(get_icon("protect"))
+        self.relationship_raw_toggle_btn = QPushButton("显示原始数据")
+        self.relationship_raw_toggle_btn.setIcon(get_icon("info"))
         refresh.clicked.connect(self._refresh_relationship)
         export.clicked.connect(self._export_relationship)
         reset.clicked.connect(self._reset_relationship)
+        self.relationship_raw_toggle_btn.clicked.connect(self._toggle_relationship_raw)
         rel_buttons.addWidget(refresh)
         rel_buttons.addWidget(export)
         rel_buttons.addWidget(reset)
+        rel_buttons.addWidget(self.relationship_raw_toggle_btn)
         rel_buttons.addStretch(1)
+        self.relationship_raw_text = QTextEdit()
+        self.relationship_raw_text.setReadOnly(True)
+        self.relationship_raw_text.setVisible(False)
+        self.relationship_raw_text.setMaximumHeight(160)
         rel_layout.addLayout(rel_buttons)
         rel_layout.addWidget(self.relationship_text)
+        rel_layout.addWidget(self.relationship_raw_text)
         layout.addWidget(rel_group)
+
+        memory_group = QGroupBox("记忆备忘录")
+        memory_layout = QVBoxLayout(memory_group)
+        self.memory_text = QTextEdit()
+        self.memory_text.setReadOnly(True)
+        memory_buttons = QHBoxLayout()
+        memory_refresh = QPushButton("刷新记忆"); memory_refresh.setIcon(get_icon("refresh"))
+        memory_refresh.clicked.connect(self._refresh_memory)
+        self.memory_note_input = QLineEdit()
+        self.memory_note_input.setPlaceholderText("写一条希望达妮娅记住的事")
+        memory_add = QPushButton("记住这条"); memory_add.setIcon(get_icon("save"))
+        memory_add.clicked.connect(self._add_memory_note)
+        memory_clear = QPushButton("清空记忆"); memory_clear.setIcon(get_icon("settings"))
+        memory_clear.clicked.connect(self._clear_memory)
+        memory_buttons.addWidget(memory_refresh)
+        memory_buttons.addWidget(self.memory_note_input, 1)
+        memory_buttons.addWidget(memory_add)
+        memory_buttons.addWidget(memory_clear)
+        memory_layout.addLayout(memory_buttons)
+        memory_layout.addWidget(self.memory_text)
+        layout.addWidget(memory_group)
 
         evt_group = QGroupBox("事件日志")
         evt_layout = QVBoxLayout(evt_group)
         self.events_text = QTextEdit()
         self.events_text.setReadOnly(True)
+        evt_buttons = QHBoxLayout()
         evt_refresh = QPushButton("刷新事件"); evt_refresh.setIcon(get_icon("refresh"))
+        self.events_raw_toggle_btn = QPushButton("显示原始日志")
+        self.events_raw_toggle_btn.setIcon(get_icon("info"))
         evt_refresh.clicked.connect(self._refresh_events)
-        evt_layout.addWidget(evt_refresh, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.events_raw_toggle_btn.clicked.connect(self._toggle_events_raw)
+        evt_buttons.addWidget(evt_refresh)
+        evt_buttons.addWidget(self.events_raw_toggle_btn)
+        evt_buttons.addStretch(1)
+        self.events_raw_text = QTextEdit()
+        self.events_raw_text.setReadOnly(True)
+        self.events_raw_text.setVisible(False)
+        self.events_raw_text.setMaximumHeight(180)
+        evt_layout.addLayout(evt_buttons)
         evt_layout.addWidget(self.events_text)
+        evt_layout.addWidget(self.events_raw_text)
         layout.addWidget(evt_group)
 
         self.tabs.addTab(tab, get_icon("download"), "关系与事件")
         self._refresh_relationship()
+        self._refresh_memory()
         self._refresh_events()
 
     def _build_system_tab(self) -> None:
@@ -1114,16 +1528,33 @@ class SettingsWindow(QDialog):
         refresh_data = QPushButton("刷新数据状态"); refresh_data.setIcon(get_icon("refresh"))
         backup = QPushButton("导出备份"); backup.setIcon(get_icon("save"))
         open_dir = QPushButton("打开数据目录"); open_dir.setIcon(get_icon("laptop"))
+        self.data_raw_toggle_btn = QPushButton("显示原始详情")
+        self.data_raw_toggle_btn.setIcon(get_icon("info"))
         refresh_data.clicked.connect(self._refresh_data)
         backup.clicked.connect(self._backup_data)
         open_dir.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.relationship_viewer.data_dir))))
+        self.data_raw_toggle_btn.clicked.connect(self._toggle_data_raw)
         data_buttons.addWidget(refresh_data)
         data_buttons.addWidget(backup)
         data_buttons.addWidget(open_dir)
+        data_buttons.addWidget(self.data_raw_toggle_btn)
         data_buttons.addStretch(1)
+        self.data_raw_text = QTextEdit()
+        self.data_raw_text.setReadOnly(True)
+        self.data_raw_text.setVisible(False)
+        self.data_raw_text.setMaximumHeight(160)
         data_layout.addLayout(data_buttons)
         data_layout.addWidget(self.data_text)
+        data_layout.addWidget(self.data_raw_text)
         layout.addWidget(data_group)
+
+        onboarding_group = QGroupBox("首次启动向导")
+        onboarding_layout = QVBoxLayout(onboarding_group)
+        onboarding_layout.addWidget(QLabel("需要重新查看新手流程、API 配置或素材放置说明时，可以重新打开向导。"))
+        open_wizard = QPushButton("重新打开首次启动向导"); open_wizard.setIcon(get_icon("info"))
+        open_wizard.clicked.connect(self._open_first_run_wizard)
+        onboarding_layout.addWidget(open_wizard, alignment=Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(onboarding_group)
 
         # 使用帮助（可折叠）
         help_group = QGroupBox("使用帮助")
@@ -1138,19 +1569,30 @@ class SettingsWindow(QDialog):
         help_content_layout = QVBoxLayout(self.help_content)
         guide_text = QTextEdit()
         guide_text.setReadOnly(True)
-        guide_text.setMaximumHeight(200)
+        guide_text.setMaximumHeight(360)
         guide_text.setPlainText(
-            "【模型与引擎】\n"
-            "1. 在云端 API 配置中选择 Provider，填写 API Key，测试连接后点「设为当前模型」。\n"
-            "2. 本地模型：选择服务类型，拉取模型列表或手动输入，保存后点「设为当前模型」。\n"
-            "3. 云端/本地 Provider 独立存储，切换不冲突。绿色状态栏显示当前生效模型。\n"
-            "4. 切换失败自动回退上一个可用模型。\n\n"
-            "【多模态】\n"
-            "5. TTS/图像/视频独立选择。none 则不启用。保存写入 multimodal_config.json。\n\n"
-            "【常见操作】\n"
-            "6. 清除当前 Key → 从 .env 删除。重置 Provider → 恢复默认值。\n"
-            "7. 自定义云端可接入任意 OpenAI 兼容 API（智谱/Kimi/豆包等 16+）。\n"
-            "8. 所有危险操作均有确认弹窗。"
+            "【模型与 API】\n"
+            "1.「保存 API 设置」只保存 Provider/Base URL/Model/Auth Header/Key，不立即切换当前模型。\n"
+            "2.「设为当前模型」会先验证连接；验证失败不会切换，也不会覆盖上一套可用模型。\n"
+            "3. API Key 行上方显示已保存的脱敏 Key；输入框只用于填写新 Key，留空保存会沿用旧 Key。\n"
+            "4. Auth Header 要和服务商一致：DeepSeek/OpenAI 通常用 bearer；MiMo 等 OpenAI 兼容服务可选 api-key/x-api-key。\n"
+            "5. 文本模型、TTS、图像、视频是独立槽位；切换文本模型不会改动未来的 TTS 或图像配置。\n"
+            "【本地模型】\n"
+            "6. Ollama/LM Studio 等本地服务要先启动，再拉取模型列表或手动填模型名。\n"
+            "7. 本地 fallback 只表示云端不可用时允许回退，本地模型本身仍需「测试服务连接」和「设为当前模型」。\n"
+            "【切换与历史】\n"
+            "8. 上方「文本模型切换」用于直接切换、启用、停用；历史会保留最近使用过的文本模型，方便 DeepSeek/MiMo/本地模型来回换。\n"
+            "9. 当前生效模型以绿色状态栏为准；如果聊天仍变成单机，请先看测试连接结果和当前模型状态。\n"
+            "【窗口】\n"
+            "10. 设置中心是独立窗口，可最小化后从任务栏找回；右键角色仍可再次唤起并恢复原窗口。\n"
+            "【角色与资源】\n"
+            "11. 前台只显示摘要；原始 YAML、日志和路径放在「显示原始」按钮里，避免误把原始配置数据当成可读内容。\n"
+            "12. 可编辑文件只有 character/speech/relationship/events 四类 YAML；lore、story、actions 默认只读，避免误改核心剧情资产。\n"
+            "【关系与事件】\n"
+            "13. 关系数值不是攻略条，而是达妮娅防御、信任、共情负荷和留下倾向的运行状态。\n"
+            "14. 事件日志会记录点击、拖拽、回归、情绪与剧情触发；前台会翻译成可读摘要，原始日志仅用于排查。\n"
+            "【数据安全】\n"
+            "15. .env、data、assets/private、models、backups、dist、build 不应提交；导出备份会放在本地备份目录。"
         )
         help_content_layout.addWidget(guide_text)
         help_layout.addWidget(self.help_content)
@@ -1169,6 +1611,25 @@ class SettingsWindow(QDialog):
         self.tabs.addTab(tab, get_icon("settings"), "系统")
         self._refresh_data()
 
+    def _masked_api_key_for_provider(self, provider: str, prov_conf: dict[str, Any] | None = None) -> str:
+        from .chat_client import mask_key
+
+        env_key = str((prov_conf or {}).get("api_key_env") or ProviderMeta.get_api_key_env(provider))
+        return mask_key(self.settings_manager.current_api_key(env_key))
+
+    def _update_saved_api_key_label(self, provider: str, prov_conf: dict[str, Any] | None = None) -> None:
+        masked = self._masked_api_key_for_provider(provider, prov_conf)
+        self.api_key_input.setPlaceholderText(_api_key_placeholder(masked))
+        self.saved_api_key_label.setText(_saved_api_key_status(masked))
+        if masked and masked != "<empty>":
+            self.saved_api_key_label.setStyleSheet("color: #22863a; font-size: 11px;")
+        else:
+            self.saved_api_key_label.setStyleSheet("color: #6a737d; font-size: 11px;")
+
+    def _toggle_api_key_visibility(self, checked: bool) -> None:
+        self.api_key_input.setEchoMode(QLineEdit.EchoMode.Normal if checked else QLineEdit.EchoMode.Password)
+        self.api_key_toggle_btn.setText("隐" if checked else "显")
+
     def _current_provider_key(self) -> str:
         return self._provider_display_map.get(self.provider_input.currentText(), "deepseek")
 
@@ -1178,32 +1639,71 @@ class SettingsWindow(QDialog):
         meta = ProviderMeta.get(key)
         self.base_url_input.setText(str(prov_conf.get("base_url") or meta.get("base_url", "")))
         self.model_input.setText(str(prov_conf.get("model") or meta.get("default_model", "")))
-        self.api_key_input.setPlaceholderText(str(prov_conf.get("api_key_masked", "<empty>")))
+        self.auth_header_input.setCurrentText(str(prov_conf.get("auth_header") or meta.get("auth_header", "bearer")))
+        self._update_saved_api_key_label(key, prov_conf)
 
-    def _save_api_settings(self) -> None:
+    def _save_api_settings(self, notify: bool = True, reload_client: bool = True) -> str:
         api_key = self.api_key_input.text()
+        provider = self._current_provider_key()
+        base_url = self.base_url_input.text().strip()
+        model = self.model_input.text().strip()
         self.settings_manager.save_api_settings(
-            provider=self._current_provider_key(),
-            base_url=self.base_url_input.text(),
-            model=self.model_input.text(),
+            provider=provider,
+            base_url=base_url,
+            model=model,
             api_key=api_key if api_key else None,
+            auth_header=self.auth_header_input.currentText(),
             local_mode=self.local_mode_input.isChecked(),
         )
-        self.controller.chat_client.reload()
+        if reload_client:
+            self.controller.chat_client.reload()
         self.api_key_input.clear()
-        self.api_result.setText("API 设置已保存；API Key 已写入 .env 或保持原值。")
-        self.controller.window.speak("……API 设置保存好了。希望你没填错。")
-        self.controller.window.animation_manager.trigger_happy()
+        self.api = self.settings_manager.load_api_config()
+        self._update_saved_api_key_label(provider, self.api.get("providers", {}).get(provider, {}))
+        if notify:
+            self.api_result.setText("API 设置已保存；API Key 已写入 .env 或保持原值。点击「设为当前模型」后才会验证并生效。")
+            self.controller.window.speak("……API 设置保存好了。希望你没填错。")
+            self.controller.window.animation_manager.trigger_happy()
         self._refresh_active_status()
+        self._refresh_profile_switcher()
+        return ProviderMeta.make_profile_id(provider)
 
     def _test_api_connection(self) -> None:
         if self.api_worker is not None and self.api_worker.isRunning():
             return
         self.api_result.setText("正在后台测试连接...")
-        self.api_worker = _ApiTestWorker(self.settings_manager)
+        api_key = self.api_key_input.text().strip()
+        self.api_worker = _ApiTestWorker(
+            self.settings_manager,
+            profile=self._cloud_profile_from_form(),
+            api_key_override=api_key or None,
+        )
         self.api_worker.finished_with_result.connect(lambda ok, msg: self.api_result.setText(("通过：" if ok else "失败：") + msg))
         self.api_worker.finished.connect(self.api_worker.deleteLater)
         self.api_worker.start()
+
+    def _cloud_profile_from_form(self) -> dict[str, Any]:
+        provider = self._current_provider_key()
+        base_url = self.base_url_input.text().strip()
+        model = self.model_input.text().strip()
+        meta = ProviderMeta.get(provider)
+        auth_header = self.settings_manager.resolve_auth_header(provider, base_url, self.auth_header_input.currentText())
+        return {
+            "id": ProviderMeta.make_profile_id(provider),
+            "name": f"{ProviderMeta.get_display_name(provider)} ({model or meta.get('default_model', '')})",
+            "type": "text",
+            "provider": provider,
+            "api_style": ProviderMeta.get_api_style(provider),
+            "base_url": base_url or str(meta.get("base_url", "")),
+            "model": model or str(meta.get("default_model", "")),
+            "api_key_env": ProviderMeta.get_api_key_env(provider),
+            "auth_header": auth_header,
+            "enabled": True,
+            "capabilities": ["text"],
+            "source": "cloud",
+            "timeout": ProviderMeta.get_timeout(provider),
+            "max_tokens": ProviderMeta.get_max_tokens(provider),
+        }
 
     def _save_pet_settings(self) -> None:
         config = self.settings_manager.load_app_config()
@@ -1213,6 +1713,8 @@ class SettingsWindow(QDialog):
         config.setdefault("window", {})["opacity_percent"] = self.opacity.value()
         config["idle_chat_enabled"] = self.idle_chat.isChecked()
         config["idle_chat_minutes"] = self.idle_minutes.value()
+        config["idle_behavior_enabled"] = self.idle_behavior.isChecked()
+        config["idle_behavior_seconds"] = self.idle_behavior_seconds.value()
         config["hourly_chime_enabled"] = self.hourly_chime.isChecked()
         config["reminder_enabled"] = self.reminder_enabled.isChecked()
         config["day_night_enabled"] = self.day_night.isChecked()
@@ -1230,14 +1732,32 @@ class SettingsWindow(QDialog):
         try:
             manifest = asset_manager.manifest()
             source = "private" if "assets\\private" in str(asset_manager.active_asset_dir()) or "assets/private" in str(asset_manager.active_asset_dir()) else "placeholder"
-            lines = [f"资源来源: {source}", f"资源目录: {asset_manager.active_asset_dir()}", f"manifest: OK"]
+            raw_lines = [f"资源来源: {source}", f"资源目录: {asset_manager.active_asset_dir()}", "manifest: OK"]
+            available = []
+            missing = []
             for action in ["idle", "talk", "clicked", "drag", "sleep", "happy", "remind", "soft_idle", "close_idle", "bubble", "look_away"]:
                 frames = asset_manager.frames_for_state(action)
                 status = "available" if frames and any(frame.exists() for frame in frames) else "missing"
-                lines.append(f"- {action}: {status}; frames={[str(frame.name) for frame in frames[:3]]}")
+                (available if status == "available" else missing).append(action)
+                raw_lines.append(f"- {action}: {status}; frames={[str(frame.name) for frame in frames[:3]]}")
+            lines = [
+                f"资源来源：{'私有素材' if source == 'private' else '占位素材'}",
+                "资源清单：可读取",
+                f"可用动作：{len(available)} 个",
+                f"缺失动作：{('、'.join(missing) if missing else '无')}",
+                "需要查看素材目录和帧文件时可展开原始详情。",
+            ]
         except Exception as exc:
-            lines = [f"manifest: FAILED {exc.__class__.__name__}"]
+            lines = [f"动作资源读取失败：{exc.__class__.__name__}"]
+            raw_lines = [f"manifest: FAILED {exc.__class__.__name__}"]
         self.action_status.setPlainText("\n".join(lines))
+        if hasattr(self, "action_raw_details"):
+            self.action_raw_details.setPlainText("\n".join(raw_lines))
+
+    def _toggle_action_details(self) -> None:
+        visible = not self.action_raw_details.isVisible()
+        self.action_raw_details.setVisible(visible)
+        self.action_details_btn.setText("隐藏原始详情" if visible else "显示原始详情")
 
     def _reload_actions(self) -> None:
         self.controller.asset_manager._manifest = None
@@ -1252,20 +1772,39 @@ class SettingsWindow(QDialog):
 
     def _refresh_character_status(self) -> None:
         status = self.character_editor.status()
-        lines = [f"路径: {status['path']}", f"加载: {status['loaded']}", f"校验: {status['validation_ok']}"]
+        files = status.get("files", {})
+        missing = [name for name, file_status in files.items() if not file_status.get("exists")]
+        yaml_errors = [name for name, file_status in files.items() if file_status.get("yaml_ok") is False]
+        lines = [
+            f"角色包：{'已加载' if status['loaded'] else '加载失败'}",
+            f"结构校验：{'通过' if status['validation_ok'] else '异常'}",
+            "可编辑配置：character.yaml、speech.yaml、relationship.yaml、events.yaml",
+            "只读资产：lore.md、lore_index.yaml、actions.yaml、story.yaml",
+        ]
+        if missing:
+            lines.append("缺失文件：" + "、".join(missing))
+        if yaml_errors:
+            lines.append("YAML 异常：" + "、".join(yaml_errors))
         if status.get("validation_errors"):
-            lines.append(str(status["validation_errors"]))
-        for name, file_status in status.get("files", {}).items():
-            lines.append(f"- {name}: exists={file_status['exists']} editable={file_status['editable']} yaml_ok={file_status['yaml_ok']}")
+            lines.append("校验信息：" + str(status["validation_errors"]))
         self.character_status.setText("\n".join(lines))
 
     def _load_pack_file(self, name: str) -> None:
         try:
-            self.pack_editor_text.setPlainText(self.character_editor.read_file(name))
-            self.pack_editor_text.setReadOnly(name not in EDITABLE_FILES)
+            text = self.character_editor.read_file(name)
+            editable = name in EDITABLE_FILES
+            self.pack_editor_text.setPlainText(text)
+            self.pack_editor_text.setReadOnly(not editable)
+            self.pack_summary_text.setPlainText(_format_pack_file_summary(name, text, editable))
         except Exception as exc:
             self.pack_editor_text.setPlainText(f"读取失败：{exc.__class__.__name__}")
             self.pack_editor_text.setReadOnly(True)
+            self.pack_summary_text.setPlainText(f"读取失败：{exc.__class__.__name__}")
+
+    def _toggle_pack_raw_file(self) -> None:
+        visible = not self.pack_editor_text.isVisible()
+        self.pack_editor_text.setVisible(visible)
+        self.pack_raw_toggle_btn.setText("隐藏原始文件" if visible else "显示原始文件")
 
     def _save_pack_file(self) -> None:
         name = self.pack_file_combo.currentText()
@@ -1281,19 +1820,69 @@ class SettingsWindow(QDialog):
     def _refresh_relationship(self) -> None:
         status = self.relationship_viewer.status()
         state = status["relationship_state"]
-        state_lines = [f"{key}: {value}" for key, value in state.items()]
-        self.relationship_text.setPlainText("\n".join(state_lines) or "relationship_state.json 不可读或为空。")
+        self.relationship_text.setPlainText(_format_relationship_summary(state))
+        if hasattr(self, "relationship_raw_text"):
+            raw_lines = [f"{key}: {value}" for key, value in state.items()]
+            self.relationship_raw_text.setPlainText("\n".join(raw_lines) or "relationship_state.json 不可读或为空。")
 
     def _refresh_events(self) -> None:
         status = self.relationship_viewer.status()
         events = status["event_log"][-20:]
-        event_lines = [
+        raw_event_lines = [
             f"- {e.get('timestamp','')} event={e.get('event_id')} source={e.get('source')} effect={e.get('relationship_effect')} lore={e.get('lore_fragments_used')} {e.get('stage_before')}->{e.get('stage_after')}"
             for e in events
             if isinstance(e, dict)
         ]
         if hasattr(self, "events_text"):
-            self.events_text.setPlainText("\n".join(event_lines) or "暂无事件记录。")
+            self.events_text.setPlainText(_format_event_log_summary(events))
+        if hasattr(self, "events_raw_text"):
+            self.events_raw_text.setPlainText("\n".join(raw_event_lines) or "暂无事件记录。")
+
+    def _refresh_memory(self) -> None:
+        status = self.relationship_viewer.status()
+        memory = status.get("user_memory")
+        if not isinstance(memory, dict):
+            memory = {}
+        profile = self.controller.profile_manager.load()
+        notes = _read_recent_text_lines(self.controller.notes_manager.path, limit=12)
+        if hasattr(self, "memory_text"):
+            self.memory_text.setPlainText(_format_user_memory_summary(profile, memory, notes))
+
+    def _add_memory_note(self) -> None:
+        text = self.memory_note_input.text().strip()
+        if not text:
+            QMessageBox.information(self, "记忆备忘录", "先写一条要记住的内容。")
+            return
+        self.controller.add_note(text)
+        self.memory_note_input.clear()
+        self._refresh_memory()
+
+    def _clear_memory(self) -> None:
+        result = QMessageBox.question(
+            self,
+            "清空记忆",
+            "会清空自动记忆和手动备忘，但不会重置关系状态。继续吗？",
+        )
+        if result != QMessageBox.StandardButton.Yes:
+            return
+        from core.memory_engine import clear_user_memory
+
+        clear_user_memory()
+        self.controller.notes_manager.clear()
+        if hasattr(self.controller, "chat_client"):
+            self.controller.chat_client.reload()
+        self._refresh_memory()
+        QMessageBox.information(self, "记忆备忘录", "已清空自动记忆和手动备忘。")
+
+    def _toggle_relationship_raw(self) -> None:
+        visible = not self.relationship_raw_text.isVisible()
+        self.relationship_raw_text.setVisible(visible)
+        self.relationship_raw_toggle_btn.setText("隐藏原始数据" if visible else "显示原始数据")
+
+    def _toggle_events_raw(self) -> None:
+        visible = not self.events_raw_text.isVisible()
+        self.events_raw_text.setVisible(visible)
+        self.events_raw_toggle_btn.setText("隐藏原始日志" if visible else "显示原始日志")
 
     def _export_relationship(self) -> None:
         path = self.relationship_viewer.export_state()
@@ -1313,10 +1902,17 @@ class SettingsWindow(QDialog):
     def _refresh_data(self) -> None:
         status = self.relationship_viewer.status()
         paths = self.relationship_viewer.paths()
+        self.data_text.setPlainText(_format_data_status_summary(status, paths))
         lines = [f"data_dir: {status['data_dir']} exists={status['exists']}"]
         for key, path in paths.items():
             lines.append(f"- {key}: exists={path.exists()} readable={status.get(key + '_readable')} error={status.get(key + '_error')}")
-        self.data_text.setPlainText("\n".join(lines))
+        if hasattr(self, "data_raw_text"):
+            self.data_raw_text.setPlainText("\n".join(lines))
+
+    def _toggle_data_raw(self) -> None:
+        visible = not self.data_raw_text.isVisible()
+        self.data_raw_text.setVisible(visible)
+        self.data_raw_toggle_btn.setText("隐藏原始详情" if visible else "显示原始详情")
 
     def _backup_data(self) -> None:
         path = self.relationship_viewer.backup_data_dir()
@@ -1339,6 +1935,22 @@ class SettingsWindow(QDialog):
         self.diagnostics_worker.finished_with_text.connect(self.diagnostics_text.setPlainText)
         self.diagnostics_worker.finished.connect(self.diagnostics_worker.deleteLater)
         self.diagnostics_worker.start()
+
+    def _open_first_run_wizard(self) -> None:
+        from .first_run_wizard import FirstRunWizard
+        from .setup_state_manager import SetupStateManager
+
+        wizard = FirstRunWizard(SetupStateManager(root=self.settings_manager.root))
+        wizard.exec()
+        self.api = self.settings_manager.load_api_config()
+        active = self.api.get("active_provider", "deepseek")
+        active_display = next((display for display, key in self._provider_display_map.items() if key == active), None)
+        if active_display:
+            self.provider_input.setCurrentText(active_display)
+        self.local_mode_input.setChecked(bool(self.api.get("local_mode", False)))
+        self.api_key_input.clear()
+        self._on_provider_changed(self.provider_input.currentText())
+        self._refresh_active_status()
 
     def _show_api_help(self) -> None:
         """弹出云端 API 配置帮助窗口。分三区：预设 Provider / CC Switch / 自部署代理。"""
@@ -1378,8 +1990,8 @@ class SettingsWindow(QDialog):
              "https://console.mistral.ai/api-keys", "欧洲领先 AI，开源友好"),
             ("Groq", "groq", "https://api.groq.com/openai/v1", "llama-4-maverick-17b-128e-instruct",
              "https://console.groq.com/keys", "Llama 4 Maverick，开源旗舰级推理速度"),
-            ("智谱 GLM", "custom_cloud", "https://open.bigmodel.cn/api/paas/v4", "glm-4.5-flash",
-             "https://open.bigmodel.cn/", "2026年 GLM-4.5，清华系中文能力最强"),
+            ("Z.AI (GLM)", "zai", "https://api.z.ai/api/paas/v4", "glm-5.1",
+             "https://docs.z.ai/", "OpenAI-compatible GLM API，需要 ZAI_API_KEY"),
             ("硅基流动 (SiliconFlow)", "custom_cloud", "https://api.siliconflow.cn/v1", "Qwen/Qwen3-235B-A22B",
              "https://siliconflow.cn/", "Qwen3-235B，国产开源最强旗舰"),
             ("月之暗面 Kimi", "custom_cloud", "https://api.moonshot.cn/v1", "kimi-k2.5",
@@ -1679,7 +2291,8 @@ class SettingsWindow(QDialog):
         if reply == QMessageBox.StandardButton.Yes:
             self.settings_manager.clear_api_key(env_key)
             self.api_key_input.clear()
-            self.api_key_input.setPlaceholderText("<empty>")
+            self.api = self.settings_manager.load_api_config()
+            self._update_saved_api_key_label(provider, self.api.get("providers", {}).get(provider, {}))
             self.api_result.setText(f"已清除 {env_key}。")
 
     def _reset_current_provider(self) -> None:
@@ -1695,6 +2308,7 @@ class SettingsWindow(QDialog):
         if reply == QMessageBox.StandardButton.Yes:
             self.base_url_input.setText(meta["base_url"])
             self.model_input.setText(meta["default_model"])
+            self.auth_header_input.setCurrentText(str(meta.get("auth_header", "bearer")))
             self.api_result.setText(f"{provider} 已重置为默认值（需点击保存和设为当前模型生效）。")
 
     def _clear_local_config(self) -> None:
@@ -1790,8 +2404,14 @@ class SettingsWindow(QDialog):
                      self.local_service_combo.currentText()))
             self.local_base_url.setText(url)
             self.local_status.setText(f"状态：已导入 {name} ({model})")
+            self._refresh_profile_switcher()
             dialog.accept()
 
         ok.clicked.connect(do_import)
         cancel.clicked.connect(dialog.reject)
         dialog.exec()
+
+
+def _profile_has_text(profile: dict[str, Any]) -> bool:
+    capabilities = profile.get("capabilities", [])
+    return str(profile.get("type", "")) == "text" or (isinstance(capabilities, list) and "text" in capabilities)

@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +51,13 @@ class ProviderManager:
         self.profiles_data = self.load_profiles()
         self.last_source = "无"
         self.last_error = "无"
+        self.last_error_type = "无"
+        self.last_error_traceback = "无"
+        self.last_provider = "无"
+        self.last_model = "无"
+        self.fallback_used = False
+        self.fallback_reason = "无"
+        self._fallback_index = 0
 
     # ── config ──────────────────────────────────────────────
 
@@ -72,7 +80,13 @@ class ProviderManager:
         profiles = self.profiles_data.get("profiles", [])
         active_id = self.profiles_data.get("active_text_profile_id", ProviderMeta.make_profile_id(Provider.DEEPSEEK))
         for p in profiles:
-            if p.get("id") == active_id:
+            if p.get("id") == active_id and _profile_enabled(p) and _profile_supports_slot(p, "text"):
+                return p
+        for p in profiles:
+            if p.get("id") == ProviderMeta.make_profile_id(Provider.DEEPSEEK) and _profile_enabled(p):
+                return p
+        for p in profiles:
+            if _profile_enabled(p) and _profile_supports_slot(p, "text"):
                 return p
         if profiles:
             return profiles[0]
@@ -90,6 +104,10 @@ class ProviderManager:
         model = profile.get("model", "")
         base_url = str(profile.get("base_url", ""))
         api_key = self._get_api_key(profile.get("api_key_env", ""))
+        auth_header = self._auth_header_for_profile(profile)
+
+        self.last_provider = provider
+        self.last_model = model
 
         try:
             if provider == Provider.OLLAMA:
@@ -124,31 +142,55 @@ class ProviderManager:
                     api_key=api_key,
                     base_url=base_url,
                     model=model,
+                    auth_header=auth_header,
                     max_tokens=int(profile.get("max_tokens", 360)),
                     timeout=int(profile.get("timeout", 20)),
                 )
 
             self.last_source = f"{provider} ({model})"
             self.last_error = "无"
+            self.last_error_type = "无"
+            self.last_error_traceback = "无"
+            self.fallback_used = False
+            self.fallback_reason = "无"
             print(f"[Daniya] Chat response: provider={provider}, model={model}, source={profile.get('source', 'cloud')}, fallback_used=False")
             return response, "api"
 
         except AuthError as e:
             self.last_error = f"auth: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except RateLimitError as e:
             self.last_error = f"rate_limit: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except ServerError as e:
             self.last_error = f"server_error: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except NetworkError as e:
             self.last_error = f"network: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except MalformedResponse as e:
             self.last_error = f"malformed: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except ModelNotFoundError as e:
             self.last_error = f"model_not_found: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except BoundaryError as e:
             self.last_error = f"boundary: {e}"
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
         except Exception as e:
             self.last_error = str(e)
+            self.last_error_type = e.__class__.__name__
+            self.last_error_traceback = traceback.format_exc()
+
+        self.fallback_used = True
+        self.fallback_reason = self.last_error
 
         print(f"[Daniya] Chat response: provider={provider}, model={model}, source=local, fallback_used=True, error_summary=\"{self.last_error}\"")
         self.last_source = "local_fallback"
@@ -156,16 +198,30 @@ class ProviderManager:
 
     def local_fallback(self, api_error: bool = False) -> str:
         chat_config = self.api_config.get("chat", {})
+        list_key = "api_error_fallback_replies" if api_error else "fallback_replies"
+        replies = chat_config.get(list_key)
+        if isinstance(replies, list):
+            candidates = [str(item).strip() for item in replies if str(item).strip()]
+            if candidates:
+                reply = candidates[self._fallback_index % len(candidates)]
+                self._fallback_index += 1
+                return reply
         if api_error:
             return str(chat_config.get("api_error_fallback_reply", "达妮娅刚刚走神了一下……但我还在哦。"))
         return str(chat_config.get("fallback_reply", "达妮娅现在还没有连上大脑，但我已经在这里啦！"))
 
-    def test_profile_model(self, profile: dict[str, Any]) -> tuple[bool, str]:
+    def test_profile_model(
+        self,
+        profile: dict[str, Any],
+        api_key_override: str | None = None,
+        timeout: int = 8,
+    ) -> tuple[bool, str]:
         """向模型发送测试消息验证可用性。返回 (ok, message)。"""
         provider = profile.get("provider", "deepseek")
         model = profile.get("model", "")
         base_url = str(profile.get("base_url", ""))
-        api_key = self._get_api_key(profile.get("api_key_env", ""))
+        api_key = str(api_key_override).strip() if api_key_override is not None else self._get_api_key(profile.get("api_key_env", ""))
+        auth_header = self._auth_header_for_profile(profile)
 
         try:
             if provider == Provider.OLLAMA:
@@ -175,34 +231,43 @@ class ProviderManager:
                 ok = anthropic_api.chat(
                     [{"role": "user", "content": "Hi"}],
                     api_key=api_key, base_url=base_url, model=model,
-                    max_tokens=5, timeout=8,
+                    max_tokens=5, timeout=timeout,
                 )
                 return True, "连接成功"
             elif provider == Provider.DEEPSEEK:
                 ok = deepseek_api.test_connection(
-                    api_key=api_key, base_url=base_url, model=model, timeout=8,
+                    api_key=api_key, base_url=base_url, model=model, timeout=timeout,
                 )
                 return ok, "连接成功" if ok else "连接失败"
             else:
                 ok = openai_api.test_connection(
-                    api_key=api_key, base_url=base_url, model=model, timeout=8,
+                    api_key=api_key, base_url=base_url, model=model, auth_header=auth_header, timeout=timeout,
                 )
                 return ok, "连接成功" if ok else "连接失败"
         except Exception as e:
             return False, str(e)
 
-    def switch_active_profile(self, new_profile_id: str) -> tuple[bool, str]:
+    def switch_active_profile(self, new_profile_id: str, slot: str = "text") -> tuple[bool, str]:
+        if slot != "text":
+            return False, "ProviderManager 只负责 text 模型切换；TTS/图像等能力必须使用独立切换器。"
+
         profiles = self.profiles_data.get("profiles", [])
         target = next((p for p in profiles if p.get("id") == new_profile_id), None)
         if not target:
             return False, f"未找到模型配置: {new_profile_id}"
+        if not _profile_supports_slot(target, slot):
+            return False, f"模型配置 {new_profile_id} 不支持 {slot}"
+        if not _profile_enabled(target):
+            return False, f"模型配置 {new_profile_id} 已停用"
 
         ok, msg = self.test_profile_model(target)
         if not ok:
             return False, f"模型测试未通过: {msg}"
 
-        old_id = self.profiles_data.get("active_text_profile_id", ProviderMeta.make_profile_id(Provider.DEEPSEEK))
-        self.profiles_data["active_text_profile_id"] = new_profile_id
+        active_key = _active_key_for_slot(slot)
+        old_id = self.profiles_data.get(active_key, ProviderMeta.make_profile_id(Provider.DEEPSEEK))
+        self.profiles_data[active_key] = new_profile_id
+        _record_profile_history(self.profiles_data, slot, new_profile_id)
 
         try:
             self.model_profiles_path.parent.mkdir(parents=True, exist_ok=True)
@@ -211,9 +276,12 @@ class ProviderManager:
                 json.dump(self.profiles_data, f, ensure_ascii=False, indent=2)
             tmp.replace(self.model_profiles_path)
             self.reload()
+            if self.profiles_data.get(active_key) != new_profile_id:
+                self.profiles_data[active_key] = old_id
+                return False, "写入后读回校验失败"
             return True, "切换成功"
         except Exception as e:
-            self.profiles_data["active_text_profile_id"] = old_id
+            self.profiles_data[active_key] = old_id
             return False, f"写入配置文件失败: {str(e)}"
 
     def prompt_to_messages(self, prompt: str, history_messages: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
@@ -233,6 +301,13 @@ class ProviderManager:
         key = os.environ.get(env_key_name) or env.get(env_key_name)
         return str(key or "").strip()
 
+    def _auth_header_for_profile(self, profile: dict[str, Any]) -> str:
+        value = str(profile.get("auth_header", "")).strip()
+        if value:
+            return value
+        provider = str(profile.get("provider", ""))
+        return ProviderMeta.get_auth_header(provider)
+
 
 def _default_profiles() -> dict[str, Any]:
     meta = ProviderMeta.get(Provider.DEEPSEEK)
@@ -241,6 +316,12 @@ def _default_profiles() -> dict[str, Any]:
         "active_vision_profile_id": "",
         "active_tts_profile_id": "",
         "active_image_profile_id": "",
+        "profile_history": {
+            "text": [ProviderMeta.make_profile_id(Provider.DEEPSEEK)],
+            "vision": [],
+            "tts": [],
+            "image": [],
+        },
         "profiles": [
             {
                 "id": ProviderMeta.make_profile_id(Provider.DEEPSEEK),
@@ -251,9 +332,43 @@ def _default_profiles() -> dict[str, Any]:
                 "base_url": meta["base_url"],
                 "model": meta["default_model"],
                 "api_key_env": meta["api_key_env"],
+                "auth_header": meta["auth_header"],
                 "enabled": True,
                 "capabilities": ["text"],
                 "source": "cloud",
             }
         ],
     }
+
+
+def _active_key_for_slot(slot: str) -> str:
+    mapping = {
+        "text": "active_text_profile_id",
+        "vision": "active_vision_profile_id",
+        "tts": "active_tts_profile_id",
+        "image": "active_image_profile_id",
+    }
+    return mapping.get(slot, f"active_{slot}_profile_id")
+
+
+def _profile_enabled(profile: dict[str, Any]) -> bool:
+    return profile.get("enabled", True) is not False
+
+
+def _profile_supports_slot(profile: dict[str, Any], slot: str) -> bool:
+    capabilities = profile.get("capabilities", [])
+    if isinstance(capabilities, list) and slot in capabilities:
+        return True
+    return str(profile.get("type", "")) == slot
+
+
+def _record_profile_history(profiles_data: dict[str, Any], slot: str, profile_id: str, limit: int = 12) -> None:
+    history = profiles_data.setdefault("profile_history", {})
+    if not isinstance(history, dict):
+        history = {}
+        profiles_data["profile_history"] = history
+    current = history.get(slot, [])
+    if not isinstance(current, list):
+        current = []
+    clean = [str(item) for item in current if str(item) and str(item) != profile_id]
+    history[slot] = [profile_id] + clean[: max(0, limit - 1)]

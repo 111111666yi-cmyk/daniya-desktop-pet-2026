@@ -105,10 +105,10 @@ def _wrap_model_client(model_client: Callable[[str], str] | Any | None) -> Calla
     if hasattr(model_client, "generate"):
         return lambda prompt: str(model_client.generate(prompt))
     if hasattr(model_client, "reply"):
-        def call_existing_chat_client(prompt: str) -> str:
+        def call_existing_chat_client(prompt: str) -> Any:
             reply = model_client.reply(prompt)
             if isinstance(reply, tuple):
-                return str(reply[0])
+                return reply
             return str(reply)
 
         return call_existing_chat_client

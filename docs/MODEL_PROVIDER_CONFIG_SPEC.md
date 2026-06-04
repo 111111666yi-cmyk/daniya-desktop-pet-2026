@@ -13,6 +13,12 @@
   "active_vision_profile_id": "当前多模态视觉所用的 Profile ID（预留，与纯文本隔离）",
   "active_tts_profile_id": "当前 TTS 语音所用的 Profile ID（预留）",
   "active_image_profile_id": "当前生图所用的 Profile ID（预留）",
+  "profile_history": {
+    "text": ["最近成功切换过的文本 Profile ID"],
+    "vision": [],
+    "tts": [],
+    "image": []
+  },
   "profiles": [
     {
       "id": "唯一标识符，格式建议为: [provider]_[model_tag]",
@@ -38,9 +44,10 @@
 
 ## 2. active_text_profile_id 切换规则
 1. **纯文本对话防混淆**：DialogueEngine 仅能读取被标记为 `active_text_profile_id` 且 `type` 为 `"text"` 的 Profile，其余 Vision、TTS、Image 配置绝不能混入纯文本对话流程中。
-2. **回退保护原则**：在设置中心更改 `active_text_profile_id` 时，系统将先使用该 Profile 调用 `test_profile_model()` 对模型可用性进行实测：
-   * **测试通过**：写盘保存，执行 `reload()` 即时生效。
-   * **测试失败**：不执行保存，回退到当前的可用模型，并弹出异常原因。
+2. **保存不等于生效**：保存 Provider 或本地模型只创建/更新 Profile，不改变 `active_text_profile_id`。
+3. **验证切换原则**：更改 `active_text_profile_id` 必须通过 `activate_text_profile()` / `ProviderManager.switch_active_profile()`：
+   * **测试通过**：写入 active、记录 `profile_history.text`、读回校验，并执行 `reload()` 即时生效。
+   * **测试失败**：不改变当前 active，并在 UI 显示失败原因。
 
 ---
 
@@ -54,15 +61,15 @@
 ### B. 设置中心保存与应用工作流
 ```mermaid
 graph TD
-    A[用户在设置中心修改参数] --> B[点击保存并应用]
-    B --> C[构建临时临时 Profile 对象]
-    C --> D[ProviderManager.test_profile_model 进行问答实测]
-    D -- 成功 --> E[写入 model_profiles.json]
-    E --> F[调用 ProviderManager.reload 热重载]
-    F --> G[更新 UI 生效状态为 绿色已生效]
-    D -- 失败 --> H[拒绝保存 active_text_profile_id]
-    H --> I[回退到旧模型, 弹窗提示失败原因]
-    I --> J[更新 UI 状态为 红色切换失败已回退]
+    A[用户在设置中心修改参数] --> B[点击保存]
+    B --> C[创建或更新 Profile, 不写 active]
+    C --> D[点击设为当前模型或直接切换]
+    D --> E[ProviderManager.test_profile_model 实测]
+    E -- 成功 --> F[写入 active_text_profile_id 与 profile_history.text]
+    F --> G[读回校验并同步 api_config.active_provider]
+    G --> H[ChatClient.reload 即时生效]
+    E -- 失败 --> I[拒绝写 active, 当前模型不变]
+    I --> J[更新 UI 状态为红色失败]
 ```
 
 ### C. Fallback 降级流程

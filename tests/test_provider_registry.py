@@ -12,6 +12,7 @@ class TestProviderConstants:
         assert Provider.DEEPSEEK in clouds
         assert Provider.OPENAI in clouds
         assert Provider.CLAUDE in clouds
+        assert Provider.ZAI in clouds
 
     def test_all_local_contains_standard_keys(self) -> None:
         locals_ = Provider.all_local()
@@ -30,6 +31,7 @@ class TestProviderMetaNormalize:
         assert ProviderMeta.normalize("deepseek") == Provider.DEEPSEEK
         assert ProviderMeta.normalize("openai") == Provider.OPENAI
         assert ProviderMeta.normalize("claude") == Provider.CLAUDE
+        assert ProviderMeta.normalize("zai") == Provider.ZAI
         assert ProviderMeta.normalize("ollama") == Provider.OLLAMA
 
     def test_alias_anthropic_to_claude(self) -> None:
@@ -51,6 +53,11 @@ class TestProviderMetaNormalize:
     def test_alias_custom(self) -> None:
         assert ProviderMeta.normalize("custom") == Provider.LOCAL_OPENAI_COMPATIBLE
 
+    def test_alias_zai(self) -> None:
+        assert ProviderMeta.normalize("Z.AI") == Provider.ZAI
+        assert ProviderMeta.normalize("zhipu") == Provider.ZAI
+        assert ProviderMeta.normalize("glm") == Provider.ZAI
+
     def test_empty_string(self) -> None:
         assert ProviderMeta.normalize("") == Provider.LOCAL_OPENAI_COMPATIBLE
 
@@ -66,21 +73,32 @@ class TestProviderMetaGetters:
 
     def test_default_url(self) -> None:
         assert ProviderMeta.get_default_url(Provider.DEEPSEEK) == "https://api.deepseek.com"
+        assert ProviderMeta.get_default_url(Provider.ZAI) == "https://api.z.ai/api/paas/v4"
         assert ProviderMeta.get_default_url(Provider.OLLAMA) == "http://localhost:11434"
 
     def test_default_model(self) -> None:
         assert ProviderMeta.get_default_model(Provider.DEEPSEEK) == "deepseek-chat"
         assert ProviderMeta.get_default_model(Provider.OPENAI) == "gpt-4.1-mini"
+        assert ProviderMeta.get_default_model(Provider.ZAI) == "glm-5.1"
 
     def test_api_key_env(self) -> None:
         assert ProviderMeta.get_api_key_env(Provider.DEEPSEEK) == "DEEPSEEK_API_KEY"
         assert ProviderMeta.get_api_key_env(Provider.OPENAI) == "OPENAI_API_KEY"
+        assert ProviderMeta.get_api_key_env(Provider.ZAI) == "ZAI_API_KEY"
+        assert ProviderMeta.get_api_key_env(Provider.OPENAI_COMPATIBLE) == "OPENAI_COMPATIBLE_API_KEY"
         assert ProviderMeta.get_api_key_env(Provider.OLLAMA) == ""
+
+    def test_auth_header(self) -> None:
+        assert ProviderMeta.get_auth_header(Provider.DEEPSEEK) == "bearer"
+        assert ProviderMeta.get_auth_header(Provider.ZAI) == "bearer"
+        assert ProviderMeta.get_auth_header(Provider.OPENAI_COMPATIBLE) == "bearer"
+        assert ProviderMeta.get_auth_header(Provider.OLLAMA) == ""
 
     def test_source_classification(self) -> None:
         assert ProviderMeta.is_cloud(Provider.DEEPSEEK) is True
         assert ProviderMeta.is_cloud(Provider.OPENAI) is True
         assert ProviderMeta.is_cloud(Provider.CLAUDE) is True
+        assert ProviderMeta.is_cloud(Provider.ZAI) is True
         assert ProviderMeta.is_cloud(Provider.OLLAMA) is False
         assert ProviderMeta.is_local(Provider.OLLAMA) is True
         assert ProviderMeta.is_local(Provider.LM_STUDIO) is True

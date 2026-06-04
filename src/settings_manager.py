@@ -24,11 +24,21 @@ def _build_default_api_config() -> dict[str, Any]:
         "local_mode": False,
         "chat": {
             "fallback_reply": "……脑子没连上。不过，我还在就是了。",
-            "api_error_fallback_reply": "唔……刚刚没连上，我先用本地脑袋陪你。"
+            "fallback_replies": [
+                "……脑子没连上。不过，我还在就是了。",
+                "……先用本地模式陪你一下，别急。",
+                "……云端还没接上，我先顶一会儿。"
+            ],
+            "api_error_fallback_reply": "唔……刚刚没连上，我先用本地脑袋陪你。",
+            "api_error_fallback_replies": [
+                "唔……刚刚没连上，我先用本地脑袋陪你。",
+                "……API 没接稳，我先留在这里。",
+                "……那边暂时没回音，我先用本地回复撑住。"
+            ]
         },
     }
     # 只为云端 Provider 生成默认 entry
-    for key in (Provider.DEEPSEEK, Provider.OPENAI, Provider.CLAUDE, Provider.LOCAL_OPENAI_COMPATIBLE):
+    for key in (Provider.DEEPSEEK, Provider.OPENAI, Provider.CLAUDE, Provider.ZAI, Provider.LOCAL_OPENAI_COMPATIBLE):
         meta = ProviderMeta.get(key)
         config["providers"][key] = {
             "base_url": meta["base_url"],
@@ -37,6 +47,7 @@ def _build_default_api_config() -> dict[str, Any]:
             "max_tokens": meta["max_tokens"],
             "temperature": 0.8,
             "api_key_env": meta["api_key_env"],
+            "auth_header": meta["auth_header"],
         }
     return config
 
@@ -46,7 +57,7 @@ DEFAULT_API_CONFIG: dict[str, Any] = _build_default_api_config()
 
 def _build_default_model_profiles() -> dict[str, Any]:
     """从 ProviderRegistry 自动生成默认 model_profiles，避免硬编码。"""
-    cloud_keys = (Provider.DEEPSEEK, Provider.OPENAI)
+    cloud_keys = (Provider.DEEPSEEK, Provider.OPENAI, Provider.ZAI)
     local_entries = [
         ("ollama_qwen25_05b", "Qwen2.5 0.5B - Ollama", Provider.OLLAMA, "ollama", "qwen2.5:0.5b"),
     ]
@@ -63,6 +74,7 @@ def _build_default_model_profiles() -> dict[str, Any]:
             "base_url": meta["base_url"],
             "model": meta["default_model"],
             "api_key_env": meta["api_key_env"],
+            "auth_header": meta["auth_header"],
             "enabled": True,
             "capabilities": ["text"],
             "source": "cloud",
@@ -88,6 +100,12 @@ def _build_default_model_profiles() -> dict[str, Any]:
         "active_vision_profile_id": "",
         "active_tts_profile_id": "",
         "active_image_profile_id": "",
+        "profile_history": {
+            "text": [ProviderMeta.make_profile_id(Provider.DEEPSEEK)],
+            "vision": [],
+            "tts": [],
+            "image": [],
+        },
         "profiles": profiles,
     }
 
@@ -122,9 +140,22 @@ class SettingsManager:
             "active_vision_profile_id": "",
             "active_tts_profile_id": "",
             "active_image_profile_id": "",
+            "profile_history": {
+                "text": [ProviderMeta.make_profile_id(Provider.DEEPSEEK)],
+                "vision": [],
+                "tts": [],
+                "image": [],
+            },
             "profiles": []
         }
         loaded = self._load_json(self.model_profiles_path, default_profiles)
+        for key, value in default_profiles.items():
+            loaded.setdefault(key, deepcopy(value))
+        if not isinstance(loaded.get("profile_history"), dict):
+            loaded["profile_history"] = deepcopy(default_profiles["profile_history"])
+        for slot in ("text", "vision", "tts", "image"):
+            history = loaded["profile_history"].get(slot, [])
+            loaded["profile_history"][slot] = history if isinstance(history, list) else []
         # 自动脱敏，防止明文 key 写入 JSON
         profiles = loaded.get("profiles", [])
         for p in profiles:
@@ -192,11 +223,15 @@ class SettingsManager:
         base_url: str,
         model: str,
         api_key: str | None = None,
+        auth_header: str | None = None,
         local_mode: bool = False,
         activate: bool = False,
     ) -> None:
         config = self.load_api_config()
-        config["active_provider"] = provider or Provider.DEEPSEEK
+        if activate:
+            config["active_provider"] = provider or Provider.DEEPSEEK
+        else:
+            config.setdefault("active_provider", Provider.DEEPSEEK)
         config["local_mode"] = bool(local_mode)
 
         providers = config.setdefault("providers", {})
@@ -206,12 +241,10 @@ class SettingsManager:
         prov_conf["model"] = model or default_meta["default_model"]
 
         env_key_name = ProviderMeta.get_api_key_env(provider)
+        auth_header_name = _resolve_auth_header(provider, base_url, auth_header)
 
         prov_conf["api_key_env"] = env_key_name
-
-        self.save_api_config(config)
-        self._sync_app_api(config)
-        self._sync_model_profiles(provider, base_url, model, env_key_name, activate=activate)
+        prov_conf["auth_header"] = auth_header_name
 
         if api_key is not None and env_key_name:
             self.write_env_values(
@@ -219,6 +252,16 @@ class SettingsManager:
                     env_key_name: api_key.strip(),
                 }
             )
+
+        self.save_api_config(config)
+        self._sync_app_api(config)
+        self._sync_model_profiles(provider, base_url, model, env_key_name, auth_header_name, activate=False)
+
+        if activate and not local_mode:
+            target_id = ProviderMeta.make_profile_id(provider)
+            ok, msg = self.activate_text_profile(target_id)
+            if not ok:
+                raise RuntimeError(msg)
 
     def current_api_key(self, env_key_name: str = "DEEPSEEK_API_KEY") -> str:
         if not env_key_name:
@@ -283,23 +326,75 @@ class SettingsManager:
         raw_key = self.current_api_key(env_key_name)
         provider = profile.get("provider", "")
 
-        ok, msg = pm.test_profile_model(profile)
+        ok, msg = pm.test_profile_model(profile, timeout=timeout)
 
         if provider not in ("ollama",) and raw_key:
             msg += f" (key={mask_key(raw_key)})"
 
         return ok, msg
 
+    def resolve_auth_header(self, provider: str, base_url: str, auth_header: str | None = None) -> str:
+        return _resolve_auth_header(provider, base_url, auth_header)
+
+    def activate_text_profile(self, profile_id: str) -> tuple[bool, str]:
+        pm = ProviderManager(api_config=self.load_api_config())
+        pm.model_profiles_path = self.model_profiles_path
+        pm.env_path = self.env_path
+        pm.reload()
+        ok, msg = pm.switch_active_profile(profile_id, slot="text")
+        if ok:
+            self.sync_api_active_provider_from_profile(profile_id)
+        return ok, msg
+
+    def sync_api_active_provider_from_profile(self, profile_id: str) -> None:
+        profiles_data = self.load_model_profiles()
+        profile = next((p for p in profiles_data.get("profiles", []) if p.get("id") == profile_id), None)
+        if not profile:
+            return
+        provider = str(profile.get("provider", Provider.DEEPSEEK))
+        config = self.load_api_config()
+        config["active_provider"] = provider
+        config["local_mode"] = False
+        providers = config.setdefault("providers", {})
+        entry = providers.setdefault(provider, {})
+        entry["base_url"] = str(profile.get("base_url", ""))
+        entry["model"] = str(profile.get("model", ""))
+        entry["api_key_env"] = str(profile.get("api_key_env", ProviderMeta.get_api_key_env(provider)))
+        entry["auth_header"] = str(profile.get("auth_header", ProviderMeta.get_auth_header(provider)))
+        self.save_api_config(config)
+        self._sync_app_api(config)
+
+    def set_profile_enabled(self, profile_id: str, enabled: bool, slot: str = "text") -> tuple[bool, str]:
+        profiles_data = self.load_model_profiles()
+        active_key = _active_key_for_slot(slot)
+        if not enabled and profiles_data.get(active_key) == profile_id:
+            return False, "当前生效模型不能停用；请先切换到另一个可用模型。"
+
+        for profile in profiles_data.get("profiles", []):
+            if profile.get("id") == profile_id:
+                profile["enabled"] = bool(enabled)
+                self.save_model_profiles(profiles_data)
+                return True, "已启用" if enabled else "已停用"
+        return False, f"未找到模型配置: {profile_id}"
+
     def _sync_app_api(self, api_config: dict[str, Any]) -> None:
         app_config = self.load_app_config()
         app_config.setdefault("api", {})["local_mode"] = bool(api_config.get("local_mode", False))
         self.save_app_config(app_config)
 
-    def _sync_model_profiles(self, provider: str, base_url: str, model: str, env_key_name: str, activate: bool = False) -> None:
+    def _sync_model_profiles(
+        self,
+        provider: str,
+        base_url: str,
+        model: str,
+        env_key_name: str,
+        auth_header: str,
+        activate: bool = False,
+    ) -> None:
         """将 api_config.json 的 Provider 同步到 model_profiles.json。
 
-        仅更新/创建 profile 条目，不自动改变 active_text_profile_id，
-        除非 activate=True（仅由显式"设为当前模型"操作触发）。
+        只更新/创建 profile 条目；生效切换必须走 activate_text_profile() 的验证事务。
+        activate 参数保留给旧调用签名，不再直接写 active_text_profile_id。
         """
         profiles_data = self.load_model_profiles()
         profiles = profiles_data.get("profiles", [])
@@ -311,6 +406,7 @@ class SettingsManager:
                 p["base_url"] = base_url
                 p["model"] = model
                 p["api_key_env"] = env_key_name
+                p["auth_header"] = auth_header
                 p["enabled"] = True
                 found = True
                 break
@@ -327,13 +423,12 @@ class SettingsManager:
                 "base_url": base_url,
                 "model": model,
                 "api_key_env": env_key_name,
+                "auth_header": auth_header,
                 "enabled": True,
                 "capabilities": ["text"],
                 "source": source,
             })
 
-        if activate:
-            profiles_data["active_text_profile_id"] = target_id
         self.save_model_profiles(profiles_data)
 
     def save_local_model_profile(self, provider: str, base_url: str, model: str, service_label: str = "") -> None:
@@ -371,21 +466,11 @@ class SettingsManager:
         # 不改变 active_text_profile_id
         self.save_model_profiles(profiles_data)
 
-    def save_and_activate_local_model_profile(self, provider: str, base_url: str, model: str, service_label: str = "") -> None:
-        """保存本地模型 profile 到 model_profiles.json，并将其设为当前活跃的 Provider/模型。"""
+    def save_and_activate_local_model_profile(self, provider: str, base_url: str, model: str, service_label: str = "") -> tuple[bool, str]:
+        """保存本地模型 profile，并且只在连接验证成功后切换为当前文本模型。"""
         self.save_local_model_profile(provider, base_url, model, service_label)
-
-        profiles_data = self.load_model_profiles()
         target_id = ProviderMeta.make_profile_id(provider, model)
-        profiles_data["active_text_profile_id"] = target_id
-        self.save_model_profiles(profiles_data)
-
-        # 同时同步到 api_config.json 保持活跃 provider 一致
-        config = self.load_api_config()
-        config["active_provider"] = provider
-        config["local_mode"] = False  # 确保关闭了本地 fallback 模式
-        self.save_api_config(config)
-        self._sync_app_api(config)
+        return self.activate_text_profile(target_id)
 
     def _load_json(self, path: Path, default: dict[str, Any]) -> Any:
         try:
@@ -447,3 +532,22 @@ def _quote_env(value: str) -> str:
     if any(ch.isspace() for ch in value):
         return json.dumps(value, ensure_ascii=False)
     return value
+
+
+def _resolve_auth_header(provider: str, base_url: str, auth_header: str | None = None) -> str:
+    normalized = ProviderMeta.normalize(provider)
+    if normalized == Provider.OPENAI_COMPATIBLE and "xiaomimimo.com" in base_url.lower():
+        return "api-key"
+    if auth_header and auth_header.strip():
+        return auth_header.strip()
+    return ProviderMeta.get_auth_header(normalized)
+
+
+def _active_key_for_slot(slot: str) -> str:
+    mapping = {
+        "text": "active_text_profile_id",
+        "vision": "active_vision_profile_id",
+        "tts": "active_tts_profile_id",
+        "image": "active_image_profile_id",
+    }
+    return mapping.get(slot, f"active_{slot}_profile_id")

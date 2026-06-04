@@ -1,9 +1,10 @@
 {
-  "version": "v0.55.3",
+  "version": "v0.60",
+  "quiet_defaults_migration": "v0.61-quiet-defaults",
   "current_character": "daniya",
   "window": {
-    "start_x": 352,
-    "start_y": 26,
+    "start_x": 0,
+    "start_y": 0,
     "always_on_top": true,
     "show_input": true
   },
@@ -30,7 +31,7 @@
       "E_QQ_pet_drag_system": true
     },
     "hover_animation_enabled": false,
-    "edge_peek_enabled": true,
+    "edge_peek_enabled": false,
     "edge_dock_visible_px": 32,
     "edge_dock_hover_visible_px": 52,
     "click_to_call_enabled": false,
@@ -49,7 +50,17 @@
     "temperature": 0.8,
     "max_tokens": 360,
     "fallback_reply": "……达妮娅现在还没有连上大脑，但我已经在这里哦！",
-    "api_error_fallback_reply": "……达妮娅刚刚走神了一下，但我还在哦。"
+    "fallback_replies": [
+      "……脑子没连上。不过，我还在就是了。",
+      "……先用本地模式陪你一下，别急。",
+      "……云端还没接上，我先顶一会儿。"
+    ],
+    "api_error_fallback_reply": "……达妮娅刚刚走神了一下，但我还在哦。",
+    "api_error_fallback_replies": [
+      "唔……刚刚没连上，我先用本地脑袋陪你。",
+      "……API 没接稳，我先留在这里。",
+      "……那边暂时没回音，我先用本地回复撑住。"
+    ]
   },
   "api": {
     "base_url": "https://api.deepseek.com",
@@ -66,8 +77,8 @@
   "affinity": {
     "click_cooldown_seconds": 5
   },
-  "hourly_chime_enabled": true,
-  "idle_chat_enabled": true,
+  "hourly_chime_enabled": false,
+  "idle_chat_enabled": false,
   "idle_chat_minutes": 10,
   "day_night_enabled": true,
   "night_start_hour": 23,
@@ -77,8 +88,9 @@
   "snap_margin_px": 24,
   "keep_on_screen_enabled": true,
   "drag_return_enabled": true,
-  "idle_behavior_enabled": true,
-  "idle_behavior_seconds": 90,
+  "idle_behavior_enabled": false,
+  "idle_behavior_seconds": 600,
   "double_click_enabled": true,
-  "long_press_ms": 600
+  "long_press_ms": 600,
+  "natural_reminder_enabled": true
 }

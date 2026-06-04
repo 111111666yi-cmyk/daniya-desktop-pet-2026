@@ -38,8 +38,8 @@ class TestBehaviorConfig:
         assert cfg.snap_margin_px == 24
         assert cfg.keep_on_screen_enabled is True
         assert cfg.drag_return_enabled is True
-        assert cfg.idle_behavior_enabled is True
-        assert cfg.idle_behavior_seconds == 90
+        assert cfg.idle_behavior_enabled is False
+        assert cfg.idle_behavior_seconds == 600
         assert cfg.double_click_enabled is True
         assert cfg.long_press_ms == 600
 
@@ -62,7 +62,7 @@ class TestBehaviorConfig:
         assert cfg.keep_on_screen_enabled is False
         assert cfg.drag_return_enabled is False
         assert cfg.idle_behavior_enabled is False
-        assert cfg.idle_behavior_seconds == 120
+        assert cfg.idle_behavior_seconds == 600
         assert cfg.double_click_enabled is False
         assert cfg.long_press_ms == 1000
 
@@ -74,7 +74,7 @@ class TestBehaviorConfig:
         }
         cfg = BehaviorConfig(bad_values)
         assert cfg.snap_margin_px == 24
-        assert cfg.idle_behavior_seconds == 90
+        assert cfg.idle_behavior_seconds == 600
         assert cfg.long_press_ms == 600
 
 
@@ -297,7 +297,7 @@ class TestIdleBehavior:
     def test_idle_check_daytime(self) -> None:
         config = BehaviorConfig({
             "idle_behavior_enabled": True,
-            "idle_behavior_seconds": 5
+            "idle_behavior_seconds": 600
         })
         is_allowed = MagicMock(return_value=True)
         is_night = MagicMock(return_value=False)
@@ -309,7 +309,7 @@ class TestIdleBehavior:
         idle.idle_action_triggered.connect(action_received.append)
 
         # Test inactive check
-        idle.last_activity_time = time.time() - 10
+        idle.last_activity_time = time.time() - 601
         idle.last_behavior_time = 0.0
 
         idle._check_idle()
@@ -318,7 +318,7 @@ class TestIdleBehavior:
     def test_idle_check_nighttime(self) -> None:
         config = BehaviorConfig({
             "idle_behavior_enabled": True,
-            "idle_behavior_seconds": 5
+            "idle_behavior_seconds": 600
         })
         is_allowed = MagicMock(return_value=True)
         is_night = MagicMock(return_value=True)
@@ -328,7 +328,7 @@ class TestIdleBehavior:
         action_received = []
         idle.idle_action_triggered.connect(action_received.append)
 
-        idle.last_activity_time = time.time() - 10
+        idle.last_activity_time = time.time() - 601
         idle.last_behavior_time = 0.0
 
         idle._check_idle()
@@ -337,7 +337,7 @@ class TestIdleBehavior:
     def test_idle_not_allowed(self) -> None:
         config = BehaviorConfig({
             "idle_behavior_enabled": True,
-            "idle_behavior_seconds": 5
+            "idle_behavior_seconds": 600
         })
         is_allowed = MagicMock(return_value=False)
         is_night = MagicMock(return_value=False)
@@ -347,7 +347,7 @@ class TestIdleBehavior:
         action_received = []
         idle.idle_action_triggered.connect(action_received.append)
 
-        idle.last_activity_time = time.time() - 10
+        idle.last_activity_time = time.time() - 601
         idle.last_behavior_time = 0.0
 
         idle._check_idle()

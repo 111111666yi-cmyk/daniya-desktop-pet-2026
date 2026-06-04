@@ -18,7 +18,15 @@ from src.character_pack_editor import CharacterPackEditor
 from src.diagnostics_panel import run_diagnostics
 from src.relationship_state_viewer import RelationshipStateViewer
 from src.settings_manager import SettingsManager
-from src.settings_window import SettingsWindow
+from src.settings_window import (
+    SettingsWindow,
+    _api_key_placeholder,
+    _format_data_status_summary,
+    _format_event_log_summary,
+    _format_user_memory_summary,
+    _format_relationship_summary,
+    _saved_api_key_status,
+)
 
 
 class FakeConfigManager:
@@ -35,6 +43,22 @@ class FakeConfigManager:
 
     def save_app_config(self, value):
         self.config = deepcopy(value)
+
+
+def test_application_lifecycle_keeps_process_alive_when_windows_are_hidden():
+    from src.app import _configure_application_lifecycle
+
+    class FakeApplication:
+        def __init__(self) -> None:
+            self.quit_on_last_window_closed = None
+
+        def setQuitOnLastWindowClosed(self, value: bool) -> None:
+            self.quit_on_last_window_closed = value
+
+    app = FakeApplication()
+    _configure_application_lifecycle(app)
+
+    assert app.quit_on_last_window_closed is False
 
 
 def test_settings_manager_saves_api_config_without_plain_key(tmp_path):
@@ -76,6 +100,20 @@ def test_character_pack_editor_backs_up_valid_save_and_rolls_back_invalid_pack(t
     ok, message, backup = editor.save_yaml_safely("lore.md", "bad")
     assert ok is False
     assert backup is None
+
+
+def test_character_pack_editor_default_root_uses_public_character_pack(monkeypatch, tmp_path):
+    from src import character_pack_editor as editor_module
+
+    runtime = tmp_path / "runtime"
+    public_character_root = tmp_path / "public_characters"
+    monkeypatch.setattr(editor_module, "runtime_root", lambda: runtime)
+    monkeypatch.setattr(editor_module, "default_character_root", lambda: public_character_root)
+
+    editor = CharacterPackEditor()
+
+    assert editor.root == runtime
+    assert editor.character_root == public_character_root
 
 
 def test_relationship_viewer_exports_and_resets_with_backup(tmp_path, monkeypatch):
@@ -138,6 +176,70 @@ def test_diagnostics_do_not_expose_full_api_key(tmp_path):
     assert any(item["name"] == "角色包校验" and item["status"] == "pass" for item in results)
 
 
+def test_api_key_placeholder_separates_saved_mask_from_input():
+    masked = "sk-0****44ef"
+
+    assert masked not in _api_key_placeholder(masked)
+    assert masked in _saved_api_key_status(masked)
+    assert "留空" in _api_key_placeholder(masked)
+
+
+def test_settings_status_summaries_hide_raw_engine_details(tmp_path):
+    rel_text = _format_relationship_summary(
+        {
+            "character_id": "daniya",
+            "relationship_stage": "default_stay",
+            "affection": 45,
+            "defense_level": 86,
+            "internal_debug": "hidden",
+        }
+    )
+    assert "关系阶段：default_stay" in rel_text
+    assert "relationship_stage" not in rel_text
+    assert "internal_debug" not in rel_text
+
+    event_text = _format_event_log_summary(
+        [
+            {
+                "timestamp": "2026-06-01T20:19:42",
+                "event_id": "user_drag",
+                "source": "physical_event",
+                "relationship_effect": {"defense_level": 1},
+                "lore_fragments_used": [],
+                "stage_before": "default_stay",
+                "stage_after": "default_stay",
+            }
+        ]
+    )
+    assert "拖拽互动" in event_text
+    assert "防御强度 +1" in event_text
+    assert "event=" not in event_text
+    assert "effect={" not in event_text
+
+    state_path = tmp_path / "relationship_state.json"
+    paths = {"relationship_state": state_path}
+    data_text = _format_data_status_summary(
+        {"exists": True, "relationship_state_readable": True, "relationship_state_error": None},
+        paths,
+    )
+    assert "关系状态：" in data_text
+    assert "relationship_state" not in data_text
+
+    memory_text = _format_user_memory_summary(
+        {"user_name": "你", "relationship": "陪伴角色与用户", "style": "简短"},
+        {
+            "user_preferences": {"likes_short_reply": True},
+            "important_user_phrases": ["我不会先走"],
+            "unlocked_lore": ["birthday_sovereignty"],
+            "last_events": ["birthday_sovereignty"],
+        },
+        ["[2026-06-03 00:00:00] 喜欢安静陪伴"],
+    )
+    assert "用户档案" in memory_text
+    assert "我不会先走" in memory_text
+    assert "喜欢安静陪伴" in memory_text
+
+
 def test_open_settings_center_warning_includes_attribute_detail(monkeypatch):
     from src import app as app_module
 
@@ -168,13 +270,110 @@ def test_open_settings_center_warning_includes_attribute_detail(monkeypatch):
     ]
 
 
+def test_open_settings_center_restores_existing_minimized_window(monkeypatch):
+    from PySide6.QtCore import Qt
+    from src import app as app_module
+
+    calls = []
+
+    class ExistingSettingsWindow:
+        def isMinimized(self):
+            return True
+
+        def showNormal(self):
+            calls.append("showNormal")
+
+        def show(self):
+            calls.append("show")
+
+        def windowState(self):
+            return Qt.WindowState.WindowMinimized
+
+        def setWindowState(self, _state):
+            calls.append("setWindowState")
+
+        def raise_(self):
+            calls.append("raise")
+
+        def activateWindow(self):
+            calls.append("activate")
+
+    monkeypatch.setattr(app_module, "SettingsWindow", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should reuse existing window")))
+
+    existing = ExistingSettingsWindow()
+    controller = SimpleNamespace(settings_window=existing, window=object())
+    app_module.AppController.open_settings_center(controller)
+
+    assert controller.settings_window is existing
+    assert calls == ["showNormal", "setWindowState", "raise", "activate"]
+
+
+def test_open_settings_center_creates_independent_taskbar_window(monkeypatch):
+    from src import app as app_module
+
+    calls = []
+
+    class FinishedSignal:
+        def connect(self, _callback):
+            calls.append(("connect", None))
+
+    class FakeSettingsWindow:
+        def __init__(self, _controller, parent):
+            calls.append(("parent", parent))
+            self.finished = FinishedSignal()
+
+        def show(self):
+            calls.append(("show", None))
+
+        def raise_(self):
+            calls.append(("raise", None))
+
+        def activateWindow(self):
+            calls.append(("activate", None))
+
+    monkeypatch.setattr(app_module, "SettingsWindow", FakeSettingsWindow)
+
+    controller = SimpleNamespace(settings_window=None, window=object())
+    app_module.AppController.open_settings_center(controller)
+
+    assert calls == [("parent", None), ("connect", None), ("show", None), ("raise", None), ("activate", None)]
+    assert isinstance(controller.settings_window, FakeSettingsWindow)
+
+
+def test_story_mode_loads_chapters_from_character_pack(tmp_path):
+    from src.menu_manager import MenuManager
+
+    story_file = tmp_path / "story.yaml"
+    story_file.write_text(
+        """
+chapters:
+  - id: 7
+    title: 测试章节
+    body: 这是角色包里的剧情。
+    prompt: 继续讲。
+""".strip(),
+        encoding="utf-8",
+    )
+    controller = SimpleNamespace(
+        daniya_adapter=SimpleNamespace(character_pack=SimpleNamespace(root=tmp_path)),
+    )
+    manager = MenuManager(window=object(), controller=controller)
+
+    assert manager._load_story_chapters() == [(7, "测试章节", "这是角色包里的剧情。", "继续讲。", None)]
+
+
 def test_settings_window_opens_with_expected_tabs_in_subprocess(tmp_path):
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["DANIYA_RELATION_DATA_DIR"] = str(tmp_path / "relation")
+    runtime_root = tmp_path / "runtime"
+    runtime_root.mkdir()
+    shutil.copytree(Path("characters"), runtime_root / "characters")
+    env["DANIYA_RUNTIME_ROOT"] = str(runtime_root)
     script = r"""
 import os, sys
 from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QPushButton
 from src.config_manager import ConfigManager
 from src.asset_manager import AssetManager
 from src.app import AppController
@@ -190,6 +389,8 @@ assert tabs[2] == '\u89d2\u8272\u4e0e\u8d44\u6e90'
 assert tabs[3] == '\u5173\u7cfb\u4e0e\u4e8b\u4ef6'
 assert tabs[4] == '\u7cfb\u7edf'
 assert controller.settings_window.pack_editor_text.isReadOnly() is False
+buttons = [button.text() for button in controller.settings_window.findChildren(QPushButton)]
+assert '\u6e05\u7a7a\u8bb0\u5fc6' in buttons
 print('SETTINGS_WINDOW_OK', flush=True)
 os._exit(0)
 """
@@ -210,6 +411,7 @@ def test_settings_window_saves_local_model_settings_and_syncs_in_subprocess(tmp_
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["DANIYA_RELATION_DATA_DIR"] = str(tmp_path / "relation")
+    env["DANIYA_RUNTIME_ROOT"] = str(tmp_path / "runtime")
     script = r"""
 import os, sys, json
 from PySide6.QtWidgets import QApplication

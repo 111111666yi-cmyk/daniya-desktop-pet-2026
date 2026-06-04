@@ -13,7 +13,7 @@
 | 字段 | 含义 | 示例 |
 |---|---|---|
 | Base URL | API 端点地址（不含 `/chat/completions`） | `https://open.bigmodel.cn/api/paas/v4` |
-| Model | 模型 ID | `glm-4-flash` |
+| Model | 模型 ID | `glm-5.1` |
 | API Key | 你的密钥 | 从平台后台获取 |
 
 4. 点「测试连接」→ 通过后点「设为当前模型」→ 生效
@@ -22,7 +22,7 @@
 
 | 厂商 | Base URL | 模型示例 |
 |---|---|---|
-| 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-flash`, `glm-4-plus` |
+| Z.AI / GLM | `https://api.z.ai/api/paas/v4` | `glm-5.1` |
 | 百度千帆 | `https://qianfan.baidubce.com/v2` | `ernie-4.0-turbo-8k` |
 | 讯飞星火 | `https://spark-api-open.xf-yun.com/v1` | `4.0Ultra` |
 | 硅基流动 | `https://api.siliconflow.cn/v1` | `Qwen/Qwen2.5-7B-Instruct` |

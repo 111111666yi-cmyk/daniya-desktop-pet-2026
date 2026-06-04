@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import sys
 import traceback
+from collections import deque
 
-from PySide6.QtCore import QObject, QThread, QTimer, Signal
+from PySide6.QtCore import QObject, QThread, QTimer, Qt, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from .affinity_manager import AffinityManager
@@ -21,6 +22,7 @@ from .notes_manager import NotesManager
 from .pet_window import PetWindow
 from .profile_manager import ProfileManager
 from .reminder_manager import ReminderManager
+from .natural_reminder_service import NaturalReminderService
 from .settings_window import SettingsWindow
 from .time_event_manager import TimeEventManager
 
@@ -126,6 +128,8 @@ class AppController(QObject):
         self.chat_client = ChatClient(self.config_manager, self.history_manager, self.profile_manager)
         self.notes_manager = NotesManager(self.config_manager)
         self.reminder_manager = ReminderManager(self.config_manager)
+        self.natural_reminder_service = NaturalReminderService(self.reminder_manager)
+        self.pending_reminder_result = None
         self.time_event_manager = TimeEventManager(self.app_config)
         self.day_night_manager = DayNightManager(self.app_config)
         self.mini_games = MiniGames()
@@ -178,16 +182,85 @@ class AppController(QObject):
         self._drag_debounce.setSingleShot(True)
         self._drag_debounce.setInterval(500)  # 500ms 防抖
         self._drag_debounce.timeout.connect(self._fire_drag_event)
+        self._pending_phys_events: deque[str] = deque(maxlen=32)
+        self._phys_busy = False
 
     def show(self) -> None:
         self.window.show_at_config_position()
         self.config_manager.save_app_config(self.app_config)
 
-    def send_message(self, user_text: str) -> None:
+    def send_message(self, user_text: str, base_time: datetime | None = None) -> None:
         self.idle_manager.mark_activity()
         if self.worker is not None and self.worker.isRunning():
             self.window.speak("……等一下，我还在想刚才那句呢。")
             return
+
+        # 1. Process pending reminder confirmation
+        if not self.app_config.get("natural_reminder_enabled", True):
+            self.pending_reminder_result = None
+        else:
+            clean_text = user_text.strip().lower()
+            confirm_keywords = {"确认", "确定", "好", "对", "没问题", "ok", "yes", "行", "确定是"}
+            cancel_keywords = {"取消", "不", "不要", "算了", "no", "cancel"}
+
+            if self.pending_reminder_result is not None:
+                if clean_text in confirm_keywords:
+                    result = self.pending_reminder_result
+                    self.pending_reminder_result = None
+                    if result.scheduled_at:
+                        time_str = result.scheduled_at.strftime("%Y-%m-%d %H:%M")
+                        success, msg = self.reminder_manager.add(time_str, result.reminder_text)
+                        if success:
+                            self.window.speak(f"……记下了。会在【{time_str}】提醒你【{result.reminder_text}】。到时候别装作看不见。")
+                        else:
+                            self.window.speak(msg)
+                    else:
+                        self.window.speak("……时间还是不明确哦。什么时候叫你？比如说“十分钟后”。")
+                        self.pending_reminder_result = result
+                    return
+                elif clean_text in cancel_keywords:
+                    self.pending_reminder_result = None
+                    self.window.speak("……好吧，那我就不记下了。")
+                    return
+                else:
+                    # Try parsing as a new reminder to see if user provides the missing time
+                    from .natural_reminder_parser import parse_natural_reminder
+                    trigger_words = {"提醒我", "叫我", "记得", "提醒", "到时叫"}
+                    temp_text = user_text if any(w in user_text for w in trigger_words) else f"提醒我{user_text}"
+                    new_res = parse_natural_reminder(temp_text, base_time=base_time)
+                    if new_res.ok and new_res.scheduled_at:
+                        has_new_trigger = any(w in user_text for w in trigger_words)
+                        r_text = self.pending_reminder_result.reminder_text if not has_new_trigger else (new_res.reminder_text or self.pending_reminder_result.reminder_text)
+                        new_res.reminder_text = r_text
+
+                        if not new_res.need_confirm:
+                            self.pending_reminder_result = None
+                            time_str = new_res.scheduled_at.strftime("%Y-%m-%d %H:%M")
+                            success, msg = self.reminder_manager.add(time_str, r_text)
+                            if success:
+                                self.window.speak(f"……记下了。会在【{time_str}】提醒你【{r_text}】。到时候别装作看不见。")
+                            else:
+                                self.window.speak(msg)
+                            return
+                        else:
+                            self.pending_reminder_result = new_res
+                            time_str = new_res.scheduled_at.strftime("%Y-%m-%d %H:%M")
+                            self.window.speak(f"……时间还是有点模糊。确定要在【{time_str}】提醒你【{r_text}】吗？确认的话跟我说“确认”哦。")
+                            return
+                    else:
+                        # Cancel pending reminder and fall through to normal chat
+                        self.pending_reminder_result = None
+
+        # 2. Check for new natural reminder
+        if self.app_config.get("natural_reminder_enabled", True):
+            is_rem, reply, parse_res = self.natural_reminder_service.process_chat_message(user_text, base_time=base_time)
+            if is_rem:
+                if parse_res and parse_res.need_confirm:
+                    self.pending_reminder_result = parse_res
+                self.window.speak(reply)
+                return
+
+        # 3. Normal LLM Chat
         self.window.set_input_enabled(False)
         self.window.set_thinking_state(True)
         # [CHANGE-002] 使用适配器代替直连 chat_client
@@ -243,9 +316,11 @@ class AppController(QObject):
             QTimer.singleShot(2000, lambda: self._check_affinity_upgrade(upgraded))
 
     def save_window_position(self, x: int, y: int) -> None:
-        self.app_config.setdefault("window", {})["start_x"] = x
-        self.app_config.setdefault("window", {})["start_y"] = y
-        self.config_manager.save_app_config(self.app_config)
+        self.window.behavior_engine.snap_controller.save_window_state(
+            x,
+            y,
+            self.window.behavior_engine.snap_controller.get_current_snap_state(),
+        )
 
     def on_drag_completed(self, x: int, y: int) -> None:
         # [CHANGE-003+005] 拖拽事件防抖：500ms 内不重复触发，拖拽结束才执行一次
@@ -287,6 +362,7 @@ class AppController(QObject):
         self.daniya_adapter.state_manager = self.window
 
         # 4. Update window references and reload manifest/assets
+        self.window.clear_render_cache()
         self.window.asset_manager = self.asset_manager
         self.window.animation_manager.asset_manager = self.asset_manager
         self.window.animation_manager.reload_manifest()
@@ -410,13 +486,23 @@ class AppController(QObject):
 
     def open_settings_center(self) -> None:
         try:
-            if self.settings_window is not None and self.settings_window.isVisible():
+            if self.settings_window is not None:
+                if self.settings_window.isMinimized():
+                    self.settings_window.showNormal()
+                else:
+                    self.settings_window.show()
+                self.settings_window.setWindowState(
+                    (self.settings_window.windowState() & ~Qt.WindowState.WindowMinimized)
+                    | Qt.WindowState.WindowActive
+                )
                 self.settings_window.raise_()
                 self.settings_window.activateWindow()
                 return
-            self.settings_window = SettingsWindow(self, self.window)
+            self.settings_window = SettingsWindow(self, None)
             self.settings_window.finished.connect(lambda _result: setattr(self, "settings_window", None))
             self.settings_window.show()
+            self.settings_window.raise_()
+            self.settings_window.activateWindow()
         except Exception as exc:
             self.settings_window = None
             traceback.print_exc()
@@ -429,16 +515,38 @@ class AppController(QObject):
             return
 
     def quit(self) -> None:
+        # Wait for any running chat worker or physical event workers to finish safely
+        if hasattr(self, "worker") and self.worker is not None and self.worker.isRunning():
+            self.worker.wait(1500)
+        if hasattr(self, "_phys_workers"):
+            for w in list(self._phys_workers):
+                if w.isRunning():
+                    w.wait(1500)
         self.qapp.quit()
 
 
     # -- [CHANGE-005] 物理事件后台调度 --
 
     def _fire_physical_event(self, event_name: str) -> None:
-        """在后台线程中触发物理事件，避免阻塞 GUI 主线程。"""
+        """在后台线程中串行触发物理事件，避免阻塞 GUI 主线程。"""
+        self._pending_phys_events.append(event_name)
+        if not self._phys_busy:
+            self._drain_next_physical_event()
+
+    def _drain_next_physical_event(self) -> None:
+        if not self._pending_phys_events:
+            self._phys_busy = False
+            return
+        self._phys_busy = True
+        event_name = self._pending_phys_events.popleft()
         w = PhysicalEventWorker(self.daniya_adapter, event_name)
         self._phys_workers.append(w)
-        w.finished.connect(lambda: self._cleanup_phys_worker(w))
+
+        def _done() -> None:
+            self._cleanup_phys_worker(w)
+            self._drain_next_physical_event()
+
+        w.finished.connect(_done)
         w.start()
 
     def _fire_drag_event(self) -> None:
@@ -463,9 +571,17 @@ class AppController(QObject):
             self.window.animation_manager.trigger_happy()
             self.window.speak(line)
 
+def _configure_application_lifecycle(app: QApplication) -> None:
+    app.setQuitOnLastWindowClosed(False)
+
+
 def run() -> None:
+    from .logging_setup import configure_logging, install_excepthook
+    configure_logging()
+    install_excepthook()
+
     app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(True)
+    _configure_application_lifecycle(app)
 
     app.setStyleSheet("""
         QDialog, QMainWindow {

@@ -87,16 +87,25 @@ class AssetManager:
         if self._asset_dir is not None:
             return self._asset_dir
 
-        candidates = [
-            self.characters_dir / self.character_id / "assets",
-            self.characters_dir / "template" / "assets",
-            self.runtime_assets / "private" / self.pet_id,
-            self.runtime_assets / "private",
-            self.runtime_assets / "placeholder" / self.pet_id,
-            self.runtime_assets / "placeholder",
-            self.bundled_assets / "placeholder" / self.pet_id,
-            self.bundled_assets / "placeholder",
-        ]
+        candidates = [self.characters_dir / self.character_id / "assets"]
+        if self.character_id == "daniya":
+            candidates.extend(
+                [
+                    self.runtime_assets / "private" / self.pet_id,
+                    self.runtime_assets / "private",
+                    self.runtime_assets / "placeholder" / self.pet_id,
+                    self.bundled_assets / "placeholder" / self.pet_id,
+                ]
+            )
+        candidates.extend(
+            [
+                self.characters_dir / "template" / "assets",
+                self.runtime_assets / "placeholder" / self.pet_id,
+                self.bundled_assets / "placeholder" / self.pet_id,
+                self.runtime_assets / "placeholder",
+                self.bundled_assets / "placeholder",
+            ]
+        )
         for candidate in candidates:
             if candidate.exists() and ((candidate / "manifest.json").exists() or (candidate / "normal1.png").exists()):
                 self._asset_dir = candidate

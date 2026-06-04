@@ -96,30 +96,20 @@ class FirstRunWizard(QDialog):
 1. 用户保存了本地配置，桌宠却仍在运行云端的旧模型。
 2. 配置界面缺少一键生效的统一入口。
 
-### 2.2 解决方案
-在 `SettingsManager` 中新增接口 `save_and_activate_local_model_profile`。它在保存 Profile 的同时，强制将 `active_text_profile_id` 指向该本地模型，并同步关闭云端 API 的 `local_mode`（避免卡在本地写死的离线 Fallback 回复），最后触发全局 `ChatClient` 重新加载配置。
+### 2.2 当前解决方案
+保存 Profile 与切换生效必须分离：`save_local_model_profile` / `save_api_settings` 只写入可选 Profile，不改变 `active_text_profile_id`。真正切换必须走 `activate_text_profile()`，由它调用 `ProviderManager.switch_active_profile()` 完成连接验证、写入 active、记录文本模型历史、读回校验，并同步 `api_config.active_provider`。
+
+`save_and_activate_local_model_profile` 仅作为兼容入口保留，内部同样先保存再调用安全切换事务；不允许再直接写 `active_text_profile_id`。
 
 ### 2.3 核心实现位置与代码
 
 #### (1) 生效逻辑封装：`src/settings_manager.py`
 ```python
-    def save_and_activate_local_model_profile(self, provider: str, base_url: str, model: str, service_label: str = "") -> None:
-        """保存本地模型 profile 到 model_profiles.json，并将其设为当前活跃的 Provider/模型。"""
-        # 第一步：保存 profile
+    def save_and_activate_local_model_profile(self, provider: str, base_url: str, model: str, service_label: str = "") -> tuple[bool, str]:
+        """保存本地模型 profile，并且只在连接验证成功后切换为当前文本模型。"""
         self.save_local_model_profile(provider, base_url, model, service_label)
-        
-        # 第二步：将当前活跃模型文本 ID 更新为刚刚保存的本地 Profile ID
-        profiles_data = self.load_model_profiles()
-        target_id = f"{provider}_{model.replace(':', '_').replace('.', '_')}"
-        profiles_data["active_text_profile_id"] = target_id
-        self.save_model_profiles(profiles_data)
-        
-        # 第三步：同步到 api_config.json 保持活跃 provider 字段一致，并关闭本地 Fallback 模式
-        config = self.load_api_config()
-        config["active_provider"] = provider
-        config["local_mode"] = False  # 确保关闭了本地 fallback 回复模式，使 LLM 可以正常调用
-        self.save_api_config(config)
-        self._sync_app_api(config)
+        target_id = ProviderMeta.make_profile_id(provider, model)
+        return self.activate_text_profile(target_id)
 ```
 
 #### (2) GUI 事件调用绑定：`src/settings_window.py` 中的 `_save_local_model_settings`

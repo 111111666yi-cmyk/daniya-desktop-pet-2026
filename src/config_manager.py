@@ -10,12 +10,15 @@ from .utils import bundled_root, ensure_dir, runtime_root
 from .version import APP_VERSION
 
 
+QUIET_DEFAULTS_MIGRATION = "v0.61-quiet-defaults"
+
 DEFAULT_APP_CONFIG: dict[str, Any] = {
     "version": APP_VERSION,
+    "quiet_defaults_migration": QUIET_DEFAULTS_MIGRATION,
     "current_character": "daniya",
     "window": {
-        "start_x": 1180,
-        "start_y": 680,
+        "start_x": 0,
+        "start_y": 0,
         "always_on_top": True,
         "show_input": False,
     },
@@ -35,7 +38,7 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
             "E_QQ_pet_drag_system": True,
         },
         "hover_animation_enabled": False,
-        "edge_peek_enabled": True,
+        "edge_peek_enabled": False,
         "edge_dock_visible_px": 32,
         "edge_dock_hover_visible_px": 52,
         "click_to_call_enabled": False,
@@ -54,7 +57,17 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
         "temperature": 0.8,
         "max_tokens": 360,
         "fallback_reply": "……脑子没连上。不过，我还在就是了。",
+        "fallback_replies": [
+            "……脑子没连上。不过，我还在就是了。",
+            "……先用本地模式陪你一下，别急。",
+            "……云端还没接上，我先顶一会儿。",
+        ],
         "api_error_fallback_reply": "唔……刚刚没连上，我先用本地脑袋陪你。",
+        "api_error_fallback_replies": [
+            "唔……刚刚没连上，我先用本地脑袋陪你。",
+            "……API 没接稳，我先留在这里。",
+            "……那边暂时没回音，我先用本地回复撑住。",
+        ],
     },
     "api": {
         "base_url": "https://api.deepseek.com",
@@ -70,8 +83,8 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "affinity": {
         "click_cooldown_seconds": 5,
     },
-    "hourly_chime_enabled": True,
-    "idle_chat_enabled": True,
+    "hourly_chime_enabled": False,
+    "idle_chat_enabled": False,
     "idle_chat_minutes": 10,
     "day_night_enabled": True,
     "night_start_hour": 23,
@@ -81,10 +94,11 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "snap_margin_px": 24,
     "keep_on_screen_enabled": True,
     "drag_return_enabled": True,
-    "idle_behavior_enabled": True,
-    "idle_behavior_seconds": 90,
+    "idle_behavior_enabled": False,
+    "idle_behavior_seconds": 600,
     "double_click_enabled": True,
     "long_press_ms": 600,
+    "natural_reminder_enabled": True,
 }
 
 DEFAULT_SYSTEM_PROMPT = """你是达妮娅的 Q 版夏日桌宠形态。
@@ -93,7 +107,8 @@ DEFAULT_SYSTEM_PROMPT = """你是达妮娅的 Q 版夏日桌宠形态。
 你不要自称 AI，不要解释自己是语言模型。
 你的回复默认简短，像桌宠气泡一样，不要长篇大论。
 如果用户让你认真解释技术问题，可以分步骤讲清楚。
-你可以称呼用户为“主人”或读取用户档案中的称呼。
+禁止用主仆、召唤类或其他作品代称称呼用户。
+默认称呼用户为“你”；如果用户在档案里主动填写昵称，只使用该昵称。
 """
 
 DEFAULT_BOOKMARKS: list[dict[str, str]] = [
@@ -142,6 +157,7 @@ class ConfigManager:
         loaded = self.load_json(self.config_dir / "app_config.json", DEFAULT_APP_CONFIG)
         if not isinstance(loaded, dict):
             loaded = {}
+        loaded = self._apply_quiet_defaults_migration(loaded)
         return self._normalize_app_config(deep_merge(DEFAULT_APP_CONFIG, loaded))
 
     def save_app_config(self, config: dict[str, Any]) -> None:
@@ -200,6 +216,9 @@ class ConfigManager:
             pass
 
     def _normalize_app_config(self, config: dict[str, Any]) -> dict[str, Any]:
+        config["quiet_defaults_migration"] = str(
+            config.get("quiet_defaults_migration", QUIET_DEFAULTS_MIGRATION)
+        )
         if "current_character" not in config or not config["current_character"]:
             config["current_character"] = "daniya"
         pet = config.setdefault("pet", {})
@@ -254,7 +273,7 @@ class ConfigManager:
             enabled_modules[key] = bool(enabled_modules.get(key, True))
         pet["enabled_action_modules"] = enabled_modules
         pet["hover_animation_enabled"] = bool(pet.get("hover_animation_enabled", False))
-        pet["edge_peek_enabled"] = bool(pet.get("edge_peek_enabled", True))
+        pet["edge_peek_enabled"] = bool(pet.get("edge_peek_enabled", False))
         pet["click_to_call_enabled"] = bool(pet.get("click_to_call_enabled", False))
         try:
             dock_visible_px = int(pet.get("edge_dock_visible_px", 32))
@@ -282,18 +301,40 @@ class ConfigManager:
             config["snap_margin_px"] = 24
         config["keep_on_screen_enabled"] = bool(config.get("keep_on_screen_enabled", True))
         config["drag_return_enabled"] = bool(config.get("drag_return_enabled", True))
-        config["idle_behavior_enabled"] = bool(config.get("idle_behavior_enabled", True))
+        config["idle_behavior_enabled"] = bool(config.get("idle_behavior_enabled", False))
         try:
-            config["idle_behavior_seconds"] = int(config.get("idle_behavior_seconds", 90))
+            config["idle_behavior_seconds"] = int(config.get("idle_behavior_seconds", 600))
         except (TypeError, ValueError):
-            config["idle_behavior_seconds"] = 90
+            config["idle_behavior_seconds"] = 600
+        config["idle_behavior_seconds"] = max(600, config["idle_behavior_seconds"])
         config["double_click_enabled"] = bool(config.get("double_click_enabled", True))
         try:
             config["long_press_ms"] = int(config.get("long_press_ms", 600))
         except (TypeError, ValueError):
             config["long_press_ms"] = 600
 
+        config["natural_reminder_enabled"] = bool(config.get("natural_reminder_enabled", True))
         return config
+
+    def _apply_quiet_defaults_migration(self, loaded: dict[str, Any]) -> dict[str, Any]:
+        if loaded.get("quiet_defaults_migration") == QUIET_DEFAULTS_MIGRATION:
+            return loaded
+
+        loaded["idle_chat_enabled"] = False
+        loaded["hourly_chime_enabled"] = False
+        loaded["idle_behavior_enabled"] = False
+        pet = loaded.get("pet")
+        if not isinstance(pet, dict):
+            pet = {}
+            loaded["pet"] = pet
+        pet["edge_peek_enabled"] = False
+        try:
+            idle_seconds = int(loaded.get("idle_behavior_seconds", 600))
+        except (TypeError, ValueError):
+            idle_seconds = 600
+        loaded["idle_behavior_seconds"] = max(600, idle_seconds)
+        loaded["quiet_defaults_migration"] = QUIET_DEFAULTS_MIGRATION
+        return loaded
 
 
 def deep_merge(default: dict[str, Any], loaded: dict[str, Any]) -> dict[str, Any]:

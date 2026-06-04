@@ -46,6 +46,51 @@ Do not include:
 - private API keys
 - official or unauthorized third-party assets
 
+## Automated Release Checks
+
+Run before sharing a release package:
+
+```bat
+python tools\check_sensitive_files.py
+python tools\check_character_packs.py
+python tools\check_config_templates.py
+python tools\check_docs_links.py
+python tools\check_public_surface.py
+pytest -q
+pack.bat
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.65-win-x64.zip
+```
+
+The GitHub `Release Check` workflow performs the package build and zip scan manually via `workflow_dispatch`. It must not require real API keys, private assets, or `characters/test_dummy/`.
+
+## v0.65 Target
+
+- Release name: `DaniyaSummerPet v0.65 Integrated Preview`
+- Zip name: `DaniyaSummerPet-v0.65-win-x64.zip`
+- Do not create or push the `v0.65` tag until the final local report is accepted.
+
+## v0.61-v0.65 Required Content
+
+- v0.61 natural language reminder parser, reminder service, input-chain wiring, documentation, and tests.
+- v0.62 safe file organizer preview, memory clear controls, provider memory injection, Z.AI provider support, documentation, and tests.
+- v0.63 local system status awareness, cooldown-protected alerts, documentation, and tests.
+- v0.64 privacy-safe clipboard interaction, local sensitive-text filtering, documentation, and tests.
+- v0.65 focus/game mode, manual and process-based focus state handling, documentation, and tests.
+
+## v0.60 Post-Audit Release Blocker Checklist
+
+Baseline for the blocker fix: `862beda`.
+
+- Ignore local audit report files with `*_audit_report.docx`: required before commit.
+- Revert unexplained runtime `config/app_config.json` changes before release; keep only public default fallback reply structures.
+- Keep public `config/model_profiles.json` aligned with v0.60 profile history defaults.
+- Ensure `pack.bat` includes `characters/daniya/story.yaml`.
+- Ensure the release zip contains `characters/daniya/story.yaml` and `characters/template/story.yaml`.
+- Ensure the release zip excludes `characters/daniya/assets/`, `assets/private/`, `data/`, `models/`, `.env`, `config/api_config.json`, `config/multimodal_config.json`, `characters/test_dummy/`, real API keys, private assets, and user chat records.
+- Sanitize docs so tracked files do not contain local user paths.
+- Re-run `pack.bat` and `tools\check_release_zip.py` after docs are updated.
+- Keep live API reply, multi-monitor drag, right-click feel, and long text bubble visual behavior as manual confirmation items.
+
 ## Allowed Public Files
 
 Allowed after review:

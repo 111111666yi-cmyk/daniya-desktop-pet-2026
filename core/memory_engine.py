@@ -51,6 +51,12 @@ def save_user_memory(memory: dict[str, Any]) -> None:
     _write_json(data_root() / "user_memory.json", _normalize_memory(memory))
 
 
+def clear_user_memory() -> dict[str, Any]:
+    memory = default_user_memory()
+    save_user_memory(memory)
+    return memory
+
+
 def update_memory_from_interaction(user_text: str, event: dict[str, Any] | None = None) -> dict[str, Any]:
     memory = load_user_memory()
     for phrase in KEY_PHRASES:

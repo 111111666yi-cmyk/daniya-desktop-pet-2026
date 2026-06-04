@@ -203,7 +203,7 @@ special_responses:
     trigger:
       - "讲讲你的故事"
       - "你的过去"
-      - "剧情模式"
+      - "剧情阅读"
       - "说说剧情"
     response: "......你想知道什么。先说好，有些事我不太想提。"
     action: talk
@@ -231,7 +231,7 @@ special_responses:
       - "破纪录"
     response: "......别问了。那台机子早没人去了。"
 
-  # ── 剧情模式完整回应 ──
+  # ── 剧情阅读完整回应 ──
   - id: story_intro
     trigger:
       - "可以和我讲讲你的故事吗"

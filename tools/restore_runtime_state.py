@@ -6,6 +6,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+MANIFEST_NAME = "BACKUP_MANIFEST.json"
 ALLOWED_TARGETS = {
     "data",
     ".env",
@@ -28,24 +29,7 @@ def resolve_inside(root: Path, relative_path: str) -> Path:
     return target
 
 
-def latest_backup(backup_root: Path) -> Path:
-    candidates = [path for path in backup_root.iterdir() if path.is_dir() and (path / "manifest.json").exists()]
-    if not candidates:
-        raise FileNotFoundError(f"No runtime state backup found under {backup_root}")
-    return sorted(candidates)[-1]
-
-
-def preserve_current(destination: Path, pre_restore_root: Path, relative: str) -> None:
-    if not destination.exists():
-        return
-    preserved = pre_restore_root / relative
-    preserved.parent.mkdir(parents=True, exist_ok=True)
-    if preserved.exists():
-        raise FileExistsError(f"Pre-restore target already exists: {preserved}")
-    shutil.move(str(destination), str(preserved))
-
-
-def restore_target(source: Path, destination: Path) -> None:
+def copy_existing(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     if source.is_dir():
         shutil.copytree(source, destination)
@@ -53,23 +37,45 @@ def restore_target(source: Path, destination: Path) -> None:
         shutil.copy2(source, destination)
 
 
+def preserve_current(destination: Path, pre_restore_root: Path, relative: str) -> bool:
+    if not destination.exists():
+        return False
+    preserved = pre_restore_root / relative
+    if preserved.exists():
+        raise FileExistsError(f"Pre-restore target already exists: {preserved}")
+    copy_existing(destination, preserved)
+    return True
+
+
+def restore_target(source: Path, destination: Path) -> None:
+    if source.is_dir():
+        for item in source.rglob("*"):
+            if not item.is_file():
+                continue
+            target = destination / item.relative_to(source)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(item, target)
+        return
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Restore ignored runtime state after destructive tests.")
     parser.add_argument("--project-root", type=Path, default=project_root())
-    parser.add_argument("--backup-root", type=Path, default=None)
-    parser.add_argument("--backup-dir", type=Path, default=None)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("backup_dir", type=Path, help="Explicit backup directory created by backup_runtime_state.py")
     args = parser.parse_args()
 
     root = args.project_root.resolve()
-    backup_root = (args.backup_root or root / "backups" / "runtime_state").resolve()
-    backup_dir = args.backup_dir.resolve() if args.backup_dir else latest_backup(backup_root)
-    manifest_path = backup_dir / "manifest.json"
+    backup_dir = args.backup_dir.resolve()
+    manifest_path = backup_dir / MANIFEST_NAME
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    pre_restore_root = root / "backups" / "pre_restore" / timestamp
+    pre_restore_root = root / "backups" / f"pre_restore_{timestamp}"
     restored: list[str] = []
+    preserved_any = False
 
     for entry in manifest.get("targets", []):
         relative = str(entry.get("path", "")).replace("\\", "/").strip("/")
@@ -84,7 +90,9 @@ def main() -> int:
             restored.append(relative)
             continue
 
-        preserve_current(destination, pre_restore_root, relative)
+        if not source.exists():
+            continue
+        preserved_any = preserve_current(destination, pre_restore_root, relative) or preserved_any
         restore_target(source, destination)
         restored.append(relative)
 
@@ -93,7 +101,7 @@ def main() -> int:
         return 0
 
     print(f"Runtime state restored from: {backup_dir}")
-    print(f"Pre-restore copy, if any: {pre_restore_root}")
+    print(f"Pre-restore copy, if any: {pre_restore_root if preserved_any else 'none'}")
     print("Restored targets: " + ", ".join(restored))
     return 0
 

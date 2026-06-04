@@ -1,6 +1,8 @@
 # Daniya Summer Desktop Pet · 达妮娅夏日桌宠
 
-达妮娅是一款基于 Python + PySide6 的开源桌宠应用。提供透明置顶窗口、拖拽移动、右键菜单、输入框对话、气泡消息、打字机效果、云端/本地 AI 对话、角色关系引擎、设置中心等功能。
+Current version: **DaniyaSummerPet v0.65 Integrated Preview**
+
+达妮娅是一款基于 Python + PySide6 的开源桌宠应用。提供透明置顶窗口、拖拽移动、右键菜单、输入框对话、气泡消息、打字机效果、云端/本地 AI 对话、角色关系、记忆备忘录、自然语言提醒、文件整理预览、系统状态感知、隐私剪贴板交互、专注/游戏模式和设置中心等功能。
 
 这是一个非官方同人作品。本仓库不分发官方游戏资源、私有角色素材、用户关系数据或 API Key。
 
@@ -10,8 +12,8 @@
 
 ```bat
 # 克隆仓库
-git clone https://github.com/<your-username>/daniya2026523.git
-cd daniya2026523
+git clone https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026.git
+cd daniya-desktop-pet-2026
 
 # 运行安装脚本（创建虚拟环境 + 安装依赖 + 创建桌面快捷方式）
 install.bat
@@ -30,13 +32,15 @@ install.bat
 ### 3. 日常使用
 
 - **对话**：右键输入框发送消息，达妮娅会通过 AI 回复
-- **设置中心**：右键菜单 → 对话 → 设置中心，管理 API、模型、桌宠行为、角色资源
+- **设置中心**：右键菜单 → 对话 → 设置中心，管理 API、模型、桌宠行为、角色资源、关系状态和记忆备忘录
 - **本地模型**：设置中心 → 模型与引擎 → 本地部署，可浏览推荐模型目录并一键拉取
+- **v0.61-v0.65 扩展能力**：自然语言提醒、文件整理预览、系统状态感知、隐私剪贴板交互、专注/游戏模式
 
 ## 系统要求
 
 - Python 3.10 / 3.11 / 3.12
 - Windows 10+（主要支持平台）
+- PySide6 兼容性建议：推荐使用 `PySide6==6.6.3`（社区反馈 `6.7.2+` 版本在特定高 DPI 或双屏系统下容易出现闪退或拖拽失效）
 - （可选）Ollama — 用于本地模型拉取和运行
 
 ## 项目结构
@@ -50,7 +54,7 @@ install.bat
 | `assets/icons/` | UI 图标（来自 Nieobie/Game-Icon-Pack） |
 | `data/` | 运行时数据（关系状态、事件日志，Git忽略） |
 | `docs/` | 项目文档 |
-| `tests/` | 测试用例（206 通过，3 个跳过） |
+| `tests/` | pytest 测试用例 |
 
 ## API 配置
 
@@ -107,6 +111,11 @@ pytest tests/ -q
 - v0.55 — 桌宠行为引擎（屏幕边缘吸附、防止移出屏幕、点击分流检测、空闲小动作）
 - **v0.55.2** — 工程审计补丁（提醒事件误触发、隐藏命令回应、发布包角色素材隔离）
 - **v0.55.3** — AppData 运行态补丁（下载版配置和数据写入 `%APPDATA%\DaniyaSummerPet\`）
+- **v0.61** — 自然语言提醒系统，支持相对、绝对、循环提醒解析和输入链路接入
+- **v0.62** — 安全文件整理预览、记忆清理入口、Provider 记忆注入与 Z.AI Provider 支持
+- **v0.63** — 本地系统状态感知，覆盖 CPU、内存、电量、磁盘与网络提示
+- **v0.64** — 隐私安全剪贴板交互，默认拦截 API Key、Bearer、凭据、手机号、身份证号等敏感内容
+- **v0.65** — 专注/游戏模式，降低游戏或专注状态下的非必要打扰
 
 ## 许可证
 
@@ -128,6 +137,16 @@ Source/development mode stores runtime data under `data/`. Packaged Windows rele
 
 `data/` and `data/daniya_relation/` are ignored by Git. Do not commit real user relationship state or chat history. Packaged release runtime data under `%APPDATA%\DaniyaSummerPet\` is outside the repository.
 
+## First-Run Wizard
+
+v0.58 adds a five-page first-run guide for welcome, API setup, private assets, character packs, and final startup. Users can skip API and use local fallback, or save a provider/base URL/model/API Key to the local `.env`.
+
+The Settings Center also exposes relationship state, recent events, and a memory memo view. User profile, relationship memory, unlocked story fragments, and manual notes are local runtime data and are not committed to Git.
+
+The completion marker is stored in `data/first_run_done.json` in source mode and `%APPDATA%\DaniyaSummerPet\data\first_run_done.json` in the Windows package. Open Settings Center -> System -> Reopen first-run wizard to view it again without clearing existing settings.
+
+See `docs/first_run_guide.md` and `docs/troubleshooting.md`.
+
 ## Development
 
 Common checks:
@@ -138,6 +157,19 @@ pytest -q
 run.bat
 git status --short
 ```
+
+Automated project checks:
+
+```bat
+python tools\check_sensitive_files.py
+python tools\check_character_packs.py
+python tools\check_config_templates.py
+python tools\check_docs_links.py
+python tools\check_public_surface.py
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.65-win-x64.zip
+```
+
+Use GitHub Issues for reproducible bugs and Pull Requests for focused, stage-scoped changes. Do not include `.env`, runtime `data/`, private assets, model files, or `characters/test_dummy/`.
 
 Read:
 
@@ -157,7 +189,23 @@ Read:
 - v0.49: official open source release.
 - v0.54: dialogue router and lore triggers.
 - v0.55: behavior engine (dragging, snapping, idle behavior).
-- v0.55.3: current AppData runtime patch.
+- v0.55.3: AppData runtime patch.
+- v0.58: first-run onboarding guide.
+- v0.59: automated local checks and CI preparation.
+- v0.60: release preparation.
+- v0.61-v0.65: reminders, file organizer preview, system status, privacy clipboard, focus/game mode.
+
+## 已知限制与问题反馈
+
+为提升同人开发阶段的使用体验，以下是整理的已知系统边界与环境限制，如遇异常可参考排查：
+
+1. **PySide6 6.7.2+ 崩溃与性能抖动**: 社区报告指出，新版 PySide6 库在某些 Windows DPI 缩放配置下可能发生异常退出。若遇到崩溃，推荐锁定安装 `PySide6==6.6.3`。
+2. **多显示器与高 DPI 缩放**: 在非标准 DPI 缩放比例（例如 125%、150% 等）或多屏幕环境下，桌宠边缘判定或拖动可能产生微小偏差，可使用右键菜单内的设置中心微调动作边界。
+3. **休眠/唤醒与定时提醒延迟**: 操作系统深度睡眠可能导致基于 QTimer 的本地提醒时间轮中断。当系统唤醒时，调度器会补偿已过期的提醒，但实时性受系统休眠时长影响。
+4. **数据隐私安全红线**:
+   - 项目在本地保存的 `.env` 配置文件与 `data/` 目录默认存有聊天记录、API Keys 及人物亲密度状态，均已写入 `.gitignore`，**强烈建议切勿提交此类私有数据到任何公共版本库**。
+   - 对安全性要求极高或需要在公共设备运行的用户，可直接在启动向导中选择本地脱机模型或离线体验模式。
+5. **Bug 提交与反馈反馈渠道**: 欢迎在 GitHub 提报 Issue，建议附带脱敏后的 `drag_debug.log` 以及复现步骤。
 
 ## License
 

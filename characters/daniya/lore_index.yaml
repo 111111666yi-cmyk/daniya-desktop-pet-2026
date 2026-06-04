@@ -1,24 +1,24 @@
 lore_policy:
   default: 不主动剧透，不主动长篇解释。
-  when_user_asks_story: 按 fragment 调用，不注入全文。
-  when_user_emotional: 只调用情绪主题片段，不展开完整剧情。
-  when_user_mentions_keywords: 只调用匹配到的 lore fragment。
+  when_user_asks_story: 按片段取用，不展开全文。
+  when_user_emotional: 只取用情绪主题片段，不展开完整剧情。
+  when_user_mentions_keywords: 只取用匹配到的背景片段。
 
 levels:
   L0:
     description: 表层身份和日常可轻量引用，不剧透。
     allow_when: [keyword, event]
   L1:
-    description: 性格成因和情绪机制，主人负面情绪或严肃聊天时可引用。
+    description: 性格成因和情绪机制，用户负面情绪或严肃聊天时可引用。
     allow_when: [keyword, event, negative_emotion]
   L2:
-    description: 核心创伤与存在主题，只在主人明确提及时引用。
+    description: 核心创伤与存在主题，只在用户明确提及时引用。
     allow_when: [keyword, event, unlocked]
   L3:
-    description: 关键意象，主人提到对应意象时短量调用。
+    description: 关键意象，用户提到对应意象时短量带出。
     allow_when: [keyword, event, unlocked]
   L4:
-    description: 主线剧透，默认禁止，仅剧情模式或明确询问时允许。
+    description: 主线剧透，默认禁止，仅剧情阅读或明确询问时允许。
     allow_when: [explicit_story_question, story_mode]
     default_inject: false
 
@@ -39,6 +39,14 @@ fragments:
     source_heading: "## 2.1 西格丽卡篇"
     max_chars: 350
 
+  - id: ordinary_life_details
+    title: 普通细节 — 把标准答案还原成人
+    level: L2
+    keywords: [普通生活, 日常, 打电话, 家里的东西, 拍照, 小动物, 普通人, 不完美]
+    inject_when: [keyword, emotional_support]
+    source_heading: "## 2.1 西格丽卡篇"
+    max_chars: 260
+
   - id: dark_side_mechanism
     title: 暗面机制 — 痛苦不是外来怪物
     level: L3
@@ -56,10 +64,28 @@ fragments:
     max_chars: 350
     default_inject: false
 
+  - id: feixue_future
+    title: 飞雪与未来预演
+    level: L4
+    keywords: [飞雪, 未来, 未来可能性, 隐藏底牌, 拉海洛, 地区危机]
+    inject_when: [explicit_story_question, story_mode]
+    source_heading: "## 2.2 暗面篇"
+    max_chars: 260
+    default_inject: false
+
+  - id: rabbit_challenge
+    title: 兔子的战书与地区命运
+    level: L4
+    keywords: [兔子, 战书, 赌局, 拉海洛, 地区命运, 胡萝卜勋章, 阿列夫伊, 会长]
+    inject_when: [explicit_story_question, story_mode]
+    source_heading: "## 2.2 暗面篇"
+    max_chars: 300
+    default_inject: false
+
   - id: daniya_hidden_guardian
     title: 怕麻烦外壳下的隐性守护
     level: L1
-    keywords: [怕麻烦, 嘴硬, 隐性守护, 关键推一把, 懒得管]
+    keywords: [怕麻烦, 嘴硬, 隐性守护, 关键推一把, 懒得管, 暗面引导, 反向埋伏]
     inject_when: [keyword, emotional_support]
     source_heading: "## 2.3 达妮娅篇"
     max_chars: 200
@@ -90,7 +116,7 @@ fragments:
     max_chars: 300
 
   - id: orange_cake
-    title: 橘子蛋糕 — 人格图腾
+    title: 橘子蛋糕 — 重要意象
     level: L3
     keywords: [橘子, 蛋糕, 橘子蛋糕, 跳跳糖, 彩虹豆, 咔啦咔啦, 好吃的, 吃东西]
     inject_when: [keyword, birthday_event]

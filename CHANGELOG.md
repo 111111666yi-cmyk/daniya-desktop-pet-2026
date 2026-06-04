@@ -1,5 +1,97 @@
 # Changelog
 
+## v0.65 (2026-06-03) - Focus and Game Mode
+
+- Added `src/focus_mode.py` coordinating manual focus states and local process game whitelist matching for automated silencing.
+- Integrated event suppression checks to prevent idle popups, chimes, and non-essential alert signals from executing when focus is active.
+- Added focus mode documentation `docs/focus_mode.md`.
+- Added tests `tests/test_focus_mode.py` verifying manual state changes, process iteration matching, automatic entry and exit, and state transition signals.
+
+## v0.64 (2026-06-03) - Privacy-Safe Clipboard Interaction
+
+- Added `src/clipboard_interaction.py` supporting PySide6 QClipboard data listening, local regular expression filtering of API keys, Bearer tokens, credentials, phone numbers, and ID cards.
+- Integrated text length bounds to prevent automatic transmission of texts over 1000 characters without explicit confirmation.
+- Added clipboard privacy documentation `docs/clipboard_privacy.md`.
+- Added tests `tests/test_clipboard_interaction.py` verifying sensitive token blocking, mobile and ID filtering, length truncation thresholds, duplicate detection, and disabled status checks.
+
+## v0.63 (2026-06-03) - System Status Awareness
+
+- Added `src/system_status.py` providing low-overhead local hardware (CPU, Memory, Battery, Disk) and network connection checks.
+- Integrated time-based alert cooldown logic (default 300s) to prevent bubble alert notification flooding.
+- Added system status documentation `docs/system_status.md`.
+- Added tests `tests/test_system_status.py` verifying high CPU load alerts, high memory alerts, discharging low battery alerts, offline network status, alert silencing when disabled, and cooldown behavior.
+
+## v0.62 (2026-06-03) - Safe File Organizer Assistant
+
+- Added `src/file_organizer.py` supporting dry-run previews, duplicate file renaming, and rollback mapping.
+- Implemented folder pruning to bypass `.git`, `.venv`, `models`, `backups`, and `.env` files automatically.
+- Added file organizer documentation `docs/file_organizer.md`.
+- Added tests `tests/test_file_organizer.py` verifying empty structures, renaming collision avoidance, folder pruning, dry-runs, move execution, and rollback/undo capabilities.
+
+## v0.62 (2026-06-03) - Memory Control, Provider Memory Injection, and Z.AI Provider
+
+- Added a visible Settings Center action to clear automatic memory and manual memory notes without resetting relationship state.
+- Verified Provider prompt construction keeps profile and memory memo context before all text Provider channels.
+- Added support for Z.AI standard Provider (GLM-5.1, `https://api.z.ai/api/paas/v4`, `ZAI_API_KEY`) following standard developer guidelines.
+
+## v0.61 (2026-06-03) - Natural Language Reminder System
+
+- Added `src/natural_reminder_parser.py` supporting rules-based extraction of Chinese relative, absolute, and recurring time expressions.
+- Added `src/natural_reminder_service.py` to bridge natural language inputs with `ReminderManager`.
+- Wired natural language reminder processing into `AppController.send_message` main chat input processing pipeline.
+- Hardened natural language reminder controls by adding the `natural_reminder_enabled` configuration switch (defaulting to `true`).
+- Ensured that when `natural_reminder_enabled` is set to `false`, the natural reminder service and any pending confirmation states are bypassed entirely, falling back cleanly to standard LLM chat.
+- Added natural language reminders documentation `docs/natural_reminders.md`.
+- Added integration tests `tests/test_natural_reminder_wiring.py` covering relative, absolute, recurring, ambiguous confirmation flows, cancellation, and switch-disabled fallback behaviors.
+
+## v0.61 (2026-06-03) - Quiet Defaults and Public Surface Audit
+
+- Made the default desktop pet experience quieter: idle chat, hourly chime, edge peek, and idle behavior are disabled by default, while user settings can still enable them.
+- Raised the idle behavior lower bound to 600 seconds so enabling it does not create high-frequency unexpected movement.
+- Added a public-surface audit check for forbidden character copy, local user paths, template repository URLs, quiet default settings, and visible memory controls.
+- Cleaned the README clone instructions to use the actual public repository URL.
+
+## v0.60 Release Blocker Fix (2026-06-02)
+
+- Fixed the v0.60 release package story asset gap by adding `characters/daniya/story.yaml` to `pack.bat`; `characters/template/story.yaml` remains included through the public template package.
+- Tightened release zip scanning so the package must contain both story files and must not contain Daniya private assets, local user paths, forbidden runtime directories, or obvious API keys.
+- Ignored local audit report documents with `*_audit_report.docx` so `DaniyaSummerPet_v0.60_audit_report.docx` cannot be accidentally committed or packaged.
+- Sanitized historical docs that contained local `<local-user-path>` references while keeping the original audit content.
+- Kept `config/model_profiles.json` aligned with the v0.60 text profile history structure; removed unrelated runtime `config/app_config.json` noise and aligned public fallback reply arrays.
+
+## v0.60 Stable Preview
+
+- Consolidates the v0.56-v0.60 hardening series into a stable public preview baseline.
+- Includes runtime data safety policy and backup/restore tooling, safer release packaging, first-run onboarding, manual QA freeze checklists, local automated checks, and GitHub Actions preparation.
+- Keeps known non-blocking issues documented instead of changing state machines or Timer logic without reproduction evidence.
+- Prepares the final Windows package name `DaniyaSummerPet-v0.60-win-x64.zip`.
+
+## v0.59 (2026-05-31) - Automated Checks and CI Preparation
+
+- Added local project checks for sensitive tracked paths, release zip safety, required character packs, config templates, and local documentation links.
+- Added Windows GitHub Actions for test and manual release package verification without requiring real API keys, private assets, or `characters/test_dummy/`.
+- Added bug report, feature request, and pull request templates for safer open source collaboration.
+
+## v0.58 (2026-05-31) - First-Run Onboarding Flow
+
+- Reworked the existing first-run dialog into a five-page onboarding guide covering welcome, API setup, private assets, character packs, and final startup.
+- Moved the canonical completion marker to `data/first_run_done.json` while keeping old `config/setup_config.json` compatibility.
+- Added a Settings Center entry to reopen the first-run guide without clearing existing settings.
+- Removed future-feature onboarding toggles for TTS, image, and video so v0.58 stays within the no-new-capability freeze rules.
+
+## v0.57 (2026-05-31) - Release Freeze QA Checklist
+
+- Added the manual QA matrix for startup, GUI, API, Daniya character behavior, hidden commands, behavior engine states, packaging, and release smoke checks.
+- Added the release freeze checklist that blocks future-stage feature work and makes P0/P1/P2 handling explicit before v0.58.
+- Reaffirmed that manual acceptance must use temporary runtime state or documented human evidence instead of destructive scripts that touch real `data/`.
+
+## v0.56 (2026-05-31) - Runtime Data Safety Hardening
+
+- Tightened destructive-test policy so `backups/` is also treated as protected runtime state.
+- Aligned runtime backup/restore tooling with the v0.56 policy: explicit backup directories, `BACKUP_MANIFEST.json`, pre-restore copies, and no automatic restore from an implicit latest backup.
+- Restricted `models/` backups to small metadata files and skipped model body extensions such as `.gguf`, `.safetensors`, `.bin`, `.pt`, and `.onnx`.
+- Verified backup/restore behavior in a temporary sandbox without touching real ignored user runtime data.
+
 ## v0.55.3 (2026-05-31) - AppData Runtime Patch
 
 - Packaged Windows exe now stores runtime state in `%APPDATA%\DaniyaSummerPet\` instead of the exe directory.

@@ -30,14 +30,14 @@ class BehaviorConfig:
 
     @property
     def idle_behavior_enabled(self) -> bool:
-        return bool(self.app_config.get("idle_behavior_enabled", True))
+        return bool(self.app_config.get("idle_behavior_enabled", False))
 
     @property
     def idle_behavior_seconds(self) -> int:
         try:
-            return int(self.app_config.get("idle_behavior_seconds", 90))
+            return max(600, int(self.app_config.get("idle_behavior_seconds", 600)))
         except (TypeError, ValueError):
-            return 90
+            return 600
 
     @property
     def double_click_enabled(self) -> bool:

@@ -35,6 +35,22 @@
       "source": "cloud"
     },
     {
+      "id": "zai_default",
+      "name": "Z.AI (GLM) 默认",
+      "type": "text",
+      "provider": "zai",
+      "api_style": "openai_compatible",
+      "base_url": "https://api.z.ai/api/paas/v4",
+      "model": "glm-5.1",
+      "api_key_env": "ZAI_API_KEY",
+      "auth_header": "bearer",
+      "enabled": true,
+      "capabilities": [
+        "text"
+      ],
+      "source": "cloud"
+    },
+    {
       "id": "ollama_qwen25_05b",
       "name": "Ollama qwen2.5:0.5b",
       "type": "text",
@@ -50,5 +66,13 @@
       "license_required": true,
       "api_key_env": ""
     }
-  ]
+  ],
+  "profile_history": {
+    "text": [
+      "deepseek_default"
+    ],
+    "vision": [],
+    "tts": [],
+    "image": []
+  }
 }

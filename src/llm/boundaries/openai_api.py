@@ -21,6 +21,7 @@ def chat(
     *,
     base_url: str,
     model: str,
+    auth_header: str = "bearer",
     temperature: float = 0.8,
     max_tokens: int = 360,
     timeout: int = 20,
@@ -31,8 +32,7 @@ def chat(
     api_key 为空时不发送 Authorization header（本地无鉴权服务）。
     """
     headers: dict[str, str] = {"Content-Type": "application/json"}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+    headers.update(_auth_headers(api_key, auth_header))
 
     payload: dict[str, Any] = {
         "model": model,
@@ -65,6 +65,7 @@ def test_connection(
     *,
     base_url: str,
     model: str,
+    auth_header: str = "bearer",
     timeout: int = 8,
 ) -> bool:
     """轻量连接测试。"""
@@ -74,9 +75,26 @@ def test_connection(
             api_key=api_key,
             base_url=base_url,
             model=model,
+            auth_header=auth_header,
             max_tokens=5,
             timeout=timeout,
         )
         return True
     except Exception:
         return False
+
+
+def _auth_headers(api_key: str, auth_header: str = "bearer") -> dict[str, str]:
+    if not api_key:
+        return {}
+
+    mode = (auth_header or "bearer").strip().lower().replace("_", "-")
+    if mode in {"bearer", "authorization-bearer"}:
+        return {"Authorization": f"Bearer {api_key}"}
+    if mode in {"api-key", "apikey"}:
+        return {"api-key": api_key}
+    if mode == "x-api-key":
+        return {"x-api-key": api_key}
+    if mode in {"none", "no-auth"}:
+        return {}
+    return {"Authorization": f"Bearer {api_key}"}

@@ -1,5 +1,33 @@
 # KNOWN_ISSUES
 
+## v0.60 Manual QA Open Items (2026-06-02)
+
+| ID | Level | Item | Status / Rationale |
+|---|---|---|---|
+| QA60-ZAI-001 | P1 | Z.AI real API reply not accepted | MANUAL REQUIRED: v0.61 source now has a standard `zai` text Provider entry, but live-provider QA still requires a user-owned `ZAI_API_KEY`, quota, and one observed real reply. Do not mark live-provider QA PASS until that evidence exists. |
+| QA60-BUBBLE-001 | P3 | Long text bubble visual not accepted | NEEDS POLISH: local fallback replies are short; a live model or dedicated long local response is needed for visual acceptance. This does not block the v0.60 release candidate. |
+| QA60-MONITOR-001 | P2 | Multi-monitor drag not accepted | BLOCKED: current Windows session exposes only one monitor. |
+| QA60-SHORTCUT-001 | P3 | First-run wizard optional desktop shortcut creation | SOURCE FIXED / NEEDS PACKAGE QA: a non-default checkbox now creates a `daniya521` desktop shortcut and failure does not block setup completion. Rebuild and manually verify before closing. |
+| QA60-WINDOW-001 | P1 | Pet/settings window lifecycle can make the app disappear | SOURCE FIXED / NEEDS PACKAGE QA: the app now disables quit-on-last-window-closed behavior, so Settings Center minimize/close and pet hidden/tray states should not terminate the process. Rebuild and manually verify before closing. |
+| QA60-INSTANCE-001 | P3 | Old development instance can coexist with packaged release instance during QA | Documented test risk: make sure manual QA targets the packaged exe process, not an already-running `pythonw.exe main.py` development instance. |
+
+## v0.60 Release Blocker Follow-Up (2026-06-02)
+
+Resolved in the v0.60 blocker fix after baseline `862beda`:
+
+- Release package story assets: `characters/daniya/story.yaml` is now explicitly packaged; `characters/template/story.yaml` remains covered by the public template package.
+- Release zip validation: the scanner now requires both story files and rejects Daniya private assets, forbidden runtime/build paths, local user paths, and obvious API key patterns.
+- Local audit report risk: `*_audit_report.docx` is ignored so `DaniyaSummerPet_v0.60_audit_report.docx` remains local-only.
+- Historical docs local paths: the known `<local-user-path>` / `<local-file-uri>` references in tracked docs were sanitized.
+- Config diff cleanup: unrelated runtime `config/app_config.json` window-position noise was reverted; public fallback reply arrays and `config/model_profiles.json` profile history defaults are kept.
+
+Still manual before tag or GitHub Release:
+
+- Valid real-provider API response with a user-owned key and quota.
+- Multi-monitor physical drag behavior.
+- Right-click menu feel.
+- Long text bubble visual behavior.
+
 更新日期：2026-05-31
 审计阶段：第二阶段，动态验证后
 
@@ -16,20 +44,42 @@
 
 ## 第二阶段已关闭
 
-| ID | 等级 | 修复结果 |
+| ID | 等级 | 修复结果 / 进展 |
 |---|---|---|
 | FA-PKG-001 | P1 | `pack.bat` 已改为 config 白名单 package input，release/dist/zip 不包含 ignored 本地 config |
 | FA-PKG-002 | P2 | `pack.bat` 已排除本地审计截图/debug/tmp/log，release/dist/zip 不包含 `docs/v0.51_patch_audit/` |
 | FA-CHAR-001 | P2 | v0.56 已确认 `characters/test_dummy/` 为 local-only，加入 `.gitignore`；正式回归只要求 `characters/daniya` 与 `characters/template` |
+| KI-001 | P4 | **[已解决]** 自然语言提醒解析与创建已在 v0.61 接入输入框主链路，并通过 `natural_reminder_enabled` 开关安全隔离。 |
 
-## 既有 Known Issues
+## 既有 Known Issues (环境与边界限制说明)
 
-### KI-001：自然语言提醒创建尚未接入输入框主链路
+### KI-004：PySide6 6.7.2+ 崩溃与不稳定性兼容问题
 
-- 等级：P4
-- 现状：`ReminderManager` 支持通过菜单添加明确时间格式的提醒；输入框中的“提醒我明天喝水”目前不会被错误吞成 `reminder_due`，但也不会自动创建提醒。
-- 原因：自然语言时间解析属于新功能，不适合本轮稳定性修复顺手实现。
-- 建议：后续单独设计提醒意图解析，明确格式、时区、失败提示和测试用例。
+- 等级：P2
+- 现状：部分开发环境和特定 Windows 系统中，使用 `PySide6>=6.7.2` 时存在随机闪退或 UI 刷新不稳定的情况。
+- 原因：PySide6 6.7 之后版本的窗口事件循环在特定 DPI 和显卡驱动下存在兼容性抖动。
+- 建议：推荐并在 requirements 中锁定安装稳定的旧版：`PySide6==6.6.3`。
+
+### KI-005：非标准 DPI 缩放与多屏幕拖动判定偏斜
+
+- 等级：P3
+- 现状：在双显示器或具有非 100% 缩放率（如 125%、150% 等）的屏幕中，桌宠边缘吸附检测与长按拖拽偶尔会出现判定偏差。
+- 原因：Windows API 坐标体系与 Qt 内部高 DPI 坐标映射的不一致引起。
+- 建议：若遇到移动失效，可在右键菜单中调用设置中心，微调参数（双击阈值与边缘安全间距）或临时切换到主屏幕运行。
+
+### KI-006：系统进入睡眠/休眠可能导致定时器阻塞
+
+- 等级：P3
+- 现状：当 Windows 系统进入深度休眠或睡眠状态后，基于本地 QTimer 和时间轮的调度将被中断。
+- 原因：系统休眠会挂起整个 Python 进程的时间计数器。
+- 建议：系统重新唤醒后，调度引擎会自动检测错过的提醒事件并补发消息，但休眠期间的定时器无法做到绝对精准，对于强实时性业务建议依赖外部成熟系统调度。
+
+### KI-007：本地 API Key 与隐私数据存储安全
+
+- 等级：P3
+- 现状：云端服务所需的各种 API 密钥及本地用户的聊天历史记录以明文存放在本地 `.env` 及 `data/` 中。
+- 原因：简化本地同人项目单机部署与开发的复杂度。
+- 建议：项目已预置了 `.gitignore` 防止意外上传，**绝对不要将个人生产环境的密钥和运行时文件提交回公共 Git 仓库**。高危安全场景推荐完全脱机运行本地大模型。
 
 ### KI-002：`run.bat` 使用 detached `pythonw.exe`
 
@@ -55,3 +105,4 @@
 - 第二阶段临时自动化脚本曾误删 ignored `data/` 与 `config/api_config.json`；已重新生成安全默认文件。
 - 该副作用不影响 Git 和发布包，但旧本地运行态历史无法从 Git 恢复。
 - v0.56 已新增 `docs/DESTRUCTIVE_TEST_POLICY.md`、`tools/backup_runtime_state.py`、`tools/restore_runtime_state.py`，后续缺文件/坏文件测试必须使用备份恢复或临时沙盒。
+- v0.56 复核后，restore 必须显式传入 `backups/runtime_backup_YYYYMMDD_HHMMSS/`，并在恢复前创建二次备份；`models/` 只备份小型 metadata，不复制大模型本体。

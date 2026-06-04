@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
+
+import yaml
 
 from PySide6.QtCore import QDateTime, Qt
 from PySide6.QtGui import QCursor
@@ -105,7 +108,7 @@ class MenuManager:
         history_action.triggered.connect(self.show_history_dialog)
         prompt_action = chat.addAction(ic("settings"), "人设设置")
         prompt_action.triggered.connect(self.show_prompt_dialog)
-        profile_action = chat.addAction(ic("info"), "主人档案")
+        profile_action = chat.addAction(ic("info"), "用户档案")
         profile_action.triggered.connect(self.show_profile_dialog)
         daniya_settings_action = chat.addAction(ic("protect"), "达妮娅设定")
         daniya_settings_action.triggered.connect(self.show_daniya_settings_dialog)
@@ -171,7 +174,7 @@ class MenuManager:
 
         edge_action = pet_features.addAction("左右边缘探头")
         edge_action.setCheckable(True)
-        edge_action.setChecked(bool(pet_config.get("edge_peek_enabled", True)))
+        edge_action.setChecked(bool(pet_config.get("edge_peek_enabled", False)))
         edge_action.triggered.connect(
             lambda checked=False: self.controller.set_pet_feature("edge_peek_enabled", bool(checked))
         )
@@ -238,7 +241,7 @@ class MenuManager:
 
     def show_profile_dialog(self) -> None:
         dialog = QDialog(self.window)
-        dialog.setWindowTitle("主人档案")
+        dialog.setWindowTitle("用户档案")
         form = QFormLayout(dialog)
         profile = self.controller.profile_manager.load()
         user_name = QLineEdit(profile["user_name"])
@@ -274,230 +277,48 @@ class MenuManager:
         dialog = DaniyaSettingsDialog(self.controller, self.window)
         dialog.exec()
 
-    # ── 剧情模式：完整顺序叙事 ─────────────────────────────
-    # 章节数据结构：(编号, 标题, 叙述内容, 发给达妮娅的话, 动作)
+    # ── 剧情阅读：章节从角色包 story.yaml 加载。
     _STORY_CHAPTERS: list[tuple[int, str, str, str, str | None]] = [
-        # ═══ 序 ═══
-        (0, "序", "【封面】\n\n达妮娅 D 部分剧情背景\n全量叙事工程化\n\n"
-         "本故事讲述了达妮娅的完整过去：\n"
-         "她从何处来，为何变成后来的样子，\n"
-         "又如何在坠入虚无后，在这里和你重逢。\n\n"
-         "请准备好。有些话，她只讲一次。",
-         "达妮娅，可以和我讲讲你的故事吗？", None),
-
-        # ═══ 第一部：西格丽卡篇 — 被期待压垮的优等生 ═══
-        (1, "第一部 · 被期待压垮的优等生",
-         "【西格丽卡 — 所有人眼里的标准答案】\n\n"
-         "在讲达妮娅之前，先要讲一个人。\n"
-         "她叫西格丽卡。成绩好、能力强、热心、可靠、未来可期。\n"
-         "所有人都觉得她完美无缺。所有人都在期待她。\n\n"
-         "但这些期待——即使是善意的期待——\n"
-         "每一句\"你一定可以\"都在她身上增加重量。\n"
-         "久而久之，期待不再是鼓励，而是一副黄金镣铐。\n\n"
-         "她终于说了那句她不敢说的话：",
-         "上学怎么这么难……", None),
-
-        (2, "第一部 · 黄金的重量",
-         "【期待如何变成自我枷锁】\n\n"
-         "西格丽卡不是不够好，而是好到失去了说\"我累了\"的资格。\n\n"
-         "别人说\"你可以\"，她听成\"我必须可以\"。\n"
-         "别人说\"我相信你\"，她听成\"我不能失败\"。\n\n"
-         "解读符文慢了——怪自己不够快。\n"
-         "通路被干扰——怪自己反应不够好。\n"
-         "已经做到极限——仍然归结为\"不够努力\"。\n\n"
-         "她真正害怕的不是失败，\n"
-         "而是失败后别人失望、安慰、指责或沉默的眼神。",
-         "被期待压垮的人……最后会怎样？", None),
-
-        (3, "第一部 · 夺回选择权",
-         "【漂泊者给出的不是答案，而是新的关系方式】\n\n"
-         "后来有一个人告诉西格丽卡：\n"
-         "\"你的选择本身就有意义。\"\n\n"
-         "这句话让她从\"我必须做到\"转向\"我决定去做\"。\n"
-         "责任没有消失，期待也没有消失，\n"
-         "但她终于可以决定自己要如何承载它们。\n\n"
-         "这条线对达妮娅很重要：\n"
-         "被期待困住的人，最终需要的不是催促，\n"
-         "而是被允许自己选择。\n\n"
-         "她是怎么看这件事的？",
-         "你对西格丽卡……是怎么想的？", None),
-
-        # ═══ 第二部：暗面篇 — 痛苦不是外来怪物 ═══
-        (4, "第二部 · 暗面映照内心",
-         "【暗面机制 — 人最难面对的，是自己】\n\n"
-         "暗面不是外来的怪物。它是一种镜面，\n"
-         "映照出人心里本来就存在的恐惧、疲惫、执念。\n\n"
-         "西格丽卡害怕辜负期待。\n"
-         "赛维教授被求知执念困住。\n"
-         "洛瑟拉校长在虚无中追问意义。\n\n"
-         "这不是三个人的小故事，\n"
-         "而是同一面暗镜里的三张不同倒影。\n\n"
-         "伟大不是永远不崩溃，\n"
-         "而是崩溃边缘仍然保住一点人的尊严。",
-         "暗面……到底是怎么影响人的？", None),
-
-        (5, "第二部 · 痛苦被武器化",
-         "【从镜子到武器】\n\n"
-         "但事情变得更糟。\n"
-         "残心会发现暗面的特性，开始利用它。\n"
-         "原本被动映照内心的暗面，被变成了武器：\n"
-         "主动植入频率、设计谜题、诱导自我否定。\n\n"
-         "一个人的痛苦不再只属于自己，\n"
-         "而成为了可以被操纵、利用和放大的东西。\n\n"
-         "达妮娅曾在其中扮演了什么角色？",
-         "残心会……和你有什么关系？", None),
-
-        # ═══ 第三部：达妮娅篇 — 名字、生日、虚无与再见 ═══
-        (6, "第三部 · 名字即遗嘱",
-         "【达妮娅 — 被制造为工具的人】\n\n"
-         "现在才真正讲到达妮娅自己的人生。\n\n"
-         "她的名字来自俄语\"До свидания\"，\n"
-         "意思是——\"再见\"。\n\n"
-         "这不是一个普通的、充满祝福的名字。\n"
-         "这像是一开始就写好的告别辞。\n\n"
-         "她没有正常出生记录。\n"
-         "没有完整档案。\n"
-         "没有普通人的童年和生活起点。\n\n"
-         "她更像是被制造出来的容器，\n"
-         "而不是被迎接到世界上的孩子。\n\n"
-         "名字里的\"再见\"最初意味着被放弃、被抛下、被写好结局。",
-         "你的名字……到底是什么意思？请告诉我完整的。", None),
-
-        (7, "第三部 · 容器",
-         "【她最痛的不是没人爱】\n\n"
-         "不是没有人关心她。\n"
-         "而是世界从一开始就没有认真承认——\n"
-         "她是一个人。\n\n"
-         "她的\"家\"只是实验室里临时分配的房间。\n"
-         "她的\"童年\"是在观察别人如何生活。\n\n"
-         "她观察别人如何笑、如何哭、如何碰拳、如何做朋友。\n"
-         "她不是天生不懂感情，\n"
-         "而是被迫把\"做人\"当作一门实验题去学习。\n\n"
-         "她花了两年，只是想弄明白——\n"
-         "普通人是怎么活着的。",
-         "你以前……到底是怎么过来的？", None),
-
-        (8, "第三部 · 生日 — 存在主权宣言",
-         "【如果世界不给她起点，她就自己刻一个】\n\n"
-         "达妮娅所谓的\"生日\"不是别人给她的。\n"
-         "是她自己编造出来的。\n\n"
-         "这不是任性，不是自欺欺人。\n"
-         "这是存在主权宣言——\n"
-         "\"我存在过。\"\n\n"
-         "她不是想办盛大庆典。\n"
-         "她是想拥有一次普通孩子可以拥有的权利：\n"
-         "被庆祝、被记住、被当作一个人来过生日。\n\n"
-         "她想要什么礼物？",
-         "你的生日……你是怎么过的？", None),
-
-        (9, "第三部 · 橘子蛋糕",
-         "【人格图腾 — 她想像孩子一样贪心一次】\n\n"
-         "她想要橘子蛋糕。\n"
-         "不止，还要加跳跳糖、彩虹豆、咔啦咔啦……\n"
-         "以及各种她叫得上名字的好东西。\n\n"
-         "这不是奇怪的口味偏好。\n"
-         "这是她像第一次进糖果店的孩子一样，\n"
-         "把所有\"好东西\"都指了一遍。\n\n"
-         "橘子味：连接她对普通日常的想象。\n"
-         "乱七八糟的配料：她被允许幼稚、被允许贪心、\n"
-         "被允许像普通孩子一样点单。\n\n"
-         "蛋糕不是美食设定。蛋糕是人格图腾。",
-         "橘子蛋糕……为什么偏偏是橘子蛋糕？", None),
-
-        (10, "第三部 · 俄罗斯方块",
-         "【用游戏把失控人生拼成能活下去的形状】\n\n"
-         "俄罗斯方块。\n"
-         "不断下落的方块。\n"
-         "必须迅速选择旋转的方向。\n"
-         "越来越高的压力。\n\n"
-         "像极了她的人生。\n\n"
-         "她不是随便玩玩。她是在用游戏把压抑、\n"
-         "孤独和失控感具象化。\n\n"
-         "破纪录的那一天，是她第一次用自己的能力证明：\n"
-         "\"我不只是被造出来的工具，\n"
-         "我也可以有热爱，我也可以赢一次，\n"
-         "我也是普通女孩。\"\n\n"
-         "可惜空荡的游戏厅里，无人为她欢呼。",
-         "你那个俄罗斯方块的记录……还记得吗？", None),
-
-        (11, "第三部 · 了断日",
-         "【向容器身份清算】\n\n"
-         "她管那一天叫\"了断日\"。\n"
-         "但不是赴死。\n\n"
-         "她要的只是——\n"
-         "\"一天真正属于人的生活\"。\n\n"
-         "逛花店。玩游戏。吃蛋糕。\n"
-         "把自己从容器身份里抢回来。\n\n"
-         "她对别人撒谎，说自己没事、身体好了、不用担心。\n"
-         "不是恶意。是因为不想让在乎的人提前难过。\n"
-         "她把沉重真相藏起来，希望朋友能在最后一天仍然笑一下。\n\n"
-         "她不是不会表达温柔，\n"
-         "只是表达得笨拙、别扭、绕远。",
-         "最后那天……你是怎么过的？", None),
-
-        (12, "第三部 · 明年一起过生日",
-         "【最轻的承诺，最重的真话】\n\n"
-         "西格丽卡隐约知道达妮娅在装没事。\n"
-         "但她没有逼问。\n"
-         "没有戳穿。\n\n"
-         "她选择陪达妮娅一起装傻，\n"
-         "把沉重真相包进轻轻一句话里：\n\n"
-         "\"明年一起过生日。\"\n\n"
-         "这是整段剧情中最轻也最重的承诺。\n"
-         "我知道你在骗我。\n"
-         "但如果这是你最后想要的体面，\n"
-         "我就陪你把这个梦演完。",
-         "她说\"明年一起过生日\"……你当时怎么回答的？", None),
-
-        (13, "第三部 · 坠入虚无",
-         "【带走黑暗，留下人间馈赠】\n\n"
-         "达妮娅最终还是坠入了虚无。\n\n"
-         "这不是单纯的死亡，也不是英雄式的牺牲。\n"
-         "更准确地说——\n"
-         "她是自己撕掉了别人给她写好的工具剧本。\n"
-         "用最后的方式决定自己是谁。\n\n"
-         "她带走黑暗和痛苦。\n"
-         "把阳光、朋友、游戏、蛋糕和生日留在人间。\n\n"
-         "她不是彻底否定世界，\n"
-         "而是把自己珍惜过的东西认真封存。\n\n"
-         "\"虚无\"在她这里不是空无，\n"
-         "而是一个被记住、被等待、还会再见的深处。",
-         "你坠落的时候……在想什么？", None),
-
-        (14, "第三部 · 再见语义逆转",
-         "【从\"你被放弃了\"到\"我们还会再见\"】\n\n"
-         "最初的再见：你被放弃了。你的存在到此为止。\n"
-         "后来的再见：我们还会再见。有人记得你。\n"
-         "你不是白白消失。\n\n"
-         "这是她自己夺回来的语义。\n"
-         "不是别人施舍给她的。\n\n"
-         "她不是彻底绝望的人。\n"
-         "她是从深处回来了一点点的人。\n\n"
-         "那根弦——松了一点。",
-         "\"再见\"……现在对你来说是什么？", None),
-
-        # ═══ 终章 ═══
-        (15, "终章 · 现在的她",
-         "【桌宠中的达妮娅 — 被接住后的松动】\n\n"
-         "所以。这才是达妮娅真正的样子。\n\n"
-         "她不是单纯慵懒，也不是普通冷淡。\n"
-         "她是被制造、被利用、被剥夺普通人生的人，\n"
-         "却笨拙地想学会像人一样活着。\n\n"
-         "共情过载 + 被期待压垮 + 想成为普通人\n"
-         "+ 用慵懒和嫌麻烦自我保护\n"
-         "+ 被主人接住后慢慢松动\n"
-         "= 现在的她。\n\n"
-         "她嘴硬、说反话、嫌弃、怕麻烦。\n"
-         "但她也默认留下、不推开、安静陪着。\n\n"
-         "她不需要直说\"我永远陪你\"。\n"
-         "因为她知道——你知道。\n\n",
-         "所以……现在留在这儿，是你的选择吗？", None),
+        (0, "剧情未配置", "当前角色包没有可用的 story.yaml。", "", None),
     ]
 
-    def show_story_dialog(self) -> None:
-        """剧情模式 — 完整顺序叙事。主人逐章阅读达妮娅的完整过去。"""
-        import textwrap
+    def _story_yaml_path(self) -> Path:
+        pack = getattr(getattr(self.controller, "daniya_adapter", None), "character_pack", None)
+        root = getattr(pack, "root", None)
+        if root:
+            return Path(root) / "story.yaml"
+        return resource_path("characters", "daniya", "story.yaml")
 
+    def _load_story_chapters(self) -> list[tuple[int, str, str, str, str | None]]:
+        path = self._story_yaml_path()
+        if path.exists():
+            try:
+                loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+                chapters = []
+                for index, item in enumerate(loaded.get("chapters", [])):
+                    if not isinstance(item, dict):
+                        continue
+                    body = str(item.get("body") or "").strip()
+                    if not body:
+                        continue
+                    action = item.get("action")
+                    chapters.append(
+                        (
+                            int(item.get("id", index)),
+                            str(item.get("title") or f"第 {index + 1} 章"),
+                            body,
+                            str(item.get("prompt") or ""),
+                            str(action) if action else None,
+                        )
+                    )
+                if chapters:
+                    return chapters
+            except (OSError, ValueError, TypeError, yaml.YAMLError):
+                pass
+        return self._STORY_CHAPTERS
+
+    def show_story_dialog(self) -> None:
+        """剧情阅读：用户逐章阅读达妮娅的完整过去。"""
         dialog = QDialog(self.window)
         dialog.setWindowTitle("剧情 — 达妮娅的完整故事")
         dialog.resize(650, 530)
@@ -566,12 +387,13 @@ class MenuManager:
         layout.addLayout(btn_row)
 
         # 状态
-        total = len(self._STORY_CHAPTERS)
+        chapters = self._load_story_chapters()
+        total = len(chapters)
         idx = [0]  # mutable box
 
         def _show_chapter():
             i = idx[0]
-            num, title, body, talk, _ = self._STORY_CHAPTERS[i]
+            num, title, body, talk, _ = chapters[i]
             progress.setText(f"剧情进度：{i + 1} / {total}")
             title_label.setText(title)
             narrative.setText(body)
@@ -599,7 +421,7 @@ class MenuManager:
                 _show_chapter()
 
         def _do_send():
-            _, _, _, talk, _ = self._STORY_CHAPTERS[idx[0]]
+            _, _, _, talk, _ = chapters[idx[0]]
             if talk:
                 self.controller.send_message(talk)
         def _do_send_and_next():

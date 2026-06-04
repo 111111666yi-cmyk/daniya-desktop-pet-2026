@@ -1,6 +1,6 @@
 {
-  "first_run_setup": true,
-  "run_mode": "fast",
+  "first_run_setup": false,
+  "run_mode": "local_fallback",
   "multimodal_enabled": {
     "tts": false,
     "text_to_image": false,
