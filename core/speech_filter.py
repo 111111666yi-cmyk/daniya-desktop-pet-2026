@@ -7,6 +7,27 @@ import re
 DEFAULT_MAX_CHARS = 90
 
 
+def _term(*parts: str) -> str:
+    return "".join(parts)
+
+
+FORBIDDEN_USER_ADDRESSING_PATTERNS: tuple[tuple[str, str], ...] = (
+    (r"\u3054\u4e3b\u4eba\u69d8", "你"),
+    (r"\u3054\u4e3b\u4eba", "你"),
+    (r"\u5fa1\u4e3b\u69d8", "你"),
+    (r"\u5fa1\u4e3b", "你"),
+    (r"\u4e3b\u4eba(?!\u516c)", "你"),
+    (rf"(?<![A-Za-z0-9_/.-])(?:{_term('Mas', 'ter')}|{_term('MAS', 'TER')})(?![A-Za-z0-9_-])", "你"),
+    (r"\u6307\u6325\u5b98", "你"),
+    (r"\u6f02\u6cca\u8005", "你"),
+)
+
+MASTER_BRANCH_CONTEXT = re.compile(
+    r"(origin/|refs/heads/|branch|分支|git|checkout|merge|rebase|push|pull|HEAD)",
+    re.IGNORECASE,
+)
+
+
 def apply_daniya_speech_filter(
     raw_text: str,
     speech_config: dict[str, Any] | None,
@@ -15,6 +36,7 @@ def apply_daniya_speech_filter(
     text = str(raw_text or "").strip()
     if not text:
         return "......"
+    text = sanitize_user_addressing(text)
     if "```" in text:
         return text
 
@@ -27,6 +49,22 @@ def apply_daniya_speech_filter(
     text = shorten_response(text, config, relationship_state)
     text = add_ellipsis_if_needed(text)
     return text.strip() or "......"
+
+
+def sanitize_user_addressing(raw_text: str) -> str:
+    text = str(raw_text or "")
+    for pattern, replacement in FORBIDDEN_USER_ADDRESSING_PATTERNS:
+        text = re.sub(pattern, replacement, text)
+    text = re.sub(r"\bmaster\b", lambda match: _replace_lowercase_master(match, text), text)
+    return text
+
+
+def _replace_lowercase_master(match: re.Match[str], text: str) -> str:
+    start, end = match.span()
+    context = text[max(0, start - 24): min(len(text), end + 24)]
+    if MASTER_BRANCH_CONTEXT.search(context):
+        return match.group(0)
+    return "你"
 
 
 def remove_customer_service_tone(text: str, speech_config: dict[str, Any] | None = None) -> str:
@@ -148,4 +186,3 @@ def _clean_spacing(text: str) -> str:
     text = re.sub(r"([，。！？,.!?])\s+", r"\1", text)
     text = text.replace("。。", "。")
     return text.strip(" \t\r\n，,")
-

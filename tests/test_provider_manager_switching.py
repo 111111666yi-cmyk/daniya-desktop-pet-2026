@@ -119,14 +119,14 @@ def test_chat_error_fallback_handling(setup_provider_manager, monkeypatch):
 def test_prompt_to_messages_keeps_user_memory_prefix_for_provider_channels(setup_provider_manager):
     pm, _tmp_path = setup_provider_manager
     pm.system_prompt = "达妮娅基础设定"
-    pm.prompt_prefix = "用户档案：\n称呼：snow\n\n达妮娅记忆备忘录：\n- 喜欢安静陪伴"
+    pm.prompt_prefix = "用户档案：\n称呼：小夏\n\n达妮娅记忆备忘录：\n- 喜欢安静陪伴"
 
     for active_id in ("deepseek_default", "ollama_qwen25_05b", "openai_compatible_default"):
         pm.profiles_data["active_text_profile_id"] = active_id
         messages = pm.prompt_to_messages("你好", history_messages=[{"role": "assistant", "content": "嗯。"}])
 
         assert messages[0]["role"] == "system"
-        assert "称呼：snow" in messages[0]["content"]
+        assert "称呼：小夏" in messages[0]["content"]
         assert "达妮娅记忆备忘录" in messages[0]["content"]
         assert "喜欢安静陪伴" in messages[0]["content"]
         assert "达妮娅基础设定" in messages[0]["content"]

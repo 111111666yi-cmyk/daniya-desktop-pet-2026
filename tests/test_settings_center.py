@@ -226,7 +226,7 @@ def test_settings_status_summaries_hide_raw_engine_details(tmp_path):
     assert "relationship_state" not in data_text
 
     memory_text = _format_user_memory_summary(
-        {"user_name": "主人", "relationship": "桌宠与主人", "style": "简短"},
+        {"user_name": "你", "relationship": "陪伴角色与用户", "style": "简短"},
         {
             "user_preferences": {"likes_short_reply": True},
             "important_user_phrases": ["我不会先走"],
@@ -235,7 +235,7 @@ def test_settings_status_summaries_hide_raw_engine_details(tmp_path):
         },
         ["[2026-06-03 00:00:00] 喜欢安静陪伴"],
     )
-    assert "主人档案" in memory_text
+    assert "用户档案" in memory_text
     assert "我不会先走" in memory_text
     assert "喜欢安静陪伴" in memory_text
 

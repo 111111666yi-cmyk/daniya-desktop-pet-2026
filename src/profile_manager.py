@@ -6,10 +6,43 @@ from .config_manager import ConfigManager
 
 
 DEFAULT_PROFILE = {
-    "user_name": "主人",
-    "relationship": "桌宠与主人",
+    "user_name": "你",
+    "relationship": "陪伴角色与用户",
     "style": "温柔、可爱、简短、陪伴感",
 }
+
+
+def _term(*parts: str) -> str:
+    return "".join(parts)
+
+
+FORBIDDEN_USER_NAMES = (
+    _term("\u5fa1", "\u4e3b"),
+    _term("\u5fa1", "\u4e3b", "\u69d8"),
+    _term("\u4e3b", "\u4eba"),
+    _term("\u3054", "\u4e3b", "\u4eba"),
+    _term("\u3054", "\u4e3b", "\u4eba", "\u69d8"),
+    _term("Mas", "ter"),
+    _term("MAS", "TER"),
+    _term("\u6307", "\u6325", "\u5b98"),
+    _term("\u6f02", "\u6cca", "\u8005"),
+)
+
+
+def sanitize_user_name(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return DEFAULT_PROFILE["user_name"]
+    if any(term in text for term in FORBIDDEN_USER_NAMES):
+        return DEFAULT_PROFILE["user_name"]
+    return text
+
+
+def sanitize_profile_text(value: Any) -> str:
+    text = str(value or "").strip()
+    for term in FORBIDDEN_USER_NAMES:
+        text = text.replace(term, "用户")
+    return text
 
 
 class ProfileManager:
@@ -27,12 +60,18 @@ class ProfileManager:
         for key in profile:
             value = data.get(key, profile[key])
             profile[key] = str(value)
+        profile["user_name"] = sanitize_user_name(profile["user_name"])
+        profile["relationship"] = sanitize_profile_text(profile["relationship"]) or DEFAULT_PROFILE["relationship"]
+        profile["style"] = sanitize_profile_text(profile["style"]) or DEFAULT_PROFILE["style"]
         return profile
 
     def save(self, profile: dict[str, str]) -> None:
         clean = DEFAULT_PROFILE.copy()
         for key in clean:
             clean[key] = str(profile.get(key, clean[key])).strip() or clean[key]
+        clean["user_name"] = sanitize_user_name(clean["user_name"])
+        clean["relationship"] = sanitize_profile_text(clean["relationship"]) or DEFAULT_PROFILE["relationship"]
+        clean["style"] = sanitize_profile_text(clean["style"]) or DEFAULT_PROFILE["style"]
         self.config_manager.save_json(self.path, clean)
 
     def prompt_prefix(self) -> str:

@@ -18,6 +18,18 @@ class FailingModel:
         raise RuntimeError("network down")
 
 
+class SequenceModel:
+    def __init__(self, responses: list[str]) -> None:
+        self.responses = list(responses)
+        self.calls: list[str] = []
+
+    def __call__(self, prompt: str) -> str:
+        self.calls.append(prompt)
+        if not self.responses:
+            return "......嗯。"
+        return self.responses.pop(0)
+
+
 class ExistingChatClientShape:
     def __init__(self) -> None:
         self.prompts: list[str] = []
@@ -87,3 +99,35 @@ def test_dialogue_engine_preserves_tuple_source_from_callable_model():
 
     assert result.response == "......谁高兴了。"
     assert result.source == "api"
+
+
+def test_dialogue_engine_sanitizes_forbidden_addressing_across_turns():
+    pack = load_character("daniya")
+    forbidden_terms = (
+        "".join(["御", "主"]),
+        "".join(["主", "人"]),
+        "Mas" + "ter",
+        "ご" + "".join(["主", "人"]),
+    )
+    model = SequenceModel(
+        [
+            f"{forbidden_terms[0]}，我在。",
+            f"{forbidden_terms[1]}，别硬撑。",
+            f"{forbidden_terms[2]}, sit down.",
+            f"{forbidden_terms[3]}、少熬夜。",
+        ]
+    )
+    engine = DialogueEngine(pack, model_client=model)
+
+    outputs = [
+        engine.handle_user_message("第一轮").response,
+        engine.handle_user_message("第二轮").response,
+        engine.handle_user_message("第三轮").response,
+        engine.handle_user_message("第四轮").response,
+    ]
+
+    assert len(model.calls) == 4
+    assert "禁止用主仆" in model.calls[0]
+    for output in outputs:
+        for forbidden in forbidden_terms:
+            assert forbidden not in output
