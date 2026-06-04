@@ -318,8 +318,6 @@ class PetWindow(QWidget):
             self.set_input_visible(True, expand=True)
         else:
             self.set_input_visible(False)
-        self._resize_to_content()
-        self.move(self._clamped_position(self.pos()))
 
     def set_input_visible(self, visible: bool, expand: bool = True) -> None:
         if visible:

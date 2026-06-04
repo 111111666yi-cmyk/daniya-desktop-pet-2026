@@ -16,6 +16,39 @@ class CustomLineEdit(QLineEdit):
         super().focusOutEvent(event)
         self.focus_lost.emit()
 
+COLLAPSED_STYLE = """
+    QPushButton {
+        background-color: rgba(255, 255, 255, 200);
+        border: 1px solid rgba(200, 200, 200, 150);
+        border-radius: 8px;
+        font-size: 10px;
+        padding: 0px;
+        margin: 0px;
+        font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+    }
+    QPushButton:hover {
+        background-color: rgba(255, 255, 255, 240);
+        border: 1px solid rgba(100, 150, 255, 150);
+    }
+"""
+
+EXPANDED_STYLE = """
+    QPushButton {
+        background-color: rgba(255, 255, 255, 200);
+        border: 1px solid rgba(200, 200, 200, 150);
+        border-radius: 14px;
+        font-size: 14px;
+        padding: 0px;
+        margin: 0px;
+        font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+    }
+    QPushButton:hover {
+        background-color: rgba(255, 255, 255, 240);
+        border: 1px solid rgba(100, 150, 255, 150);
+    }
+"""
+
+
 class InputBar(QWidget):
     submitted = Signal(str)
 
@@ -34,23 +67,7 @@ class InputBar(QWidget):
         self.icon_btn.setFixedSize(16, 16)
         self.icon_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.icon_btn.clicked.connect(self._on_icon_clicked)
-        self.icon_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: rgba(255, 255, 255, 200);
-                border: 1px solid rgba(200, 200, 200, 150);
-                border-radius: 8px;
-                font-size: 10px;
-                padding: 0px;
-                margin: 0px;
-                font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 240);
-                border: 1px solid rgba(100, 150, 255, 150);
-            }
-            """
-        )
+        self.icon_btn.setStyleSheet(COLLAPSED_STYLE)
 
         shadow1 = QGraphicsDropShadowEffect(self.icon_btn)
         shadow1.setBlurRadius(4)
@@ -103,22 +120,34 @@ class InputBar(QWidget):
             self.expand_input()
 
     def expand_input(self) -> None:
+        self.icon_btn.setFixedSize(28, 28)
+        self.icon_btn.setStyleSheet(EXPANDED_STYLE)
         self.icon_btn.setText("✕")
         self.line_edit.show()
         self.line_edit.setFocus()
         self.setMinimumWidth(self._stored_min_width + 32)
         self.setMaximumWidth(16777215)
-        if self.parentWidget():
-            self.parentWidget().adjustSize()
+        parent = self.parentWidget()
+        if parent:
+            if hasattr(parent, "_resize_to_content"):
+                parent._resize_to_content()
+            else:
+                parent.adjustSize()
 
     def collapse_input(self) -> None:
         self.line_edit.hide()
         self.line_edit.clear()
+        self.icon_btn.setFixedSize(16, 16)
+        self.icon_btn.setStyleSheet(COLLAPSED_STYLE)
         self.icon_btn.setText("💬")
         self.setMinimumWidth(0)
         self.setMaximumWidth(16)
-        if self.parentWidget():
-            self.parentWidget().adjustSize()
+        parent = self.parentWidget()
+        if parent:
+            if hasattr(parent, "_resize_to_content"):
+                parent._resize_to_content()
+            else:
+                parent.adjustSize()
 
     def _on_focus_lost(self) -> None:
         # Delay collapsing slightly in case the app is just switching windows
