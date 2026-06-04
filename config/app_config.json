@@ -6,7 +6,7 @@
     "start_x": 0,
     "start_y": 0,
     "always_on_top": true,
-    "show_input": true
+    "show_input": false
   },
   "pet": {
     "pet_height": 96,
