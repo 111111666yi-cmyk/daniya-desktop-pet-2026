@@ -42,12 +42,12 @@ def test_prompt_prefix_includes_profile_memory_and_notes(tmp_path, monkeypatch) 
     )
 
     manager = ProfileManager(FakeConfigManager(tmp_path))
-    manager.save({"user_name": "snow", "relationship": "桌宠与主人", "style": "简短"})
+    manager.save({"user_name": "小夏", "relationship": "陪伴角色与用户", "style": "简短"})
     (tmp_path / "data" / "notes.txt").write_text("[2026-06-03 00:00:00] 喜欢安静陪伴\n", encoding="utf-8")
 
     prefix = manager.prompt_prefix()
 
-    assert "称呼：snow" in prefix
+    assert "称呼：小夏" in prefix
     assert "用户记忆偏好" in prefix
     assert "我不会先走" in prefix
     assert "birthday_sovereignty" in prefix

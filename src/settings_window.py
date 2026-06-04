@@ -288,9 +288,9 @@ def _format_event_log_summary(events: list[Any]) -> str:
 
 def _format_user_memory_summary(profile: dict[str, str], memory: dict[str, Any], notes: list[str]) -> str:
     lines = [
-        "主人档案",
-        f"- 称呼：{profile.get('user_name', '主人')}",
-        f"- 关系：{profile.get('relationship', '桌宠与主人')}",
+        "用户档案",
+        f"- 称呼：{profile.get('user_name', '你')}",
+        f"- 关系：{profile.get('relationship', '陪伴角色与用户')}",
         f"- 偏好风格：{profile.get('style', '')}",
         "",
         "自动记忆",

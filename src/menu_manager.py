@@ -108,7 +108,7 @@ class MenuManager:
         history_action.triggered.connect(self.show_history_dialog)
         prompt_action = chat.addAction(ic("settings"), "人设设置")
         prompt_action.triggered.connect(self.show_prompt_dialog)
-        profile_action = chat.addAction(ic("info"), "主人档案")
+        profile_action = chat.addAction(ic("info"), "用户档案")
         profile_action.triggered.connect(self.show_profile_dialog)
         daniya_settings_action = chat.addAction(ic("protect"), "达妮娅设定")
         daniya_settings_action.triggered.connect(self.show_daniya_settings_dialog)
@@ -241,7 +241,7 @@ class MenuManager:
 
     def show_profile_dialog(self) -> None:
         dialog = QDialog(self.window)
-        dialog.setWindowTitle("主人档案")
+        dialog.setWindowTitle("用户档案")
         form = QFormLayout(dialog)
         profile = self.controller.profile_manager.load()
         user_name = QLineEdit(profile["user_name"])
@@ -318,7 +318,7 @@ class MenuManager:
         return self._STORY_CHAPTERS
 
     def show_story_dialog(self) -> None:
-        """剧情阅读：主人逐章阅读达妮娅的完整过去。"""
+        """剧情阅读：用户逐章阅读达妮娅的完整过去。"""
         dialog = QDialog(self.window)
         dialog.setWindowTitle("剧情 — 达妮娅的完整故事")
         dialog.resize(650, 530)

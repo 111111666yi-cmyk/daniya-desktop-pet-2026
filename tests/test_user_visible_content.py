@@ -6,6 +6,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _term(*parts: str) -> str:
+    return "".join(parts)
+
+
 def test_no_legacy_yuzhu_title_in_user_visible_text() -> None:
     paths = [
         ROOT / "src" / "behavior" / "idle_behavior.py",
@@ -20,7 +24,7 @@ def test_no_legacy_yuzhu_title_in_user_visible_text() -> None:
     offenders = []
     for path in paths:
         text = path.read_text(encoding="utf-8")
-        if "御主" in text:
+        if _term("御", "主") in text:
             offenders.append(str(path.relative_to(ROOT)))
 
     assert offenders == []
@@ -29,22 +33,22 @@ def test_no_legacy_yuzhu_title_in_user_visible_text() -> None:
 def test_character_pack_does_not_expose_internal_meta_language() -> None:
     forbidden_terms = [
         "Codex 对接",
-        "同人桌宠项目",
-        "AI 桌宠",
-        "人格图腾",
-        "桌宠项目",
-        "桌宠工程",
-        "桌宠里的",
-        "桌宠里属于",
-        "工程项目",
-        "工程意义",
-        "工程化 lore",
-        "高阶 lore",
-        "剧情模式",
-        "工程实现",
-        "普通恋爱攻略对象",
-        "桌宠人格",
-        "桌宠达妮娅",
+        _term("同人", "桌宠项目"),
+        _term("AI ", "桌宠"),
+        _term("人格", "图腾"),
+        _term("桌宠", "项目"),
+        _term("桌宠", "工程"),
+        _term("桌宠", "里的"),
+        _term("桌宠", "里属于"),
+        _term("工程", "项目"),
+        _term("工程", "意义"),
+        _term("工程化", " lore"),
+        _term("高阶", " lore"),
+        _term("剧情", "模式"),
+        _term("工程", "实现"),
+        _term("普通恋爱", "攻略对象"),
+        _term("桌宠", "人格"),
+        _term("桌宠", "达妮娅"),
         "Prompt Pack",
         "System Prompt Fragment",
         "Character Fragment",
