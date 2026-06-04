@@ -324,14 +324,14 @@ class PetWindow(QWidget):
     def set_input_visible(self, visible: bool, expand: bool = True) -> None:
         if visible:
             self.input_box.always_expanded = True
-            self.input_box.setMinimumWidth(self.input_min_width)
             self.input_box.show()
             if expand:
                 self.input_box.expand_input()
+            else:
+                self.input_box.collapse_input()
         else:
             self.input_box.always_expanded = False
             self.input_box.collapse_input()
-            self.input_box.setMinimumWidth(0)
             self.input_box.hide()
         self._resize_to_content()
         self.move(self._clamped_position(self.pos()))

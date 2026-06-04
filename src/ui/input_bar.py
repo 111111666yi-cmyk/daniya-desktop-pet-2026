@@ -106,6 +106,8 @@ class InputBar(QWidget):
         self.icon_btn.setText("✕")
         self.line_edit.show()
         self.line_edit.setFocus()
+        self.setMinimumWidth(self._stored_min_width + 32)
+        self.setMaximumWidth(16777215)
         if self.parentWidget():
             self.parentWidget().adjustSize()
 
@@ -113,6 +115,8 @@ class InputBar(QWidget):
         self.line_edit.hide()
         self.line_edit.clear()
         self.icon_btn.setText("💬")
+        self.setMinimumWidth(0)
+        self.setMaximumWidth(28)
         if self.parentWidget():
             self.parentWidget().adjustSize()
 
