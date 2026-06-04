@@ -5,7 +5,7 @@ from typing import Any, Callable
 from PySide6.QtCore import QObject, QTimer, Signal
 
 IDLE_BUBBLES = [
-    "御主还在吗？",
+    "你还在吗？",
     "我没有睡着。",
     "……只是发了一会儿呆。",
     "……盯着屏幕太久，眼睛不累吗？",

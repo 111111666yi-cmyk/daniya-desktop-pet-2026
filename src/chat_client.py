@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from core.speech_filter import sanitize_user_addressing
+
 from .config_manager import ConfigManager
 from .history_manager import HistoryManager
 from .profile_manager import ProfileManager
@@ -55,11 +57,11 @@ class ChatClient:
         """
         if self.local_mode:
             print("[Daniya] Chat response: provider=none, model=none, source=local, fallback_used=True, error_summary=\"local_mode_enabled\"")
-            return self.local_reply(missing_key=True), "local"
+            return sanitize_user_addressing(self.local_reply(missing_key=True)), "local"
             
         if not self.provider_manager:
             print("[Daniya] Chat response: provider=none, model=none, source=local, fallback_used=True, error_summary=\"provider_manager_missing\"")
-            return self.local_reply(missing_key=True), "local"
+            return sanitize_user_addressing(self.local_reply(missing_key=True)), "local"
             
         # 兼容旧代码：由于 DialogueEngine 的适配器只传了单个 prompt 字符串，
         # 我们用 history_manager 获取额外的历史记录（如果 DialogueEngine 自己没有做的话）
@@ -70,13 +72,14 @@ class ChatClient:
             history_messages=self.history_manager.recent_messages(self.context_limit)
         )
         
-        return self.provider_manager.chat(messages)
+        reply, source = self.provider_manager.chat(messages)
+        return sanitize_user_addressing(reply), source
 
     def local_reply(self, missing_key: bool = True) -> str:
         """返回本地回退回复"""
         if self.provider_manager:
-            return self.provider_manager.local_fallback(api_error=not missing_key)
-        return "达妮娅刚刚走神了一下……但我还在哦。"
+            return sanitize_user_addressing(self.provider_manager.local_fallback(api_error=not missing_key))
+        return sanitize_user_addressing("达妮娅刚刚走神了一下……但我还在哦。")
 
 
 def mask_key(api_key: str) -> str:

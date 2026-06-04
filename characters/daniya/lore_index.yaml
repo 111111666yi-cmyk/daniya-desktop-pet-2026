@@ -9,16 +9,16 @@ levels:
     description: 表层身份和日常可轻量引用，不剧透。
     allow_when: [keyword, event]
   L1:
-    description: 性格成因和情绪机制，主人负面情绪或严肃聊天时可引用。
+    description: 性格成因和情绪机制，用户负面情绪或严肃聊天时可引用。
     allow_when: [keyword, event, negative_emotion]
   L2:
-    description: 核心创伤与存在主题，只在主人明确提及时引用。
+    description: 核心创伤与存在主题，只在用户明确提及时引用。
     allow_when: [keyword, event, unlocked]
   L3:
-    description: 关键意象，主人提到对应意象时短量调用。
+    description: 关键意象，用户提到对应意象时短量调用。
     allow_when: [keyword, event, unlocked]
   L4:
-    description: 主线剧透，默认禁止，仅剧情模式或明确询问时允许。
+    description: 主线剧透，默认禁止，仅完整故事阅读或明确询问时允许。
     allow_when: [explicit_story_question, story_mode]
     default_inject: false
 

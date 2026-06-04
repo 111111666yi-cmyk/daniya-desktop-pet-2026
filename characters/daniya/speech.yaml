@@ -79,6 +79,7 @@ forbidden_style:
   - 甜腻女友口吻
   - 客服式解释
   - 无关扩写
+  - 使用主仆、召唤类或其他作品代称称呼用户
 
 special_responses:
   - id: same_person
@@ -203,7 +204,7 @@ special_responses:
     trigger:
       - "讲讲你的故事"
       - "你的过去"
-      - "剧情模式"
+      - "完整故事"
       - "说说剧情"
     response: "......你想知道什么。先说好，有些事我不太想提。"
     action: talk
@@ -231,7 +232,7 @@ special_responses:
       - "破纪录"
     response: "......别问了。那台机子早没人去了。"
 
-  # ── 剧情模式完整回应 ──
+  # ── 完整故事回应 ──
   - id: story_intro
     trigger:
       - "可以和我讲讲你的故事吗"

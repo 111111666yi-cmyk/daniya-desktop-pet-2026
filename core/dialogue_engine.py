@@ -74,7 +74,7 @@ class DialogueEngine:
                 recent_messages=context.get("recent_messages"),
             )
             raw_model_response, source, errors = self._call_model(prompt, user_text)
-        filtered_response = apply_daniya_speech_filter(raw_model_response, self.character_pack.speech, state)
+        filtered_response = self._filter_response(raw_model_response, state)
 
         stage_before = state.get("relationship_stage")
         updated_state = update_from_event(state, event)
@@ -188,7 +188,8 @@ class DialogueEngine:
         memory: dict[str, Any] | None,
         match: dict[str, Any],
     ) -> EngineResult | None:
-        response = str(match.get("response") or "......")
+        raw_response = str(match.get("response") or "......")
+        response = self._filter_response(raw_response, state)
         effect = dict(match.get("relationship_effect") or {})
         lore_fragments = retrieve_lore(
             user_text,
@@ -237,7 +238,7 @@ class DialogueEngine:
             source="special_response",
             matched_special_response=True,
             raw_model_response=None,
-            filtered=False,
+            filtered=response != raw_response,
             errors=[],
             prompt=None,
             special_response_id=match.get("id"),
@@ -289,6 +290,9 @@ class DialogueEngine:
         save_state(updated_state)
         update_memory_from_interaction(user_text, command_event or event)
 
+        raw_response = response
+        response = self._filter_response(raw_response, updated_state)
+
         route = route_action(
             user_text=user_text,
             response=response,
@@ -321,7 +325,7 @@ class DialogueEngine:
             source="command",
             matched_special_response=matched_special.get("matched") if matched_special else False,
             raw_model_response=None,
-            filtered=False,
+            filtered=response != raw_response,
             errors=[],
             prompt=None,
             special_response_id=special_response_id,
@@ -350,6 +354,9 @@ class DialogueEngine:
         if any(keyword in text for keyword in ["抱抱", "陪我", "不走"]):
             return "......烦死了。过来。"
         return "......哦。"
+
+    def _filter_response(self, response: str, state: dict[str, Any] | None = None) -> str:
+        return apply_daniya_speech_filter(response, self.character_pack.speech, state)
 
 
 def _coerce_model_text(reply: Any) -> str:

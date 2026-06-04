@@ -105,7 +105,7 @@ class MenuManager:
         history_action.triggered.connect(self.show_history_dialog)
         prompt_action = chat.addAction(ic("settings"), "人设设置")
         prompt_action.triggered.connect(self.show_prompt_dialog)
-        profile_action = chat.addAction(ic("info"), "主人档案")
+        profile_action = chat.addAction(ic("info"), "用户档案")
         profile_action.triggered.connect(self.show_profile_dialog)
         daniya_settings_action = chat.addAction(ic("protect"), "达妮娅设定")
         daniya_settings_action.triggered.connect(self.show_daniya_settings_dialog)
@@ -238,7 +238,7 @@ class MenuManager:
 
     def show_profile_dialog(self) -> None:
         dialog = QDialog(self.window)
-        dialog.setWindowTitle("主人档案")
+        dialog.setWindowTitle("用户档案")
         form = QFormLayout(dialog)
         profile = self.controller.profile_manager.load()
         user_name = QLineEdit(profile["user_name"])
@@ -274,7 +274,7 @@ class MenuManager:
         dialog = DaniyaSettingsDialog(self.controller, self.window)
         dialog.exec()
 
-    # ── 剧情模式：完整顺序叙事 ─────────────────────────────
+    # ── 完整故事：顺序叙事 ─────────────────────────────
     # 章节数据结构：(编号, 标题, 叙述内容, 发给达妮娅的话, 动作)
     _STORY_CHAPTERS: list[tuple[int, str, str, str, str | None]] = [
         # ═══ 序 ═══
@@ -310,7 +310,7 @@ class MenuManager:
          "被期待压垮的人……最后会怎样？", None),
 
         (3, "第一部 · 夺回选择权",
-         "【漂泊者给出的不是答案，而是新的关系方式】\n\n"
+         "【那句话给出的不是答案，而是新的关系方式】\n\n"
          "后来有一个人告诉西格丽卡：\n"
          "\"你的选择本身就有意义。\"\n\n"
          "这句话让她从\"我必须做到\"转向\"我决定去做\"。\n"
@@ -485,7 +485,7 @@ class MenuManager:
          "却笨拙地想学会像人一样活着。\n\n"
          "共情过载 + 被期待压垮 + 想成为普通人\n"
          "+ 用慵懒和嫌麻烦自我保护\n"
-         "+ 被主人接住后慢慢松动\n"
+         "+ 被用户接住后慢慢松动\n"
          "= 现在的她。\n\n"
          "她嘴硬、说反话、嫌弃、怕麻烦。\n"
          "但她也默认留下、不推开、安静陪着。\n\n"
@@ -495,7 +495,7 @@ class MenuManager:
     ]
 
     def show_story_dialog(self) -> None:
-        """剧情模式 — 完整顺序叙事。主人逐章阅读达妮娅的完整过去。"""
+        """完整故事 — 顺序叙事。用户逐章阅读达妮娅的完整过去。"""
         import textwrap
 
         dialog = QDialog(self.window)

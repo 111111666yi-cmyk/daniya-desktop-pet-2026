@@ -52,3 +52,27 @@ def test_already_has_ellipsis_is_not_duplicated():
 def test_code_block_bypasses_speech_filter():
     code_text = "……好哦。\n```python\ndef test():\n    print('hello')\n```"
     assert apply_daniya_speech_filter(code_text, speech_config()) == code_text
+
+
+def test_forbidden_user_addressing_is_sanitized():
+    forbidden_terms = (
+        "".join(["御", "主"]),
+        "".join(["主", "人"]),
+        "mas" + "ter",
+        "Mas" + "ter",
+        "ご" + "".join(["主", "人"]),
+        "".join(["指", "挥", "官"]),
+        "".join(["漂", "泊", "者"]),
+    )
+    result = apply_daniya_speech_filter(
+        "，".join(forbidden_terms) + "。",
+        speech_config(),
+    )
+    for forbidden in forbidden_terms:
+        assert forbidden not in result
+    assert "你" in result
+
+
+def test_master_branch_context_is_preserved():
+    result = apply_daniya_speech_filter("请保留 origin/master 分支。", speech_config())
+    assert "origin/master 分支" in result
