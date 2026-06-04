@@ -171,7 +171,7 @@ if not exist "dist\%APP_NAME%\%APP_NAME%.exe" (
 echo [Daniya] Creating release directory...
 call :ensure_dir "release\!PACKAGE_NAME!" || exit /b 1
 robocopy "dist\%APP_NAME%" "release\!PACKAGE_NAME!" /E /XD "assets\private" "data" "models" "backups" "__pycache__" /XF ".env" "*.log" "*.spec" >nul
-if %ERRORLEVEL% GEQ 8 (
+if errorlevel 8 (
     echo [Daniya] Failed to copy PyInstaller output.
     pause
     exit /b 1
@@ -184,14 +184,14 @@ if not exist "release\!PACKAGE_NAME!\characters\daniya" robocopy "characters\dan
 if not exist "release\!PACKAGE_NAME!\characters\template" robocopy "characters\template" "release\!PACKAGE_NAME!\characters\template" /E >nul
 call :remove_dir "release\!PACKAGE_NAME!\config" || exit /b 1
 robocopy "%SAFE_CONFIG%" "release\!PACKAGE_NAME!\config" /E >nul
-if %ERRORLEVEL% GEQ 8 (
+if errorlevel 8 (
     echo [Daniya] Failed to copy public config files.
     pause
     exit /b 1
 )
 call :remove_dir "release\!PACKAGE_NAME!\docs" || exit /b 1
 robocopy "%SAFE_DOCS%" "release\!PACKAGE_NAME!\docs" /E /XD "v0.51_patch_audit" "screenshots" "debug" "debug_logs" "tmp" "__pycache__" /XF "*.tmp" "*.log" "debug_*" >nul
-if %ERRORLEVEL% GEQ 8 (
+if errorlevel 8 (
     echo [Daniya] Failed to copy public docs.
     pause
     exit /b 1
