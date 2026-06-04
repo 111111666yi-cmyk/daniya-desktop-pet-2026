@@ -1,8 +1,8 @@
 # Daniya Summer Desktop Pet · 达妮娅夏日桌宠
 
-Current version: **DaniyaSummerPet v0.60**
+Current version: **DaniyaSummerPet v0.65 Integrated Preview**
 
-达妮娅是一款基于 Python + PySide6 的开源桌宠应用。提供透明置顶窗口、拖拽移动、右键菜单、输入框对话、气泡消息、打字机效果、云端/本地 AI 对话、角色关系、记忆备忘录和设置中心等功能。
+达妮娅是一款基于 Python + PySide6 的开源桌宠应用。提供透明置顶窗口、拖拽移动、右键菜单、输入框对话、气泡消息、打字机效果、云端/本地 AI 对话、角色关系、记忆备忘录、自然语言提醒、文件整理预览、系统状态感知、隐私剪贴板交互、专注/游戏模式和设置中心等功能。
 
 这是一个非官方同人作品。本仓库不分发官方游戏资源、私有角色素材、用户关系数据或 API Key。
 
@@ -34,6 +34,7 @@ install.bat
 - **对话**：右键输入框发送消息，达妮娅会通过 AI 回复
 - **设置中心**：右键菜单 → 对话 → 设置中心，管理 API、模型、桌宠行为、角色资源、关系状态和记忆备忘录
 - **本地模型**：设置中心 → 模型与引擎 → 本地部署，可浏览推荐模型目录并一键拉取
+- **v0.61-v0.65 扩展能力**：自然语言提醒、文件整理预览、系统状态感知、隐私剪贴板交互、专注/游戏模式
 
 ## 系统要求
 
@@ -110,6 +111,11 @@ pytest tests/ -q
 - v0.55 — 桌宠行为引擎（屏幕边缘吸附、防止移出屏幕、点击分流检测、空闲小动作）
 - **v0.55.2** — 工程审计补丁（提醒事件误触发、隐藏命令回应、发布包角色素材隔离）
 - **v0.55.3** — AppData 运行态补丁（下载版配置和数据写入 `%APPDATA%\DaniyaSummerPet\`）
+- **v0.61** — 自然语言提醒系统，支持相对、绝对、循环提醒解析和输入链路接入
+- **v0.62** — 安全文件整理预览、记忆清理入口、Provider 记忆注入与 Z.AI Provider 支持
+- **v0.63** — 本地系统状态感知，覆盖 CPU、内存、电量、磁盘与网络提示
+- **v0.64** — 隐私安全剪贴板交互，默认拦截 API Key、Bearer、凭据、手机号、身份证号等敏感内容
+- **v0.65** — 专注/游戏模式，降低游戏或专注状态下的非必要打扰
 
 ## 许可证
 
@@ -159,7 +165,8 @@ python tools\check_sensitive_files.py
 python tools\check_character_packs.py
 python tools\check_config_templates.py
 python tools\check_docs_links.py
-python tools\check_release_zip.py release\DaniyaSummerPet-v0.60-win-x64.zip
+python tools\check_public_surface.py
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.65-win-x64.zip
 ```
 
 Use GitHub Issues for reproducible bugs and Pull Requests for focused, stage-scoped changes. Do not include `.env`, runtime `data/`, private assets, model files, or `characters/test_dummy/`.
@@ -186,6 +193,7 @@ Read:
 - v0.58: first-run onboarding guide.
 - v0.59: automated local checks and CI preparation.
 - v0.60: release preparation.
+- v0.61-v0.65: reminders, file organizer preview, system status, privacy clipboard, focus/game mode.
 
 ## 已知限制与问题反馈
 

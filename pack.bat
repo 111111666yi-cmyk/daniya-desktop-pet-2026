@@ -112,11 +112,19 @@ for %%F in (
     release_checklist.md
     dev_workflow.md
     behavior_engine.md
+    natural_reminders.md
+    file_organizer.md
+    system_status.md
+    clipboard_privacy.md
+    focus_mode.md
     SETTINGS_CENTER.md
     SECURITY_AUDIT.md
     local_models.md
     LLM_PROVIDERS.md
     CUSTOM_API_PROVIDER_GUIDE.md
+    roadmap.md
+    KNOWN_ISSUES.md
+    known_issues.md
 ) do (
     if exist "docs\%%F" copy /Y "docs\%%F" "%SAFE_DOCS%\%%F" >nul
 )

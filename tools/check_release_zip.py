@@ -44,6 +44,11 @@ REQUIRED_ENTRY_SUFFIXES = (
     "characters/daniya/speech.yaml",
     "characters/daniya/story.yaml",
     "characters/template/story.yaml",
+    "docs/natural_reminders.md",
+    "docs/file_organizer.md",
+    "docs/system_status.md",
+    "docs/clipboard_privacy.md",
+    "docs/focus_mode.md",
 )
 TEXT_SUFFIXES = {".txt", ".md", ".json", ".yaml", ".yml", ".py", ".bat", ".env", ".ini", ".cfg", ".example"}
 MAX_TEXT_SCAN_BYTES = 1_000_000

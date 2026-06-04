@@ -4,7 +4,7 @@
 
 ---
 
-## Unreleased v0.61-v0.65 review hardening
+## v0.61-v0.65 Integrated Preview (2026-06-04)
 
 - 新增 `tools/check_public_surface.py`，把公开文案、本机路径、静默默认值和记忆清空入口纳入自动审查。
 - 默认关闭闲聊、整点提醒、边缘探头和空闲小动作，降低首次运行时“自己动/自己说”的风险。

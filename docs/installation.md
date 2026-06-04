@@ -2,7 +2,7 @@
 
 ## Downloaded Windows Package
 
-1. Download `DaniyaSummerPet-v0.60-win-x64.zip`.
+1. Download `DaniyaSummerPet-v0.65-win-x64.zip`.
 2. Extract it to a normal folder such as Desktop, Downloads, or another drive.
 3. Run `DaniyaSummerPet.exe`.
 4. Runtime data is stored in `%APPDATA%\DaniyaSummerPet\`, not beside the exe.

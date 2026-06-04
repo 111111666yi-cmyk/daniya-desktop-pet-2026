@@ -6,6 +6,11 @@
 - [First Run Guide](first_run_guide.md)
 - [API Configuration](api_config.md)
 - [Troubleshooting](troubleshooting.md)
+- [Natural Reminders](natural_reminders.md)
+- [File Organizer](file_organizer.md)
+- [System Status](system_status.md)
+- [Clipboard Privacy](clipboard_privacy.md)
+- [Focus Mode](focus_mode.md)
 
 ## Project
 

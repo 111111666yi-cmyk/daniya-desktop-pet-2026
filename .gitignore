@@ -57,3 +57,5 @@ run_verify.py
 drag_debug.log
 *_audit_report.docx
 DaniyaSummerPet_v*.docx
+.repo_audit_tracked_files.txt
+*.pdf
