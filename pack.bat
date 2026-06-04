@@ -87,7 +87,30 @@ for %%F in (bookmarks.json model_catalog.json profile.json provider_capabilities
     if exist "config\%%F" copy /Y "config\%%F" "%SAFE_CONFIG%\%%F" >nul
 )
 
-robocopy "docs" "%SAFE_DOCS%" /E /XD "v0.51_patch_audit" "screenshots" "debug" "debug_logs" "tmp" "__pycache__" /XF "*.tmp" "*.log" "debug_*" >nul
+REM === Docs whitelist: only these files enter the release package ===
+REM Do NOT use robocopy /E on docs/. Archive and audit files must not ship.
+for %%F in (
+    README.md
+    help.md
+    character_pack_guide.md
+    local_models.md
+    LLM_PROVIDERS.md
+    CUSTOM_API_PROVIDER_GUIDE.md
+    SETTINGS_CENTER.md
+    release_checklist.md
+    asset_policy.md
+    dev_workflow.md
+    roadmap.md
+    known_issues.md
+    ACTION_ASSET_GUIDE.md
+    behavior_engine.md
+    FIRST_RUN_WIZARD.md
+    MODEL_PROVIDER_CONFIG_SPEC.md
+    DESTRUCTIVE_TEST_POLICY.md
+) do (
+    if exist "docs\%%F" copy /Y "docs\%%F" "%SAFE_DOCS%\%%F" >nul
+)
+
 if %ERRORLEVEL% GEQ 8 (
     echo [Daniya] Failed to prepare public docs.
     pause

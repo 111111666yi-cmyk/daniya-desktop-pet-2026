@@ -54,3 +54,7 @@ scratch/
 docs/v0.51_patch_audit/
 run_verify.py
 drag_debug.log
+.repo_audit_tracked_files.txt
+nul
+*.docx
+*.pdf

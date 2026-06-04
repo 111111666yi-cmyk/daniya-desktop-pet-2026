@@ -1,11 +1,13 @@
 # Destructive Test Policy
 
-更新日期：2026-05-31
-适用范围：v0.56 起的本地破坏性 fallback、缺文件、坏文件、打包安全与运行态恢复测试。
+This policy applies to tests that intentionally simulate missing files, broken
+runtime data, broken config files, damaged assets, or package-content failures.
 
-## 禁止直接删除的路径
+## Paths That Must Not Be Deleted Directly
 
-以下路径可能包含用户运行态、密钥、私有素材或大模型文件，禁止在测试脚本中直接删除、清空或覆盖：
+The following paths can contain user runtime state, secrets, private assets, or
+large local model files. Do not delete, empty, or overwrite them directly from a
+test script:
 
 - `data/`
 - `.env`
@@ -14,30 +16,36 @@
 - `assets/private/`
 - `models/`
 
-## 必须使用的测试方式
+## Required Test Pattern
 
-缺文件、坏 JSON/YAML、坏 window state、缺 manifest、缺角色包等测试只能使用以下方式之一：
+Use one of these approaches instead:
 
-1. 在临时沙盒目录中复制最小 fixture 后测试。
-2. 先运行 `python tools/backup_runtime_state.py`，再执行测试，最后运行 `python tools/restore_runtime_state.py`。
-3. 对单个文件使用临时改名，并在 `finally` 或等价清理逻辑中恢复。
+1. Copy the minimum fixture into a temporary sandbox and test there.
+2. Run `python tools/backup_runtime_state.py`, execute the test, then run
+   `python tools/restore_runtime_state.py`.
+3. For a single file, temporarily rename it and restore it in `finally` or an
+   equivalent cleanup path.
 
-如果测试中断，必须能通过 `backups/runtime_state/` 下最近一次备份恢复。不要伪造恢复成功；恢复失败时必须报告失败路径和原因。
+If a destructive test is interrupted, the most recent backup under
+`backups/runtime_state/` must be enough to restore the workspace. Do not claim
+recovery succeeded unless it was verified.
 
-## 工具和发布包规则
+## Tool And Package Rules
 
-- `backups/` 必须保持在 `.gitignore` 中。
-- `tools/backup_runtime_state.py` 和 `tools/restore_runtime_state.py` 只用于开发/审计，不进入 release 包。
-- `pack.bat` 不复制 `tools/`，release 和 zip 中不得包含 runtime backup 或 restore 工具。
-- 打包后仍需扫描 `.env`、`data/`、`assets/private/`、`models/`、`backups/`、`config/api_config.json`、`config/multimodal_config.json`。
+- `backups/` must remain ignored by Git.
+- `tools/backup_runtime_state.py` and `tools/restore_runtime_state.py` are
+  development tools and must not enter release packages.
+- `pack.bat` must not copy `tools/` into the release package.
+- After packaging, scan for `.env`, `data/`, `assets/private/`, `models/`,
+  `backups/`, `config/api_config.json`, and `config/multimodal_config.json`.
 
-## 事故记录要求
+## Incident Recording
 
-若测试误删或覆盖 ignored 运行态文件，必须记录到：
+If a test deletes or overwrites ignored runtime files by mistake, record the
+incident in a local ignored note or issue tracker item. The record must state:
 
-- `docs/CODEX_EXECUTION_LOG.md`
-- `docs/KNOWN_ISSUES.md`
-- `docs/FULL_REGRESSION_TEST_v0.1-v0.55.md`
-- `docs/FULL_BUG_LIST_v0.1-v0.55.md`
-
-记录必须明确说明 Git 和 release 是否受影响、旧本地运行态历史是否可从 Git 恢复，以及已经采取的防复发措施。
+- whether Git-tracked files were affected
+- whether release package contents were affected
+- which local runtime files were affected
+- whether the files were restored from backup
+- what guard was added to prevent recurrence

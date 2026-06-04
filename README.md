@@ -10,7 +10,7 @@
 
 ```bat
 # 克隆仓库
-git clone https://github.com/<your-username>/daniya2026523.git
+git clone https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026.git
 cd daniya2026523
 
 # 运行安装脚本（创建虚拟环境 + 安装依赖 + 创建桌面快捷方式）
@@ -89,7 +89,27 @@ python main.py
 
 # 测试
 pytest tests/ -q
+
+# 公开面审计
+python tools\audit_repo_surface.py
 ```
+
+Common checks:
+
+```bat
+python tools\validate_character_pack.py characters\daniya
+pytest -q
+run.bat
+git status --short
+```
+
+Read:
+
+- `CONTRIBUTING.md` for contribution workflow.
+- `docs/dev_workflow.md` for stage-by-stage validation.
+- `docs/roadmap.md` for planned versions.
+- `docs/release_checklist.md` for future release checks.
+- `docs/known_issues.md` for known limitations.
 
 ## 版本历史
 
@@ -127,38 +147,3 @@ Source/development mode stores runtime data under `data/`. Packaged Windows rele
 - `data/daniya_relation/user_memory.json`
 
 `data/` and `data/daniya_relation/` are ignored by Git. Do not commit real user relationship state or chat history. Packaged release runtime data under `%APPDATA%\DaniyaSummerPet\` is outside the repository.
-
-## Development
-
-Common checks:
-
-```bat
-python tools\validate_character_pack.py characters\daniya
-pytest -q
-run.bat
-git status --short
-```
-
-Read:
-
-- `AGENTS.md` for AI coding agent rules.
-- `CONTRIBUTING.md` for contribution workflow.
-- `docs/dev_workflow.md` for stage-by-stage validation.
-- `docs/roadmap.md` for planned versions.
-- `docs/release_checklist.md` for future release checks.
-
-## Roadmap
-
-- v0.44: exe packaging test, completed.
-- v0.45: multi-model backend, integrated.
-- v0.46: local model connection, integrated.
-- v0.47: action asset pack integration, integrated.
-- v0.48: release candidate, accepted.
-- v0.49: official open source release.
-- v0.54: dialogue router and lore triggers.
-- v0.55: behavior engine (dragging, snapping, idle behavior).
-- v0.55.3: current AppData runtime patch.
-
-## License
-
-Code in this repository is licensed under the MIT License. The license only covers repository code and documentation. It does not cover user-provided character assets, third-party assets, official game resources, or any private files placed under ignored directories.

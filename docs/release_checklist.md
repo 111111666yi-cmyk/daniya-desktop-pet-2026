@@ -1,119 +1,98 @@
 # Release Checklist
 
-## v0.49 Release Check Result
+Use this checklist before proposing a public release or release-candidate
+branch. v0.43 cleanup work should keep the repository publishable; later
+packaging or provider stages still require explicit stage acceptance.
 
-Status: passed for local packaging and smoke verification on 2026-05-29.
+## Required Checks
 
-- v0.48 RC report exists: pass.
-- v0.48 known issues file exists: pass.
-- Blocking issues: none recorded in `docs/V0.48_RC_REPORT.md` or `docs/KNOWN_ISSUES_v0.48.md`.
-- Version metadata updated to `v0.49`: pass.
-- Public placeholder assets are neutral abstract placeholders: pass.
-- Pet window startup, drag, docking, resize, and offscreen recovery are constrained inside the screen: pass, covered by regression tests.
-- `python tools\validate_character_pack.py characters\daniya`: pass.
-- `python tools\validate_assets.py assets\private`: pass.
-- `pytest -q`: pass, 99 tests.
-- `run.bat`: startup smoke pass.
-- `pack.bat`: pass.
-- Official zip: `release/DaniyaSummerPet-v0.49-win-x64.zip`.
-- Independent unpack smoke test: pass.
-- Wrong API key startup smoke test: pass.
-- No `.env`, `data/`, `assets/private/`, `models/`, `backups/`, `build/`, `dist/`, `__pycache__/`, `*.log`, `*.spec`, or `*.broken-*` in zip: pass.
-- Git tracked sensitive file check: pass.
-- Real valid API key network test: not run; no valid release-test key was provided in this environment.
+Run from the repository root:
 
-v0.43 does not publish a Release. This checklist prepares future v0.44/v0.49 release work.
+```bat
+git status --short
+python tools\audit_repo_surface.py
+python tools\validate_character_pack.py characters\daniya
+pytest -q
+run.bat
+```
+
+Also verify that no sensitive paths are tracked:
+
+```bat
+git ls-files .env data assets/private models backups dist build
+```
+
+The sensitive-path command must print nothing.
 
 ## Forbidden In Release Packages
 
 Do not include:
 
-- `.env`
-- `.env.*` except `.env.example`
+- `.env` or `.env.*` except `.env.example`
+- `config/api_config.json`
+- `config/multimodal_config.json`
 - `assets/private/`
+- `characters/*/assets/` except `characters/template/assets/`
 - `data/`
 - `data/daniya_relation/`
 - `models/`
 - `backups/`
 - `build/`
-- `dist/` before final packaging review
+- `dist/` before final package assembly
 - `__pycache__/`
 - `*.spec`
 - `*.log`
-- real chat history
-- real relationship state
-- real reminders or notes
-- private API keys
-- official or unauthorized third-party assets
+- `*.broken-*`
+- local audit reports or document exports
+- real chat history, relationship state, reminders, or notes
+- official game resources or unauthorized third-party assets
 
-## Allowed Public Files
+## Allowed Public Inputs
 
 Allowed after review:
 
-- packaged exe in later v0.44/v0.49 stages
-- `config/` defaults and example configs
+- source code under `src/` and `core/`
+- public tools under `tools/`
+- example character metadata under `characters/daniya/`
+- template character pack under `characters/template/`
+- placeholder assets under `assets/placeholder/`
+- public icons under `assets/icons/`
+- config defaults and example configs
 - `.env.example`
-- `characters/template/`
-- `characters/daniya/` public example or placeholder pack
-- `assets/placeholder/`
-- `core/`
-- `src/`
-- `tools/`
-- `docs/`
-- `README.md`
-- `LICENSE`
-- `AGENTS.md`
-- `CONTRIBUTING.md`
-- `CHANGELOG.md`
-- `requirements.txt`
-- `install.bat`
-- `run.bat`
-- `pack.bat`
+- `README.md`, `LICENSE`, `CONTRIBUTING.md`, `CHANGELOG.md`
+- curated docs under `docs/`
+- launch and packaging scripts
 
-## Regression Matrix
+## Package Smoke Matrix
 
-Before release, test:
+Before a release, verify:
 
-- no API key
-- incorrect API key
-- valid API key
-- no `assets/private/`
-- broken private manifest
-- missing action frames
-- broken config
-- broken runtime data
-- broken character pack
+- no API key startup path
+- incorrect API key fallback path
+- valid API key conversation path, if a test key is available
+- missing private assets fallback
+- broken config fallback
+- broken runtime data fallback
+- broken character pack fallback
 - settings center opens
-- Daniya read-only settings window opens
-- main desktop pet displays
+- desktop pet displays with transparent window
+- dragging works
 - right-click menu opens
 - input box sends text
-- bubble displays
-- typewriter effect runs
+- bubble and typewriter text render
 - local fallback works
 - action fallback works
-
-## Git Safety
-
-Run:
-
-```bat
-git status --short
-git ls-files .env data assets/private models backups dist build
-```
-
-The sensitive file command should return no tracked private files.
+- package zip contains only whitelisted content
 
 ## Documentation
 
 Confirm these are current:
 
 - `README.md`
-- `LICENSE`
-- `AGENTS.md`
 - `CONTRIBUTING.md`
 - `CHANGELOG.md`
+- `docs/README.md`
 - `docs/asset_policy.md`
 - `docs/roadmap.md`
 - `docs/dev_workflow.md`
-- stage integration report
+- `docs/known_issues.md`
