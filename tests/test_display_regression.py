@@ -94,6 +94,30 @@ def test_pet_window_edge_peek_keeps_only_visible_strip_on_left_and_right(monkeyp
         _close_window(app, window)
 
 
+def test_pet_window_snap_drag_path_uses_edge_peek_position(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = _app()
+    config = {
+        "window": {"start_x": 100, "start_y": 100, "always_on_top": False, "show_input": True},
+        "pet": {"pet_height": 96, "target_height": 96, "edge_peek_enabled": True},
+        "ui": {"bubble_max_width": 300, "input_min_width": 180},
+        "drag_return_enabled": False,
+    }
+    window = PetWindow(AssetManager(config), config)
+    try:
+        window.show_at_config_position()
+        app.processEvents()
+        bounds = window._desktop_bounds()
+        window.move(QPoint(bounds.left() + 2, bounds.center().y()))
+        window.behavior_engine.snap_controller.snap_and_save(QPoint(bounds.left() + 2, bounds.center().y()))
+        app.processEvents()
+        assert window.dock_side == "left"
+        assert window.x() < bounds.left()
+        assert QRect(window.pos(), window.size()).intersected(bounds).width() >= 32
+    finally:
+        _close_window(app, window)
+
+
 def test_pet_window_input_can_be_restored_after_hidden_config(monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = _app()

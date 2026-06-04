@@ -293,7 +293,10 @@ class PetWindow(QWidget):
         self._print_render_debug(path, MockOriginal(orig_w, orig_h), base_height, dpr, scaled, logical_width, logical_display_height)
         # Remove resize_to_content() to prevent micro-jumping
         if self.isVisible():
-            self.move(self._clamped_position(self.pos()))
+            if self.dock_side in {"left", "right"}:
+                self.move(self._docked_position(self.dock_side))
+            else:
+                self.move(self._clamped_position(self.pos()))
 
     def speak(self, text: str) -> None:
         self.typewriter.speak(text)
@@ -700,6 +703,9 @@ class PetWindow(QWidget):
             new_avatar_pos = self.image_label.mapToGlobal(QPoint(0, 0))
             delta = old_avatar_pos - new_avatar_pos
             self.move(self.pos() + delta)
+
+        if self.dock_side in {"left", "right"}:
+            self.move(self._docked_position(self.dock_side))
 
     def _current_device_pixel_ratio(self) -> float:
         screen = self.screen() or QGuiApplication.primaryScreen()

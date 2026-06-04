@@ -60,6 +60,20 @@ class SnapController(QObject):
             target_x = max(min_x, min(max_x, target_x))
             target_y = max(min_y, min(max_y, target_y))
 
+        pet_config = getattr(self.window, "app_config", {}).get("pet", {})
+        if bool(pet_config.get("edge_peek_enabled", False)):
+            edge_side = None
+            if snap_state.startswith("left"):
+                edge_side = "left"
+            elif snap_state.startswith("right"):
+                edge_side = "right"
+            docked_position = getattr(self.window, "_docked_position", None)
+            if edge_side and callable(docked_position):
+                docked = docked_position(edge_side)
+                target_x = docked.x()
+                target_y = docked.y()
+                self.window.dock_side = edge_side
+
         target_pos = QPoint(target_x, target_y)
         if target_pos != pos and self.config.drag_return_enabled:
             self.animate_to(target_pos)

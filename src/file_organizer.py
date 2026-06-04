@@ -104,7 +104,11 @@ class FileOrganizer:
             pruned_dirs = []
             for d in dirs:
                 d_path = Path(root) / d
-                if self.is_sensitive_path(d_path) or self.is_hidden_path(d_path):
+                if self.is_sensitive_path(d_path):
+                    skipped.append((str(d_path), "敏感目录跳过"))
+                    continue
+                if self.is_hidden_path(d_path):
+                    skipped.append((str(d_path), "隐藏目录跳过"))
                     continue
                 pruned_dirs.append(d)
             dirs[:] = pruned_dirs
