@@ -222,7 +222,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-"%PYTHON_EXE%" -c "import zipfile; z=r'release\!PACKAGE_NAME!.zip'; archive=zipfile.ZipFile(z); bad=archive.testzip(); archive.close(); raise SystemExit(1 if bad else 0)"
+"%PYTHON_EXE%" tools\check_release_zip.py "release\!PACKAGE_NAME!.zip"
 if errorlevel 1 (
     echo [Daniya] Zip validation failed.
     pause
