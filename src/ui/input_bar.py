@@ -31,7 +31,7 @@ class InputBar(QWidget):
 
         # Chat Icon Button
         self.icon_btn = QPushButton("💬")
-        self.icon_btn.setFixedSize(28, 28)
+        self.icon_btn.setFixedSize(16, 16)
         self.icon_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.icon_btn.clicked.connect(self._on_icon_clicked)
         self.icon_btn.setStyleSheet(
@@ -39,8 +39,8 @@ class InputBar(QWidget):
             QPushButton {
                 background-color: rgba(255, 255, 255, 200);
                 border: 1px solid rgba(200, 200, 200, 150);
-                border-radius: 14px;
-                font-size: 14px;
+                border-radius: 8px;
+                font-size: 10px;
                 padding: 0px;
                 margin: 0px;
                 font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
@@ -116,7 +116,7 @@ class InputBar(QWidget):
         self.line_edit.clear()
         self.icon_btn.setText("💬")
         self.setMinimumWidth(0)
-        self.setMaximumWidth(28)
+        self.setMaximumWidth(16)
         if self.parentWidget():
             self.parentWidget().adjustSize()
 
