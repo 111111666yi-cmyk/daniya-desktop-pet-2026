@@ -62,13 +62,13 @@ if errorlevel 1 (
 )
 
 echo [Daniya] Cleaning old build artifacts...
-if exist "build" rmdir /s /q "build"
-if exist "dist" rmdir /s /q "dist"
-if exist "release\!PACKAGE_NAME!" rmdir /s /q "release\!PACKAGE_NAME!"
-if exist "release\test_run_v0.49" rmdir /s /q "release\test_run_v0.49"
-if exist "release\!PACKAGE_NAME!.zip" del /q "release\!PACKAGE_NAME!.zip"
-if not exist "release" mkdir "release"
-if exist "%PKG_STAGING%" rmdir /s /q "%PKG_STAGING%"
+call :remove_dir "build" || exit /b 1
+call :remove_dir "dist" || exit /b 1
+call :remove_dir "release\!PACKAGE_NAME!" || exit /b 1
+call :remove_dir "release\test_run_v0.49" || exit /b 1
+call :remove_file "release\!PACKAGE_NAME!.zip" || exit /b 1
+call :ensure_dir "release" || exit /b 1
+call :remove_dir "%PKG_STAGING%" || exit /b 1
 
 echo [Daniya] Preparing public package input...
 mkdir "%SAFE_CONFIG%"
@@ -169,7 +169,7 @@ if not exist "dist\%APP_NAME%\%APP_NAME%.exe" (
 )
 
 echo [Daniya] Creating release directory...
-mkdir "release\!PACKAGE_NAME!"
+call :ensure_dir "release\!PACKAGE_NAME!" || exit /b 1
 robocopy "dist\%APP_NAME%" "release\!PACKAGE_NAME!" /E /XD "assets\private" "data" "models" "backups" "__pycache__" /XF ".env" "*.log" "*.spec" >nul
 if %ERRORLEVEL% GEQ 8 (
     echo [Daniya] Failed to copy PyInstaller output.
@@ -182,14 +182,14 @@ if not exist "release\!PACKAGE_NAME!\assets\placeholder" robocopy "assets\placeh
 if not exist "release\!PACKAGE_NAME!\assets\icons" robocopy "assets\icons" "release\!PACKAGE_NAME!\assets\icons" /E >nul
 if not exist "release\!PACKAGE_NAME!\characters\daniya" robocopy "characters\daniya" "release\!PACKAGE_NAME!\characters\daniya" /E /XD "assets" >nul
 if not exist "release\!PACKAGE_NAME!\characters\template" robocopy "characters\template" "release\!PACKAGE_NAME!\characters\template" /E >nul
-if exist "release\!PACKAGE_NAME!\config" rmdir /s /q "release\!PACKAGE_NAME!\config"
+call :remove_dir "release\!PACKAGE_NAME!\config" || exit /b 1
 robocopy "%SAFE_CONFIG%" "release\!PACKAGE_NAME!\config" /E >nul
 if %ERRORLEVEL% GEQ 8 (
     echo [Daniya] Failed to copy public config files.
     pause
     exit /b 1
 )
-if exist "release\!PACKAGE_NAME!\docs" rmdir /s /q "release\!PACKAGE_NAME!\docs"
+call :remove_dir "release\!PACKAGE_NAME!\docs" || exit /b 1
 robocopy "%SAFE_DOCS%" "release\!PACKAGE_NAME!\docs" /E /XD "v0.51_patch_audit" "screenshots" "debug" "debug_logs" "tmp" "__pycache__" /XF "*.tmp" "*.log" "debug_*" >nul
 if %ERRORLEVEL% GEQ 8 (
     echo [Daniya] Failed to copy public docs.
@@ -227,4 +227,32 @@ echo [Daniya] Package complete:
 echo [Daniya] release\!PACKAGE_NAME!\%APP_NAME%.exe
 echo [Daniya] release\!PACKAGE_NAME!.zip
 echo [Daniya] Private assets, .env, data, models, backups, build, and dist work directories are not included in the zip.
-if exist "%PKG_STAGING%" rmdir /s /q "%PKG_STAGING%"
+call :remove_dir "%PKG_STAGING%" || exit /b 1
+exit /b 0
+
+:remove_dir
+if not exist "%~1" exit /b 0
+for /L %%R in (1,1,3) do (
+    rmdir /s /q "%~1" 2>nul
+    if not exist "%~1" exit /b 0
+    timeout /t 1 /nobreak >nul
+)
+echo [Daniya] Failed to remove directory: %~1
+exit /b 1
+
+:remove_file
+if not exist "%~1" exit /b 0
+for /L %%R in (1,1,3) do (
+    del /q "%~1" 2>nul
+    if not exist "%~1" exit /b 0
+    timeout /t 1 /nobreak >nul
+)
+echo [Daniya] Failed to remove file: %~1
+exit /b 1
+
+:ensure_dir
+if exist "%~1" exit /b 0
+mkdir "%~1" 2>nul
+if exist "%~1" exit /b 0
+echo [Daniya] Failed to create directory: %~1
+exit /b 1
