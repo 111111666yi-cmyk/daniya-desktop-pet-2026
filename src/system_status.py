@@ -23,17 +23,27 @@ class SystemStatus:
 class SystemStatusManager(QObject):
     status_alert = Signal(str, str)  # alert_type ("cpu", "memory", "battery", "network"), message
 
-    def __init__(self, sample_interval_ms: int = 60_000, cooldown_seconds: int = 300) -> None:
+    def __init__(
+        self,
+        sample_interval_ms: int = 300_000,
+        cooldown_seconds: int = 300,
+        cpu_threshold: int = 90,
+        memory_threshold: int = 90,
+        battery_threshold: int = 20,
+        network_check_enabled: bool = False,
+    ) -> None:
         super().__init__()
-        self.sample_interval_ms = sample_interval_ms
-        self.cooldown_seconds = cooldown_seconds
+        self.sample_interval_ms = max(1, int(sample_interval_ms))
+        self.cooldown_seconds = max(0, int(cooldown_seconds))
+        self.cpu_threshold = max(1, min(100, int(cpu_threshold)))
+        self.memory_threshold = max(1, min(100, int(memory_threshold)))
+        self.battery_threshold = max(1, min(100, int(battery_threshold)))
+        self.network_check_enabled = bool(network_check_enabled)
         self.enabled = True
         self.last_alert_times: dict[str, float] = {}
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.check_status)
-        # Low frequency sampling, default 60s
-        self.timer.start(self.sample_interval_ms)
 
     def set_enabled(self, val: bool) -> None:
         self.enabled = val
@@ -74,7 +84,7 @@ class SystemStatusManager(QObject):
             except Exception:
                 pass
 
-        net = self.is_network_online()
+        net = True if not self.network_check_enabled else self.is_network_online()
 
         return SystemStatus(
             cpu_percent=cpu,
@@ -93,15 +103,15 @@ class SystemStatusManager(QObject):
         now = time.time()
 
         # Check CPU
-        if status.cpu_percent > 90.0:
+        if status.cpu_percent > float(self.cpu_threshold):
             self._trigger_alert("cpu", f"……电脑CPU占用太高了（{status.cpu_percent}%）。你在烤红薯吗？", now)
 
         # Check Memory
-        if status.memory_percent > 90.0:
+        if status.memory_percent > float(self.memory_threshold):
             self._trigger_alert("memory", f"……内存快满了（{status.memory_percent}%）。要不要关掉一些没用的浏览器标签页？", now)
 
         # Check Battery
-        if status.battery_percent is not None and status.battery_percent < 20.0 and not status.is_battery_charging:
+        if status.battery_percent is not None and status.battery_percent < float(self.battery_threshold) and not status.is_battery_charging:
             self._trigger_alert("battery", f"……电量只剩 {status.battery_percent}% 了，还没接电源。等会儿关机了别哭哦。", now)
 
         # Check Network

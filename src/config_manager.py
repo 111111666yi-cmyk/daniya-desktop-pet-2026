@@ -99,6 +99,29 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "double_click_enabled": True,
     "long_press_ms": 600,
     "natural_reminder_enabled": True,
+    "file_organizer_enabled": False,
+    "system_status_enabled": False,
+    "system_status_interval_seconds": 300,
+    "system_status_cooldown_seconds": 300,
+    "system_status_cpu_threshold": 90,
+    "system_status_memory_threshold": 90,
+    "system_status_battery_threshold": 20,
+    "system_status_network_check_enabled": False,
+    "clipboard_interaction_enabled": False,
+    "clipboard_max_chars": 1000,
+    "clipboard_show_preview": False,
+    "clipboard_allow_api_after_confirm": True,
+    "clipboard_sensitive_block_enabled": True,
+    "focus_mode_enabled": False,
+    "focus_mode_manual": False,
+    "focus_mode_auto_game_detect": False,
+    "focus_mode_process_whitelist": [],
+    "focus_mode_silence_idle_chat": True,
+    "focus_mode_silence_hourly_chime": True,
+    "focus_mode_silence_edge_peek": True,
+    "focus_mode_silence_system_status": True,
+    "focus_mode_silence_clipboard": True,
+    "focus_mode_allow_important_reminders": True,
 }
 
 DEFAULT_SYSTEM_PROMPT = """你是达妮娅的 Q 版夏日桌宠形态。
@@ -314,6 +337,56 @@ class ConfigManager:
             config["long_press_ms"] = 600
 
         config["natural_reminder_enabled"] = bool(config.get("natural_reminder_enabled", True))
+        config["file_organizer_enabled"] = bool(config.get("file_organizer_enabled", False))
+        config["system_status_enabled"] = bool(config.get("system_status_enabled", False))
+        try:
+            system_interval = int(config.get("system_status_interval_seconds", 300))
+        except (TypeError, ValueError):
+            system_interval = 300
+        config["system_status_interval_seconds"] = max(300, system_interval)
+        try:
+            system_cooldown = int(config.get("system_status_cooldown_seconds", 300))
+        except (TypeError, ValueError):
+            system_cooldown = 300
+        config["system_status_cooldown_seconds"] = max(300, system_cooldown)
+        for key, default in (
+            ("system_status_cpu_threshold", 90),
+            ("system_status_memory_threshold", 90),
+            ("system_status_battery_threshold", 20),
+        ):
+            try:
+                value = int(config.get(key, default))
+            except (TypeError, ValueError):
+                value = default
+            config[key] = max(1, min(100, value))
+        config["system_status_network_check_enabled"] = bool(config.get("system_status_network_check_enabled", False))
+
+        config["clipboard_interaction_enabled"] = bool(config.get("clipboard_interaction_enabled", False))
+        try:
+            clipboard_max_chars = int(config.get("clipboard_max_chars", 1000))
+        except (TypeError, ValueError):
+            clipboard_max_chars = 1000
+        config["clipboard_max_chars"] = max(100, min(10000, clipboard_max_chars))
+        config["clipboard_show_preview"] = bool(config.get("clipboard_show_preview", False))
+        config["clipboard_allow_api_after_confirm"] = bool(config.get("clipboard_allow_api_after_confirm", True))
+        config["clipboard_sensitive_block_enabled"] = bool(config.get("clipboard_sensitive_block_enabled", True))
+
+        config["focus_mode_enabled"] = bool(config.get("focus_mode_enabled", False))
+        config["focus_mode_manual"] = bool(config.get("focus_mode_manual", False))
+        config["focus_mode_auto_game_detect"] = bool(config.get("focus_mode_auto_game_detect", False))
+        whitelist = config.get("focus_mode_process_whitelist", [])
+        if not isinstance(whitelist, list):
+            whitelist = []
+        config["focus_mode_process_whitelist"] = [str(item).strip() for item in whitelist if str(item).strip()]
+        for key in (
+            "focus_mode_silence_idle_chat",
+            "focus_mode_silence_hourly_chime",
+            "focus_mode_silence_edge_peek",
+            "focus_mode_silence_system_status",
+            "focus_mode_silence_clipboard",
+            "focus_mode_allow_important_reminders",
+        ):
+            config[key] = bool(config.get(key, DEFAULT_APP_CONFIG[key]))
         return config
 
     def _apply_quiet_defaults_migration(self, loaded: dict[str, Any]) -> dict[str, Any]:

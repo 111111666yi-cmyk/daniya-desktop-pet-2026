@@ -70,6 +70,7 @@ def test_system_status_sampling_and_alerts(monkeypatch) -> None:
     # 6. Test Offline Alert
     time.sleep(1.1)
     mock_psutil.sensors_battery.return_value = MagicMock(percent=15.0, power_plugged=True)  # Charging now
+    manager.network_check_enabled = True
     monkeypatch.setattr(manager, "is_network_online", lambda: False)
     manager.check_status()
     assert len(alerts) == 5

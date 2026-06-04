@@ -71,7 +71,7 @@ def test_pet_window_clamps_all_positions_fully_inside_screen(monkeypatch):
         _close_window(app, window)
 
 
-def test_pet_window_docking_never_moves_window_offscreen(monkeypatch):
+def test_pet_window_edge_peek_keeps_only_visible_strip_on_left_and_right(monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = _app()
     config = {
@@ -84,9 +84,38 @@ def test_pet_window_docking_never_moves_window_offscreen(monkeypatch):
         window.show_at_config_position()
         app.processEvents()
         bounds = window._desktop_bounds()
-        for side in ("left", "right", "top", "bottom"):
-            pos = window._docked_position(side, visible=32)
-            assert bounds.contains(QRect(pos, window.size()))
+        visible = 32
+        for side in ("left", "right"):
+            pos = window._docked_position(side, visible=visible)
+            exposed = QRect(pos, window.size()).intersected(bounds)
+            assert exposed.width() == visible
+            assert exposed.height() == window.height()
+    finally:
+        _close_window(app, window)
+
+
+def test_pet_window_input_can_be_restored_after_hidden_config(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = _app()
+    config = {
+        "window": {"start_x": 100, "start_y": 100, "always_on_top": False, "show_input": False},
+        "pet": {"pet_height": 96, "target_height": 96},
+        "ui": {"bubble_max_width": 300, "input_min_width": 180},
+    }
+    window = PetWindow(AssetManager(config), config)
+    try:
+        window.show_at_config_position()
+        app.processEvents()
+        assert not window.input_box.isVisible()
+
+        window.set_input_visible(True)
+        app.processEvents()
+        assert window.input_box.isVisible()
+        assert window.input_box.line_edit.isVisible()
+
+        window.set_input_visible(False)
+        app.processEvents()
+        assert not window.input_box.isVisible()
     finally:
         _close_window(app, window)
 

@@ -76,8 +76,8 @@ def test_settings_manager_saves_api_config_without_plain_key(tmp_path):
     assert "secret-key" not in (tmp_path / "config" / "api_config.json").read_text(encoding="utf-8")
     assert "DEEPSEEK_API_KEY=secret-key" in (tmp_path / ".env").read_text(encoding="utf-8")
     ok, message = manager.test_api_connection()
-    assert ok is True
-    assert "本地模式" in message
+    assert ok is False
+    assert "云端 API 未测试" in message
 
 
 def test_character_pack_editor_backs_up_valid_save_and_rolls_back_invalid_pack(tmp_path):

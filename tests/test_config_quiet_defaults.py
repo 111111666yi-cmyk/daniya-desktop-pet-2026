@@ -17,6 +17,10 @@ def test_default_app_config_is_quiet_by_default() -> None:
     assert DEFAULT_APP_CONFIG["idle_behavior_seconds"] == 600
     assert DEFAULT_APP_CONFIG["window"]["show_input"] is False
     assert pet["edge_peek_enabled"] is False
+    assert DEFAULT_APP_CONFIG["file_organizer_enabled"] is False
+    assert DEFAULT_APP_CONFIG["system_status_enabled"] is False
+    assert DEFAULT_APP_CONFIG["clipboard_interaction_enabled"] is False
+    assert DEFAULT_APP_CONFIG["focus_mode_enabled"] is False
     assert DEFAULT_APP_CONFIG["quiet_defaults_migration"] == QUIET_DEFAULTS_MIGRATION
 
 
@@ -38,6 +42,12 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     noisy["pet"]["edge_peek_enabled"] = True
     noisy["version"] = "v0.60"
     noisy["window"]["show_input"] = True
+    noisy["file_organizer_enabled"] = True
+    noisy["system_status_enabled"] = True
+    noisy["system_status_interval_seconds"] = 60
+    noisy["system_status_cooldown_seconds"] = 60
+    noisy["clipboard_interaction_enabled"] = True
+    noisy["focus_mode_enabled"] = True
 
     failures = _check_quiet_defaults("config/app_config.json", noisy, APP_VERSION)
 
@@ -47,7 +57,13 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     assert any("hourly_chime_enabled=false" in failure for failure in failures)
     assert any("idle_behavior_enabled=false" in failure for failure in failures)
     assert any("pet.edge_peek_enabled=false" in failure for failure in failures)
+    assert any("file_organizer_enabled=false" in failure for failure in failures)
+    assert any("system_status_enabled=false" in failure for failure in failures)
+    assert any("clipboard_interaction_enabled=false" in failure for failure in failures)
+    assert any("focus_mode_enabled=false" in failure for failure in failures)
     assert any("idle_behavior_seconds >= 600" in failure for failure in failures)
+    assert any("system_status_interval_seconds >= 300" in failure for failure in failures)
+    assert any("system_status_cooldown_seconds >= 300" in failure for failure in failures)
 
 
 def test_setup_template_check_rejects_skipped_first_run_or_future_toggles() -> None:

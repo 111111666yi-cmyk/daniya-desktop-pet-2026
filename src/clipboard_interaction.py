@@ -17,11 +17,20 @@ SENSITIVE_PATTERNS = [
 class ClipboardInteraction(QObject):
     clipboard_alert = Signal(dict)  # Emits result dictionary
 
-    def __init__(self, clipboard_obj: Any = None) -> None:
+    def __init__(
+        self,
+        clipboard_obj: Any = None,
+        max_chars: int = 1000,
+        show_preview: bool = False,
+        sensitive_block_enabled: bool = True,
+    ) -> None:
         super().__init__()
         self.clipboard = clipboard_obj
         self.enabled = False
         self.last_text = ""
+        self.max_chars = max(100, int(max_chars))
+        self.show_preview = bool(show_preview)
+        self.sensitive_block_enabled = bool(sensitive_block_enabled)
 
         if self.clipboard:
             self.clipboard.dataChanged.connect(self.on_clipboard_change)
@@ -35,29 +44,31 @@ class ClipboardInteraction(QObject):
             return {"ok": False, "status": "empty", "message": "剪贴板为空", "clean_text": ""}
 
         # 1. Check sensitive info
-        for p in SENSITIVE_PATTERNS:
-            if p.search(text):
-                return {
-                    "ok": False,
-                    "status": "sensitive",
-                    "message": "检测到疑似敏感或隐私内容（如密钥/密码/身份信息），已自动忽略。",
-                    "clean_text": ""
-                }
+        if self.sensitive_block_enabled:
+            for p in SENSITIVE_PATTERNS:
+                if p.search(text):
+                    return {
+                        "ok": False,
+                        "status": "sensitive",
+                        "message": "检测到疑似敏感或隐私内容（如密钥/密码/身份信息），已自动忽略。",
+                        "clean_text": ""
+                    }
 
-        # 2. Check length (limit 1000 characters)
-        if len(text) > 1000:
+        # 2. Check length
+        if len(text) > self.max_chars:
             return {
                 "ok": True,
                 "status": "too_long",
                 "message": f"剪贴板文本过长（已复制 {len(text)} 字），需要你确认后才能分析。",
-                "clean_text": text[:1000]
+                "clean_text": text[:self.max_chars] if self.show_preview else ""
             }
 
+        clean_text = text if self.show_preview else ""
         return {
             "ok": True,
             "status": "safe",
             "message": f"检测到剪贴板有新文本（{len(text)} 字）。需要帮你分析一下吗？",
-            "clean_text": text
+            "clean_text": clean_text
         }
 
     def on_clipboard_change(self) -> None:

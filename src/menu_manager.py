@@ -122,6 +122,8 @@ class MenuManager:
         note_action.triggered.connect(self.show_note_dialog)
         reminder_action = companion.addAction(ic("refresh"), "日程提醒")
         reminder_action.triggered.connect(self.show_reminder_dialog)
+        organizer_action = companion.addAction(ic("document"), "文件整理助手（预览）")
+        organizer_action.triggered.connect(self.controller.open_file_organizer)
 
         games = companion.addMenu(ic("chip"), "小游戏")
         rps = games.addMenu(ic("protect"), "猜拳")

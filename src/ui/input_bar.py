@@ -22,6 +22,7 @@ class InputBar(QWidget):
     def __init__(self, min_width: int = 180, parent=None):
         super().__init__(parent)
         self._stored_min_width = min_width
+        self.always_expanded = False
 
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -30,23 +31,23 @@ class InputBar(QWidget):
 
         # Chat Icon Button
         self.icon_btn = QPushButton("💬")
-        self.icon_btn.setFixedSize(16, 16)
+        self.icon_btn.setFixedSize(28, 28)
         self.icon_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.icon_btn.clicked.connect(self.expand_input)
+        self.icon_btn.clicked.connect(self._on_icon_clicked)
         self.icon_btn.setStyleSheet(
             """
             QPushButton {
                 background-color: rgba(255, 255, 255, 200);
                 border: 1px solid rgba(200, 200, 200, 150);
-                border-radius: 8px;
-                font-size: 10px;
+                border-radius: 14px;
+                font-size: 14px;
                 padding: 0px;
                 margin: 0px;
                 font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 240);
-                border: 1px solid rgba(150, 150, 255, 150);
+                border: 1px solid rgba(100, 150, 255, 150);
             }
             """
         )
@@ -95,8 +96,14 @@ class InputBar(QWidget):
 
         self.line_edit.hide()
 
+    def _on_icon_clicked(self) -> None:
+        if self.line_edit.isVisible():
+            self.collapse_input()
+        else:
+            self.expand_input()
+
     def expand_input(self) -> None:
-        self.icon_btn.hide()
+        self.icon_btn.setText("✕")
         self.line_edit.show()
         self.line_edit.setFocus()
         if self.parentWidget():
@@ -105,7 +112,7 @@ class InputBar(QWidget):
     def collapse_input(self) -> None:
         self.line_edit.hide()
         self.line_edit.clear()
-        self.icon_btn.show()
+        self.icon_btn.setText("💬")
         if self.parentWidget():
             self.parentWidget().adjustSize()
 
@@ -114,6 +121,8 @@ class InputBar(QWidget):
         QTimer.singleShot(100, self._check_focus_and_collapse)
 
     def _check_focus_and_collapse(self) -> None:
+        if self.always_expanded:
+            return
         if not self.line_edit.hasFocus():
             self.collapse_input()
 
@@ -122,7 +131,8 @@ class InputBar(QWidget):
         if text:
             self.line_edit.clear()
             self.submitted.emit(text)
-        self.collapse_input()
+        if not self.always_expanded:
+            self.collapse_input()
 
     def setEnabled(self, enabled: bool) -> None:
         self.icon_btn.setEnabled(enabled)

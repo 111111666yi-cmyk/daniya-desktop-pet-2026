@@ -1138,14 +1138,16 @@ class SettingsWindow(QDialog):
         return target_id
 
     def _refresh_active_status(self) -> None:
-        """刷新顶部「当前生效模型」状态标签。"""
+        """刷新顶部文本模型状态标签。"""
+        api_config = self.settings_manager.load_api_config()
+        local_mode = bool(api_config.get("local_mode", False))
         profiles_data = self.settings_manager.load_model_profiles()
         active_id = profiles_data.get("active_text_profile_id", "")
         profiles = profiles_data.get("profiles", [])
         active_profile = next((p for p in profiles if p.get("id") == active_id), None)
 
         if not active_profile:
-            self.active_profile_status.setText("当前生效模型：无")
+            self.active_profile_status.setText("当前文本模型：无；云端未连接。")
             self.active_profile_status.setStyleSheet(
                 "background: #f8d7da; border: 1px solid #f5c6cb; padding: 8px; margin-bottom: 10px; color: #721c24;"
             )
@@ -1155,12 +1157,22 @@ class SettingsWindow(QDialog):
         model = active_profile.get("model", "")
         source = active_profile.get("source", "cloud")
         source_label = "本地" if source == "local" else "云端"
-        provider = active_profile.get("provider", "")
 
-        text = f"当前生效模型：{name} ({model}) [{source_label}]"
+        if local_mode:
+            text = (
+                f"当前文本模型：{name} ({model}) [{source_label}]；"
+                "本地 fallback 模式已开启，云端 Provider 当前不会实际调用。"
+            )
+            self.active_profile_status.setText(text)
+            self.active_profile_status.setStyleSheet(
+                "background: #fff3cd; border: 1px solid #ffeeba; padding: 8px; margin-bottom: 10px; color: #856404;"
+            )
+            return
+
+        text = f"当前文本模型：{name} ({model}) [{source_label}]；上次切换通过，实时连通性请看下方「测试连接」。"
         self.active_profile_status.setText(text)
         self.active_profile_status.setStyleSheet(
-            "background: #d4edda; border: 1px solid #c3e6cb; padding: 8px; margin-bottom: 10px; color: #155724;"
+            "background: #e7f1ff; border: 1px solid #b6d4fe; padding: 8px; margin-bottom: 10px; color: #084298;"
         )
 
     def _activate_cloud_profile(self) -> None:
@@ -1211,6 +1223,8 @@ class SettingsWindow(QDialog):
         self.pet_size = QSpinBox()
         self.pet_size.setRange(int(pet.get("min_pet_height", 80)), int(pet.get("max_pet_height", 160)))
         self.pet_size.setValue(int(pet.get("pet_height", 96)))
+        self.show_input = QCheckBox("显示输入框")
+        self.show_input.setChecked(bool(window.get("show_input", True)))
         self.always_on_top = QCheckBox("保持置顶")
         self.always_on_top.setChecked(bool(window.get("always_on_top", True)))
         self.opacity = QSpinBox()
@@ -1230,12 +1244,16 @@ class SettingsWindow(QDialog):
         self.idle_behavior_seconds.setValue(int(app_config.get("idle_behavior_seconds", 600)))
         self.hourly_chime = QCheckBox("整点报时")
         self.hourly_chime.setChecked(bool(app_config.get("hourly_chime_enabled", False)))
+        self.edge_peek = QCheckBox("左右边缘趴墙")
+        self.edge_peek.setToolTip("开启后，把达妮娅拖到屏幕左右边缘时会半隐藏趴在边上；默认关闭，避免首次运行时自己动。")
+        self.edge_peek.setChecked(bool(pet.get("edge_peek_enabled", False)))
         self.reminder_enabled = QCheckBox("提醒功能")
         self.reminder_enabled.setChecked(bool(app_config.get("reminder_enabled", True)))
         self.day_night = QCheckBox("昼夜作息")
         self.day_night.setChecked(bool(app_config.get("day_night_enabled", True)))
 
         form.addRow("桌宠大小", self.pet_size)
+        form.addRow("输入框", self.show_input)
         form.addRow("置顶", self.always_on_top)
         form.addRow("透明度", self.opacity)
         form.addRow("闲聊", self.idle_chat)
@@ -1243,6 +1261,7 @@ class SettingsWindow(QDialog):
         form.addRow("空闲小动作", self.idle_behavior)
         form.addRow("小动作等待", self.idle_behavior_seconds)
         form.addRow("整点报时", self.hourly_chime)
+        form.addRow("趴墙", self.edge_peek)
         form.addRow("提醒", self.reminder_enabled)
         form.addRow("昼夜作息", self.day_night)
         layout.addLayout(form)
@@ -1548,6 +1567,8 @@ class SettingsWindow(QDialog):
         data_layout.addWidget(self.data_raw_text)
         layout.addWidget(data_group)
 
+        self._build_integrated_features_section(layout)
+
         onboarding_group = QGroupBox("首次启动向导")
         onboarding_layout = QVBoxLayout(onboarding_group)
         onboarding_layout.addWidget(QLabel("需要重新查看新手流程、API 配置或素材放置说明时，可以重新打开向导。"))
@@ -1582,7 +1603,7 @@ class SettingsWindow(QDialog):
             "7. 本地 fallback 只表示云端不可用时允许回退，本地模型本身仍需「测试服务连接」和「设为当前模型」。\n"
             "【切换与历史】\n"
             "8. 上方「文本模型切换」用于直接切换、启用、停用；历史会保留最近使用过的文本模型，方便 DeepSeek/MiMo/本地模型来回换。\n"
-            "9. 当前生效模型以绿色状态栏为准；如果聊天仍变成单机，请先看测试连接结果和当前模型状态。\n"
+            "9. 顶部状态只表示当前选择的文本模型；实时连通性以「测试连接」结果为准。\n"
             "【窗口】\n"
             "10. 设置中心是独立窗口，可最小化后从任务栏找回；右键角色仍可再次唤起并恢复原窗口。\n"
             "【角色与资源】\n"
@@ -1610,6 +1631,140 @@ class SettingsWindow(QDialog):
 
         self.tabs.addTab(tab, get_icon("settings"), "系统")
         self._refresh_data()
+
+    def _build_integrated_features_section(self, parent_layout: Any) -> None:
+        config = self.settings_manager.load_app_config()
+        group = QGroupBox("预览功能与专注控制")
+        layout = QVBoxLayout(group)
+        form = QFormLayout()
+
+        self.file_organizer_enabled = QCheckBox("启用文件整理助手（预览）")
+        self.file_organizer_enabled.setChecked(bool(config.get("file_organizer_enabled", False)))
+        open_organizer = QPushButton("打开文件整理助手"); open_organizer.setIcon(get_icon("document"))
+        open_organizer.clicked.connect(self.controller.open_file_organizer)
+        file_row = QHBoxLayout()
+        file_row.addWidget(self.file_organizer_enabled)
+        file_row.addWidget(open_organizer)
+        file_row.addStretch(1)
+        form.addRow("文件整理", file_row)
+
+        self.system_status_enabled = QCheckBox("启用系统状态感知")
+        self.system_status_enabled.setChecked(bool(config.get("system_status_enabled", False)))
+        self.system_status_interval = QSpinBox()
+        self.system_status_interval.setRange(300, 7200)
+        self.system_status_interval.setSuffix(" 秒")
+        self.system_status_interval.setValue(int(config.get("system_status_interval_seconds", 300)))
+        self.system_status_cooldown = QSpinBox()
+        self.system_status_cooldown.setRange(300, 7200)
+        self.system_status_cooldown.setSuffix(" 秒")
+        self.system_status_cooldown.setValue(int(config.get("system_status_cooldown_seconds", 300)))
+        self.system_status_cpu = QSpinBox(); self.system_status_cpu.setRange(1, 100); self.system_status_cpu.setSuffix("%")
+        self.system_status_cpu.setValue(int(config.get("system_status_cpu_threshold", 90)))
+        self.system_status_memory = QSpinBox(); self.system_status_memory.setRange(1, 100); self.system_status_memory.setSuffix("%")
+        self.system_status_memory.setValue(int(config.get("system_status_memory_threshold", 90)))
+        self.system_status_battery = QSpinBox(); self.system_status_battery.setRange(1, 100); self.system_status_battery.setSuffix("%")
+        self.system_status_battery.setValue(int(config.get("system_status_battery_threshold", 20)))
+        self.system_status_network = QCheckBox("检测网络断开")
+        self.system_status_network.setChecked(bool(config.get("system_status_network_check_enabled", False)))
+        form.addRow("系统状态", self.system_status_enabled)
+        form.addRow("状态检查间隔", self.system_status_interval)
+        form.addRow("状态提醒冷却", self.system_status_cooldown)
+        form.addRow("CPU 阈值", self.system_status_cpu)
+        form.addRow("内存阈值", self.system_status_memory)
+        form.addRow("电池阈值", self.system_status_battery)
+        form.addRow("网络检查", self.system_status_network)
+
+        self.clipboard_enabled = QCheckBox("启用剪贴板互动")
+        self.clipboard_enabled.setChecked(bool(config.get("clipboard_interaction_enabled", False)))
+        self.clipboard_max_chars = QSpinBox()
+        self.clipboard_max_chars.setRange(100, 10000)
+        self.clipboard_max_chars.setValue(int(config.get("clipboard_max_chars", 1000)))
+        self.clipboard_show_preview = QCheckBox("显示截断预览")
+        self.clipboard_show_preview.setChecked(bool(config.get("clipboard_show_preview", False)))
+        self.clipboard_allow_api = QCheckBox("允许确认后进入 API 对话")
+        self.clipboard_allow_api.setChecked(bool(config.get("clipboard_allow_api_after_confirm", True)))
+        self.clipboard_sensitive_block = QCheckBox("启用敏感内容拦截")
+        self.clipboard_sensitive_block.setChecked(bool(config.get("clipboard_sensitive_block_enabled", True)))
+        form.addRow("剪贴板", self.clipboard_enabled)
+        form.addRow("剪贴板最大字符", self.clipboard_max_chars)
+        form.addRow("剪贴板预览", self.clipboard_show_preview)
+        form.addRow("剪贴板 API", self.clipboard_allow_api)
+        form.addRow("敏感拦截", self.clipboard_sensitive_block)
+
+        self.focus_enabled = QCheckBox("启用专注 / 游戏模式")
+        self.focus_enabled.setChecked(bool(config.get("focus_mode_enabled", False)))
+        self.focus_manual = QCheckBox("手动进入专注模式")
+        self.focus_manual.setChecked(bool(config.get("focus_mode_manual", False)))
+        self.focus_auto = QCheckBox("按进程白名单自动进入")
+        self.focus_auto.setChecked(bool(config.get("focus_mode_auto_game_detect", False)))
+        self.focus_whitelist = QTextEdit()
+        self.focus_whitelist.setMaximumHeight(70)
+        whitelist = config.get("focus_mode_process_whitelist", [])
+        self.focus_whitelist.setPlainText("\n".join(str(item) for item in whitelist if str(item).strip()))
+        self.focus_silence_idle = QCheckBox("静默闲聊/空闲动作")
+        self.focus_silence_idle.setChecked(bool(config.get("focus_mode_silence_idle_chat", True)))
+        self.focus_silence_hourly = QCheckBox("静默整点报时")
+        self.focus_silence_hourly.setChecked(bool(config.get("focus_mode_silence_hourly_chime", True)))
+        self.focus_silence_edge = QCheckBox("静默左右边缘趴墙")
+        self.focus_silence_edge.setChecked(bool(config.get("focus_mode_silence_edge_peek", True)))
+        self.focus_silence_system = QCheckBox("静默系统状态提醒")
+        self.focus_silence_system.setChecked(bool(config.get("focus_mode_silence_system_status", True)))
+        self.focus_silence_clipboard = QCheckBox("静默剪贴板提示")
+        self.focus_silence_clipboard.setChecked(bool(config.get("focus_mode_silence_clipboard", True)))
+        self.focus_allow_important = QCheckBox("允许重要提醒")
+        self.focus_allow_important.setChecked(bool(config.get("focus_mode_allow_important_reminders", True)))
+        form.addRow("专注模式", self.focus_enabled)
+        form.addRow("手动专注", self.focus_manual)
+        form.addRow("自动检测", self.focus_auto)
+        form.addRow("进程白名单", self.focus_whitelist)
+        form.addRow("专注静默", self.focus_silence_idle)
+        form.addRow("", self.focus_silence_hourly)
+        form.addRow("", self.focus_silence_edge)
+        form.addRow("", self.focus_silence_system)
+        form.addRow("", self.focus_silence_clipboard)
+        form.addRow("重要提醒", self.focus_allow_important)
+
+        layout.addLayout(form)
+        self.integrated_result = QLabel("")
+        self.integrated_result.setWordWrap(True)
+        save = QPushButton("保存预览功能设置"); save.setIcon(get_icon("save"))
+        save.clicked.connect(self._save_integrated_features)
+        layout.addWidget(save, alignment=Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(self.integrated_result)
+        parent_layout.addWidget(group)
+
+    def _save_integrated_features(self) -> None:
+        config = self.settings_manager.load_app_config()
+        config["file_organizer_enabled"] = self.file_organizer_enabled.isChecked()
+        config["system_status_enabled"] = self.system_status_enabled.isChecked()
+        config["system_status_interval_seconds"] = self.system_status_interval.value()
+        config["system_status_cooldown_seconds"] = self.system_status_cooldown.value()
+        config["system_status_cpu_threshold"] = self.system_status_cpu.value()
+        config["system_status_memory_threshold"] = self.system_status_memory.value()
+        config["system_status_battery_threshold"] = self.system_status_battery.value()
+        config["system_status_network_check_enabled"] = self.system_status_network.isChecked()
+        config["clipboard_interaction_enabled"] = self.clipboard_enabled.isChecked()
+        config["clipboard_max_chars"] = self.clipboard_max_chars.value()
+        config["clipboard_show_preview"] = self.clipboard_show_preview.isChecked()
+        config["clipboard_allow_api_after_confirm"] = self.clipboard_allow_api.isChecked()
+        config["clipboard_sensitive_block_enabled"] = self.clipboard_sensitive_block.isChecked()
+        config["focus_mode_enabled"] = self.focus_enabled.isChecked()
+        config["focus_mode_manual"] = self.focus_manual.isChecked()
+        config["focus_mode_auto_game_detect"] = self.focus_auto.isChecked()
+        config["focus_mode_process_whitelist"] = [
+            line.strip() for line in self.focus_whitelist.toPlainText().splitlines() if line.strip()
+        ]
+        config["focus_mode_silence_idle_chat"] = self.focus_silence_idle.isChecked()
+        config["focus_mode_silence_hourly_chime"] = self.focus_silence_hourly.isChecked()
+        config["focus_mode_silence_edge_peek"] = self.focus_silence_edge.isChecked()
+        config["focus_mode_silence_system_status"] = self.focus_silence_system.isChecked()
+        config["focus_mode_silence_clipboard"] = self.focus_silence_clipboard.isChecked()
+        config["focus_mode_allow_important_reminders"] = self.focus_allow_important.isChecked()
+        self.settings_manager.save_app_config(config)
+        self.controller.app_config.update(config)
+        self.controller.apply_integrated_feature_config()
+        self.controller.window.set_context_menu(self.controller.menu_manager.create_menu())
+        self.integrated_result.setText("已保存。预览功能开关和运行时状态已即时同步。")
 
     def _masked_api_key_for_provider(self, provider: str, prov_conf: dict[str, Any] | None = None) -> str:
         from .chat_client import mask_key
@@ -1709,8 +1864,10 @@ class SettingsWindow(QDialog):
         config = self.settings_manager.load_app_config()
         config.setdefault("pet", {})["pet_height"] = self.pet_size.value()
         config.setdefault("pet", {})["target_height"] = self.pet_size.value()
+        config.setdefault("window", {})["show_input"] = self.show_input.isChecked()
         config.setdefault("window", {})["always_on_top"] = self.always_on_top.isChecked()
         config.setdefault("window", {})["opacity_percent"] = self.opacity.value()
+        config.setdefault("pet", {})["edge_peek_enabled"] = self.edge_peek.isChecked()
         config["idle_chat_enabled"] = self.idle_chat.isChecked()
         config["idle_chat_minutes"] = self.idle_minutes.value()
         config["idle_behavior_enabled"] = self.idle_behavior.isChecked()
@@ -1721,9 +1878,12 @@ class SettingsWindow(QDialog):
         self.settings_manager.save_app_config(config)
         self.controller.app_config.update(config)
         self.controller.save_pet_height(self.pet_size.value())
+        self.controller.window.set_input_visible(self.show_input.isChecked(), expand=self.show_input.isChecked())
         self.controller.window.set_always_on_top(self.always_on_top.isChecked())
         self.controller.window.setWindowOpacity(self.opacity.value() / 100)
-        self.pet_result.setText("已保存。大小、置顶、透明度已即时生效；部分定时器配置重启后完全生效。")
+        self.controller.window.behavior_engine.reload_config(self.controller.app_config)
+        self.controller.window.set_context_menu(self.controller.menu_manager.create_menu())
+        self.pet_result.setText("已保存。大小、输入框、置顶、透明度、趴墙已即时生效；部分定时器配置重启后完全生效。")
         self.controller.window.speak("……保存好啦。别又忘了哦。")
         self.controller.window.animation_manager.trigger_happy()
 

@@ -24,6 +24,9 @@ from .profile_manager import ProfileManager
 from .reminder_manager import ReminderManager
 from .natural_reminder_service import NaturalReminderService
 from .settings_window import SettingsWindow
+from .clipboard_interaction import ClipboardInteraction
+from .focus_mode import FocusModeManager
+from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
 
 
@@ -134,6 +137,9 @@ class AppController(QObject):
         self.day_night_manager = DayNightManager(self.app_config)
         self.mini_games = MiniGames()
         self.bookmark_manager = BookmarkManager(self.config_manager)
+        self.system_status_manager = SystemStatusManager()
+        self.clipboard_interaction = ClipboardInteraction(self.qapp.clipboard())
+        self.focus_mode_manager = FocusModeManager()
 
         # [CHANGE-001] v0.415 引擎适配器初始化
         # 将 chat_client 作为 model_client 传入，适配器内部通过 _wrap_model_client
@@ -151,6 +157,7 @@ class AppController(QObject):
         # Inject behavior engine checkers
         self.window.behavior_engine.idle_behavior.is_allowed = self.is_idle_behavior_allowed
         self.window.behavior_engine.idle_behavior.is_night = self.is_night_behavior
+        self.window.edge_peek_allowed_callback = lambda: not self._focus_suppresses("focus_mode_silence_edge_peek")
 
         self.idle_manager = IdleManager(self.app_config, self.window.can_show_idle_message)
         self.menu_manager = MenuManager(self.window, self)
@@ -172,6 +179,9 @@ class AppController(QObject):
         self.reminder_manager.reminder_due.connect(self.on_reminder_due)
         self.time_event_manager.hourly_chime.connect(self.speak_remind)
         self.idle_manager.idle_message.connect(self.speak_happy)
+        self.system_status_manager.status_alert.connect(self._on_system_status_alert)
+        self.clipboard_interaction.clipboard_alert.connect(self._on_clipboard_alert)
+        self.focus_mode_manager.focus_state_changed.connect(self._on_focus_state_changed)
         self.window.update_affinity(self.affinity_manager.badge())
         self.worker: ChatWorker | None = None
         self.reminder_boxes: list[QMessageBox] = []
@@ -184,6 +194,7 @@ class AppController(QObject):
         self._drag_debounce.timeout.connect(self._fire_drag_event)
         self._pending_phys_events: deque[str] = deque(maxlen=32)
         self._phys_busy = False
+        self.apply_integrated_feature_config()
 
     def show(self) -> None:
         self.window.show_at_config_position()
@@ -285,6 +296,8 @@ class AppController(QObject):
             QTimer.singleShot(2500, lambda: self._check_affinity_upgrade(upgraded))
 
     def is_idle_behavior_allowed(self) -> bool:
+        if self._focus_suppresses("focus_mode_silence_idle_chat"):
+            return False
         if self.worker is not None and self.worker.isRunning():
             return False
         if self.window.typewriter.is_typing:
@@ -391,6 +404,46 @@ class AppController(QObject):
         self.config_manager.save_app_config(self.app_config)
         self.window.set_context_menu(self.menu_manager.create_menu())
 
+    def open_file_organizer(self) -> None:
+        from .file_organizer_dialog import FileOrganizerDialog
+
+        dialog = FileOrganizerDialog(
+            enabled=bool(self.app_config.get("file_organizer_enabled", False)),
+            parent=self.window,
+        )
+        dialog.exec()
+
+    def apply_integrated_feature_config(self) -> None:
+        config = self.config_manager._normalize_app_config(self.app_config)
+        self.app_config.update(config)
+
+        self.system_status_manager.sample_interval_ms = int(config.get("system_status_interval_seconds", 300)) * 1000
+        self.system_status_manager.cooldown_seconds = int(config.get("system_status_cooldown_seconds", 300))
+        self.system_status_manager.cpu_threshold = int(config.get("system_status_cpu_threshold", 90))
+        self.system_status_manager.memory_threshold = int(config.get("system_status_memory_threshold", 90))
+        self.system_status_manager.battery_threshold = int(config.get("system_status_battery_threshold", 20))
+        self.system_status_manager.network_check_enabled = bool(config.get("system_status_network_check_enabled", False))
+        self.system_status_manager.set_enabled(bool(config.get("system_status_enabled", False)))
+
+        self.clipboard_interaction.max_chars = int(config.get("clipboard_max_chars", 1000))
+        self.clipboard_interaction.show_preview = bool(config.get("clipboard_show_preview", False))
+        self.clipboard_interaction.sensitive_block_enabled = bool(config.get("clipboard_sensitive_block_enabled", True))
+        self.clipboard_interaction.set_enabled(bool(config.get("clipboard_interaction_enabled", False)))
+
+        whitelist = config.get("focus_mode_process_whitelist", [])
+        if isinstance(whitelist, list):
+            self.focus_mode_manager.game_whitelist = {str(item).lower() for item in whitelist if str(item).strip()}
+        focus_enabled = bool(config.get("focus_mode_enabled", False))
+        if not focus_enabled:
+            self.focus_mode_manager.set_auto_detect(False)
+            self.focus_mode_manager.exit_focus_mode()
+            return
+        self.focus_mode_manager.set_auto_detect(bool(config.get("focus_mode_auto_game_detect", False)))
+        if bool(config.get("focus_mode_manual", False)):
+            self.focus_mode_manager.enter_focus_mode()
+        elif not self.focus_mode_manager.auto_focus_active:
+            self.focus_mode_manager.exit_focus_mode()
+
     def set_drag_module_enabled(self, enabled: bool) -> None:
         modules = self.app_config.setdefault("pet", {}).setdefault("enabled_action_modules", {})
         if isinstance(modules, dict):
@@ -449,6 +502,8 @@ class AppController(QObject):
             QTimer.singleShot(1000, lambda: self._check_affinity_upgrade(upgraded))
 
     def speak_remind(self, text: str) -> None:
+        if self._focus_suppresses("focus_mode_silence_hourly_chime"):
+            return
         if not self.window.can_show_idle_message():
             return
         self.window.animation_manager.trigger_remind()
@@ -513,6 +568,43 @@ class AppController(QObject):
                 f"\u8bbe\u7f6e\u4e2d\u5fc3\u6253\u5f00\u5931\u8d25\uff1a{detail}",
             )
             return
+
+    def _focus_suppresses(self, config_key: str) -> bool:
+        return (
+            bool(self.app_config.get("focus_mode_enabled", False))
+            and self.focus_mode_manager.should_suppress_notifications()
+            and bool(self.app_config.get(config_key, False))
+        )
+
+    def _on_focus_state_changed(self, active: bool) -> None:
+        if active:
+            self.window.speak("……专注模式开了。我会安静一点。")
+        else:
+            self.window.speak("……专注模式关掉了。")
+
+    def _on_system_status_alert(self, _alert_type: str, message: str) -> None:
+        if not bool(self.app_config.get("system_status_enabled", False)):
+            return
+        if self._focus_suppresses("focus_mode_silence_system_status"):
+            return
+        if self.settings_window is not None and self.settings_window.isVisible():
+            return
+        if not self.window.can_show_idle_message():
+            return
+        self.window.animation_manager.trigger_remind()
+        self.window.speak(message)
+
+    def _on_clipboard_alert(self, result: dict[str, object]) -> None:
+        if not bool(self.app_config.get("clipboard_interaction_enabled", False)):
+            return
+        if self._focus_suppresses("focus_mode_silence_clipboard"):
+            return
+        if self.settings_window is not None and self.settings_window.isVisible():
+            return
+        status = str(result.get("status", ""))
+        message = str(result.get("message", ""))
+        if status in {"safe", "too_long", "sensitive"} and message:
+            self.window.speak(message)
 
     def quit(self) -> None:
         # Wait for any running chat worker or physical event workers to finish safely

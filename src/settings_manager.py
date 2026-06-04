@@ -317,7 +317,7 @@ class SettingsManager:
     def test_api_connection(self, timeout: int = 8) -> tuple[bool, str]:
         config = self.load_api_config()
         if config.get("local_mode"):
-            return True, "本地模式已开启，API 测试跳过。"
+            return False, "本地 fallback 模式已开启，云端 API 未测试；关闭本地模式后再测试连接。"
 
         pm = ProviderManager(config)
         profile = pm.get_active_profile()

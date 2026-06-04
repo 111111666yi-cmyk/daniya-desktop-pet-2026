@@ -11,15 +11,20 @@ except ImportError:
 class FocusModeManager(QObject):
     focus_state_changed = Signal(bool)  # Emits True when entering, False when exiting
 
-    def __init__(self, sample_interval_ms: int = 5000) -> None:
+    def __init__(self, sample_interval_ms: int = 300_000, process_whitelist: list[str] | None = None) -> None:
         super().__init__()
         self.is_active = False
+        self.auto_focus_active = False
         self.auto_detect = False
-        self.game_whitelist: set[str] = {"game.exe", "eldenring.exe", "lol.exe", "valorant.exe"}
+        default_whitelist = {"game.exe", "eldenring.exe", "lol.exe", "valorant.exe"}
+        if process_whitelist is None:
+            self.game_whitelist = default_whitelist
+        else:
+            self.game_whitelist = {item.strip().lower() for item in process_whitelist if str(item).strip()}
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.scan_processes)
-        self.timer.start(sample_interval_ms)
+        self.timer.setInterval(max(1000, int(sample_interval_ms)))
 
     def set_auto_detect(self, val: bool) -> None:
         self.auto_detect = val
@@ -37,6 +42,7 @@ class FocusModeManager(QObject):
     def exit_focus_mode(self) -> None:
         if self.is_active:
             self.is_active = False
+            self.auto_focus_active = False
             self.focus_state_changed.emit(False)
 
     def should_suppress_notifications(self) -> bool:
@@ -56,9 +62,10 @@ class FocusModeManager(QObject):
             
             if game_running:
                 if not self.is_active:
+                    self.auto_focus_active = True
                     self.enter_focus_mode()
             else:
-                if self.is_active:
+                if self.is_active and self.auto_focus_active:
                     # Only exit automatically if focus mode was triggered by auto-detect
                     self.exit_focus_mode()
         except Exception:

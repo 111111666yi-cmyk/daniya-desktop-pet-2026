@@ -39,6 +39,7 @@ class PetWindow(QWidget):
         self._walk_target: QPoint | None = None
         self._walk_step = 0
         self.dock_side: str | None = None
+        self.edge_peek_allowed_callback = lambda: True
         self.always_on_top = bool(app_config.get("window", {}).get("always_on_top", True))
         self._last_render_debug: tuple[Any, ...] | None = None
         self._tray_icon: QSystemTrayIcon | None = None
@@ -135,8 +136,9 @@ class PetWindow(QWidget):
         self.root_layout.addLayout(pet_row)
 
         if not bool(self.app_config.get("window", {}).get("show_input", True)):
-            self.input_box.setMinimumWidth(0)
-            self.input_box.hide()
+            self.set_input_visible(False, expand=False)
+        else:
+            self.set_input_visible(True, expand=True)
 
     def set_context_menu(self, menu: QMenu) -> None:
         self.context_menu = menu
@@ -312,7 +314,25 @@ class PetWindow(QWidget):
             self.input_box.setFocus()
 
     def toggle_input(self) -> None:
-        self.input_box.toggle_visibility()
+        if not self.input_box.isVisible():
+            self.set_input_visible(True, expand=True)
+        else:
+            self.set_input_visible(False)
+        self._resize_to_content()
+        self.move(self._clamped_position(self.pos()))
+
+    def set_input_visible(self, visible: bool, expand: bool = True) -> None:
+        if visible:
+            self.input_box.always_expanded = True
+            self.input_box.setMinimumWidth(self.input_min_width)
+            self.input_box.show()
+            if expand:
+                self.input_box.expand_input()
+        else:
+            self.input_box.always_expanded = False
+            self.input_box.collapse_input()
+            self.input_box.setMinimumWidth(0)
+            self.input_box.hide()
         self._resize_to_content()
         self.move(self._clamped_position(self.pos()))
 
@@ -410,6 +430,9 @@ class PetWindow(QWidget):
 
     def _tick_edge_peek(self) -> None:
         pet_config = self.app_config.get("pet", {})
+        if not self.edge_peek_allowed_callback():
+            self.dock_side = None
+            return
         if not bool(pet_config.get("edge_peek_enabled", False)):
             self.dock_side = None
             return
@@ -547,6 +570,9 @@ class PetWindow(QWidget):
 
     def _dock_if_near_edge(self) -> None:
         pet_config = self.app_config.get("pet", {})
+        if not self.edge_peek_allowed_callback():
+            self.dock_side = None
+            return
         if not bool(pet_config.get("edge_peek_enabled", False)):
             self.dock_side = None
             return
@@ -601,9 +627,9 @@ class PetWindow(QWidget):
         current_x = max(bounds.left(), min(max_x, current.x()))
         current_y = max(bounds.top(), min(max_y, current.y()))
         if side == "left":
-            return QPoint(bounds.left(), current_y)
+            return QPoint(bounds.left() - width + visible, current_y)
         if side == "right":
-            return QPoint(max_x, current_y)
+            return QPoint(bounds.right() + 1 - visible, current_y)
         if side == "top":
             return QPoint(current_x, bounds.top())
         if side == "bottom":

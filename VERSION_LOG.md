@@ -4,6 +4,20 @@
 
 ---
 
+## Unreleased — v0.62-v0.65 Wiring Recovery
+
+- 修复 `show_input=false` 后输入框无法恢复的问题：显示输入框时会重新显示 `InputBar` 父控件并展开输入栏。
+- 修复左右趴墙退化为普通贴边的问题：`_docked_position(side, visible)` 现在会按 `visible` 宽度把窗口半隐藏到屏幕左右边缘。
+- 设置中心新增“输入框”和“左右边缘趴墙”开关，保存后即时作用到主窗口和右键菜单。
+- Provider 顶部状态从“绿色生效”改为“当前文本模型 / 本地 fallback / 实时连接看测试结果”三类语义，避免未连通时误判为 PASS。
+- `file_organizer_enabled`、`system_status_enabled`、`clipboard_interaction_enabled`、`focus_mode_enabled` 等 v0.62-v0.65 配置项补入默认配置与模板检查。
+- v0.62 文件整理助手接入右键菜单与独立预览 Dialog：仅手动选择目录、生成预览、二次确认后执行，move log 写入运行时目录。
+- v0.63 系统状态感知接入运行时：默认关闭，间隔/冷却下限由配置校验保证，网络检查默认关闭。
+- v0.64 剪贴板互动接入运行时：默认关闭，敏感内容本地拦截，默认不保留剪贴板预览文本。
+- v0.65 专注模式接入运行时：默认关闭，可手动/白名单自动进入，并可静默闲聊、整点、边缘趴墙、系统状态和剪贴板提示。
+
+---
+
 ## v0.61-v0.65 Integrated Preview (2026-06-04)
 
 - 新增 `tools/check_public_surface.py`，把公开文案、本机路径、静默默认值和记忆清空入口纳入自动审查。
@@ -11,6 +25,41 @@
 - 空闲小动作的配置下限统一为 600 秒，避免用户开启后出现高频打扰。
 - 记忆备忘录增加清空入口；清空范围覆盖自动记忆和手动备忘，不重置关系状态。
 - Provider 消息构造测试覆盖用户档案与记忆备忘录注入，确保云端和本地文本 Provider 共用同一上下文入口。
+
+---
+
+## v0.56-v0.60 Stable Preview Hardening (2026-05-31 → 2026-06-02)
+
+这段内容对应 `stabilize-v0.56-v0.60` 的稳定化工作。内部审计长报告已从公开 `docs/` 面移出，但公开版本日志保留阶段摘要，避免 v0.55.2 后直接跳到 v0.61-v0.65。
+
+### v0.56 — 运行态数据安全与打包加固
+
+- 增加运行态数据安全策略，明确 `.env`、`data/`、`assets/private/`、`models/`、`backups/` 等目录不得被破坏或提交。
+- 增加 `tools/backup_runtime_state.py` 与 `tools/restore_runtime_state.py`，用于沙盒化备份/恢复验证。
+- 加固 release 打包边界，确保用户运行态数据不进入公开包。
+
+### v0.57 — 人工 QA 冻结清单
+
+- 增加人工 QA 冻结矩阵和 release freeze checklist。
+- 将真实鼠标、真实显示器、多显示器、真实 API Key 等项目明确标记为人工签收项，不再用自动化结果冒充 PASS。
+
+### v0.58 — 首次启动向导
+
+- 增加首次启动向导、setup state 管理和设置中心重新打开入口。
+- 支持跳过 API 配置并进入 local fallback；API 测试通过后台 worker 执行，不阻塞 UI。
+- 首次启动状态在打包模式下写入 AppData 运行时目录。
+
+### v0.59 — 自动化检查与 CI
+
+- 增加敏感文件、角色包、配置模板、文档链接、release zip 等检查工具。
+- 增加 GitHub Actions workflow 与 issue/PR 模板，为公开协作和远端验证准备基础门禁。
+
+### v0.60 — 稳定预览包与验收
+
+- 同步版本元数据、打包命名、用户文档、安装/API 配置文档和 release checklist。
+- 修复 MiMo/OpenAI-compatible `auth_header=api-key` 路径，Provider 切换改为验证事务，失败不覆盖上一套可用模型。
+- 增加 GUI smoke、release exe smoke、zip 扫描、公开文案清理和运行态隔离检查。
+- 保留未完成项：真实 Z.AI API、真实多显示器/鼠标手感和人工 GUI 体验仍需人工签收。
 
 ---
 

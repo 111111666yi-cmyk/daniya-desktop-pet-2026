@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased - v0.62-v0.65 Recovery Wiring
+
+- Fixed the hidden input bar recovery path: when `window.show_input=false` hides the parent `InputBar`, enabling it from Settings now restores the whole widget and expands the editable field.
+- Restored left/right edge peek positioning so the pet can cling partly off-screen again when the setting is enabled, while keeping the release default quiet.
+- Changed the Provider status banner so local fallback and real cloud connectivity are no longer reported as a green active/PASS state without a successful connection test.
+- Added Settings Center controls and runtime wiring for the v0.62-v0.65 preview features: file organizer preview, system status, clipboard interaction, and focus/game mode.
+- Restored the public v0.56-v0.60 summary in `VERSION_LOG.md`; internal audit logs remain outside the public docs surface.
+
 ## v0.65 (2026-06-03) - Focus and Game Mode
 
 - Added `src/focus_mode.py` coordinating manual focus states and local process game whitelist matching for automated silencing.

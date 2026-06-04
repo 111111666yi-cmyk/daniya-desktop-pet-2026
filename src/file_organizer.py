@@ -49,13 +49,18 @@ class FileOrganizer:
 
     def is_sensitive_path(self, path: Path) -> bool:
         # Check folders
-        parts = path.parts
-        forbidden_dirs = {".git", ".venv", "venv", "models", "backups", "dist", "build", "release", "data", "assets/private"}
-        if any(p in forbidden_dirs for p in parts):
+        parts = {part.lower() for part in path.parts}
+        forbidden_dirs = {".git", ".venv", "venv", "models", "backups", "dist", "build", "release", "data"}
+        if parts & forbidden_dirs:
+            return True
+        lowered = [part.lower() for part in path.parts]
+        if any(lowered[i] == "assets" and lowered[i + 1] == "private" for i in range(len(lowered) - 1)):
             return True
         # Check files
         name = path.name.lower()
-        if "sk-" in name or "api_key" in name or ".env" in name or "secret" in name:
+        if path.as_posix().lower().endswith(("config/api_config.json", "config/multimodal_config.json")):
+            return True
+        if any(marker in name for marker in ("sk-", "api_key", ".env", "secret", "password", "token", "credentials")):
             return True
         return False
 

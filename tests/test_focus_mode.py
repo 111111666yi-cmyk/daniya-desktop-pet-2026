@@ -68,3 +68,20 @@ def test_auto_detect_focus_mode(monkeypatch) -> None:
     manager.scan_processes()
     assert not manager.is_active
     assert emits == [True, False]
+
+def test_empty_process_whitelist_disables_auto_match(monkeypatch) -> None:
+    mock_psutil = MagicMock()
+    monkeypatch.setattr(focus_module, "psutil", mock_psutil)
+
+    manager = FocusModeManager(process_whitelist=[])
+    manager.timer.stop()
+    manager.set_auto_detect(True)
+
+    game_proc = MagicMock()
+    game_proc.info = {"name": "eldenring.exe"}
+    mock_psutil.process_iter.return_value = [game_proc]
+
+    manager.scan_processes()
+
+    assert manager.game_whitelist == set()
+    assert not manager.is_active

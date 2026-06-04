@@ -109,6 +109,14 @@ def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list
         "hourly_chime_enabled": data.get("hourly_chime_enabled"),
         "idle_behavior_enabled": data.get("idle_behavior_enabled"),
         "pet.edge_peek_enabled": pet.get("edge_peek_enabled"),
+        "file_organizer_enabled": data.get("file_organizer_enabled"),
+        "system_status_enabled": data.get("system_status_enabled"),
+        "system_status_network_check_enabled": data.get("system_status_network_check_enabled"),
+        "clipboard_interaction_enabled": data.get("clipboard_interaction_enabled"),
+        "clipboard_show_preview": data.get("clipboard_show_preview"),
+        "focus_mode_enabled": data.get("focus_mode_enabled"),
+        "focus_mode_manual": data.get("focus_mode_manual"),
+        "focus_mode_auto_game_detect": data.get("focus_mode_auto_game_detect"),
     }
     failures.extend(
         f"{relative} expected {key}=false, got {value!r}"
@@ -121,6 +129,13 @@ def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list
         idle_seconds = 0
     if idle_seconds < 600:
         failures.append(f"{relative} expected idle_behavior_seconds >= 600, got {idle_seconds!r}")
+    for key in ("system_status_interval_seconds", "system_status_cooldown_seconds"):
+        try:
+            seconds = int(data.get(key, 0))
+        except (TypeError, ValueError):
+            seconds = 0
+        if seconds < 300:
+            failures.append(f"{relative} expected {key} >= 300, got {seconds!r}")
     return failures
 
 

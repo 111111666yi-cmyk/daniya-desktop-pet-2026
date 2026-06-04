@@ -41,7 +41,11 @@ def test_clipboard_interaction_checks() -> None:
     res_long = inter.check_text(long_txt)
     assert res_long["ok"]
     assert res_long["status"] == "too_long"
-    assert len(res_long["clean_text"]) == 1000
+    assert res_long["clean_text"] == ""
+
+    preview = ClipboardInteraction(show_preview=True, max_chars=500)
+    res_preview = preview.check_text(long_txt)
+    assert len(res_preview["clean_text"]) == 500
 
 def test_clipboard_interaction_signals() -> None:
     # Mock PySide6 Clipboard object

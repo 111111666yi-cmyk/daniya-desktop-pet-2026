@@ -31,6 +31,10 @@ def test_file_organizer_safety_checks(tmp_path) -> None:
     assert not plan4.ok
     assert "子目录" in plan4.reason
 
+    assert organizer.is_sensitive_path(Path("assets") / "private" / "secret.png")
+    assert organizer.is_sensitive_path(Path("config") / "api_config.json")
+    assert organizer.is_sensitive_path(Path("config") / "multimodal_config.json")
+
 def test_file_organizer_classification_and_execution(tmp_path) -> None:
     organizer = FileOrganizer(data_dir=tmp_path)
 
