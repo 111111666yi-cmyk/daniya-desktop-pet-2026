@@ -4,6 +4,7 @@ from copy import deepcopy
 import json
 
 from src.config_manager import DEFAULT_APP_CONFIG, ConfigManager, QUIET_DEFAULTS_MIGRATION, deep_merge
+from src.version import APP_VERSION
 from tools.check_config_templates import _check_quiet_defaults, _check_setup_defaults
 
 
@@ -14,6 +15,7 @@ def test_default_app_config_is_quiet_by_default() -> None:
     assert DEFAULT_APP_CONFIG["hourly_chime_enabled"] is False
     assert DEFAULT_APP_CONFIG["idle_behavior_enabled"] is False
     assert DEFAULT_APP_CONFIG["idle_behavior_seconds"] == 600
+    assert DEFAULT_APP_CONFIG["window"]["show_input"] is False
     assert pet["edge_peek_enabled"] is False
     assert DEFAULT_APP_CONFIG["quiet_defaults_migration"] == QUIET_DEFAULTS_MIGRATION
 
@@ -34,9 +36,13 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     noisy["idle_behavior_enabled"] = True
     noisy["idle_behavior_seconds"] = 90
     noisy["pet"]["edge_peek_enabled"] = True
+    noisy["version"] = "v0.60"
+    noisy["window"]["show_input"] = True
 
-    failures = _check_quiet_defaults("config/app_config.json", noisy)
+    failures = _check_quiet_defaults("config/app_config.json", noisy, APP_VERSION)
 
+    assert any(f"version='{APP_VERSION}'" in failure for failure in failures)
+    assert any("window.show_input=false" in failure for failure in failures)
     assert any("idle_chat_enabled=false" in failure for failure in failures)
     assert any("hourly_chime_enabled=false" in failure for failure in failures)
     assert any("idle_behavior_enabled=false" in failure for failure in failures)

@@ -30,6 +30,7 @@ def project_root() -> Path:
 def main() -> int:
     root = project_root()
     failures: list[str] = []
+    app_version = _load_app_version(root)
 
     for relative in REQUIRED_FILES:
         path = root / relative
@@ -46,7 +47,7 @@ def main() -> int:
                 failures.append(f"Invalid JSON in {relative}: {exc}")
                 continue
             if relative in QUIET_DEFAULT_CONFIGS:
-                failures.extend(_check_quiet_defaults(relative, data))
+                failures.extend(_check_quiet_defaults(relative, data, app_version))
             if relative == "config/setup_config.json":
                 failures.extend(_check_setup_defaults(relative, data))
 
@@ -80,16 +81,29 @@ def main() -> int:
     return 0
 
 
-def _check_quiet_defaults(relative: str, data: object) -> list[str]:
+def _load_app_version(root: Path) -> str:
+    version_text = (root / "src" / "version.py").read_text(encoding="utf-8")
+    match = re.search(r"APP_VERSION\s*=\s*['\"]([^'\"]+)['\"]", version_text)
+    if not match:
+        raise RuntimeError("src/version.py missing APP_VERSION")
+    return match.group(1)
+
+
+def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list[str]:
     if not isinstance(data, dict):
         return [f"{relative} must contain a JSON object"]
     pet = data.get("pet") if isinstance(data.get("pet"), dict) else {}
+    window = data.get("window") if isinstance(data.get("window"), dict) else {}
     failures: list[str] = []
+    if data.get("version") != app_version:
+        failures.append(f"{relative} expected version={app_version!r}, got {data.get('version')!r}")
     if data.get("quiet_defaults_migration") != "v0.61-quiet-defaults":
         failures.append(
             f"{relative} expected quiet_defaults_migration='v0.61-quiet-defaults', "
             f"got {data.get('quiet_defaults_migration')!r}"
         )
+    if window.get("show_input") is not False:
+        failures.append(f"{relative} expected window.show_input=false, got {window.get('show_input')!r}")
     expected_false = {
         "idle_chat_enabled": data.get("idle_chat_enabled"),
         "hourly_chime_enabled": data.get("hourly_chime_enabled"),
