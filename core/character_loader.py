@@ -23,6 +23,23 @@ REQUIRED_YAML_FILES = {
     "actions.yaml": "actions",
 }
 
+INTERNAL_CHARACTER_IDS = {"test_dummy"}
+
+
+def discover_character_ids(root: Path | None = None, *, include_internal: bool = False) -> list[str]:
+    base = root or default_character_root()
+    if not base.exists():
+        return []
+    character_ids: list[str] = []
+    for path in base.iterdir():
+        if not path.is_dir() or path.name.startswith("."):
+            continue
+        if not include_internal and path.name in INTERNAL_CHARACTER_IDS:
+            continue
+        if not (path / "character.yaml").is_file():
+            continue
+        character_ids.append(path.name)
+    return sorted(character_ids)
 
 
 def character_pack_path(character_id: str = "daniya", root: Path | None = None) -> Path:

@@ -383,7 +383,7 @@ class SettingsWindow(QDialog):
             if hasattr(pack, "character_id") and isinstance(pack.character_id, str):
                 char_id = pack.character_id
         self.character_editor = CharacterPackEditor(character_id=char_id)
-        self.relationship_viewer = RelationshipStateViewer()
+        self.relationship_viewer = RelationshipStateViewer(character_id=char_id)
         self.api_worker: _ApiTestWorker | None = None
         self.diagnostics_worker: _DiagnosticsWorker | None = None
         self.ollama_worker: _OllamaPullWorker | None = None
@@ -1395,13 +1395,8 @@ class SettingsWindow(QDialog):
 
     def _refresh_character_list(self) -> None:
         self.char_selector.clear()
-        import os
-        from core.character_loader import default_character_root
-        root_path = default_character_root()
-        if root_path.exists():
-            for name in sorted(os.listdir(root_path)):
-                if (root_path / name).is_dir():
-                    self.char_selector.addItem(name)
+        from core.character_loader import discover_character_ids
+        self.char_selector.addItems(discover_character_ids())
         curr = self.controller.app_config.get("current_character", "daniya")
         index = self.char_selector.findText(curr)
         if index >= 0:

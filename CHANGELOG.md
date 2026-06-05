@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.69 (2026-06-05) - Character Pack Stability
+
+- Added public character discovery that ignores hidden folders, invalid folders, and the local-only `test_dummy` pack.
+- Isolated relationship state by character while preserving the legacy `relationship_state.json` path for Daniya and migrating legacy foreign-character state safely.
+- Changed hot reload to persist the character that actually loaded after fallback, without replacing long-lived reminder, idle, event, or feedback managers.
+- Added regression coverage for missing lore, missing or invalid story data, manifest/action fallback, character discovery, resolved-character persistence, and per-character relationship state.
+
 ## v0.68 (2026-06-05) - Feedback Coordination
 
 - Added one coordinator for non-essential bubbles, character actions, optional sound hooks, completion, and cooldown handling.

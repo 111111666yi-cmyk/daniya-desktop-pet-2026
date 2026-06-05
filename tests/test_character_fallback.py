@@ -1,8 +1,11 @@
 import pytest
 from pathlib import Path
-from core.character_loader import safe_load_character
+from types import SimpleNamespace
+
+from core.character_loader import discover_character_ids, safe_load_character
 from src.asset_manager import AssetManager
 from src.action_manifest import ActionManifest
+from src.menu_manager import MenuManager
 
 def test_character_config_fallback(tmp_path, monkeypatch):
     # Setup a temp character pack directory with ONLY character.yaml
@@ -76,3 +79,32 @@ def test_action_manifest_fallback():
     frames = manifest.get_frames("idle")
     assert len(frames) > 0
     assert Path(frames[0]).exists()
+
+
+def test_character_discovery_excludes_internal_test_pack(tmp_path):
+    root = tmp_path / "characters"
+    for character_id in ("daniya", "template", "test_dummy", ".scratch", "empty"):
+        (root / character_id).mkdir(parents=True)
+    for character_id in ("daniya", "template", "test_dummy"):
+        (root / character_id / "character.yaml").write_text("id: test\n", encoding="utf-8")
+
+    assert discover_character_ids(root) == ["daniya", "template"]
+    assert discover_character_ids(root, include_internal=True) == ["daniya", "template", "test_dummy"]
+
+
+@pytest.mark.parametrize("story_text", [None, "chapters: [broken"])
+def test_missing_or_invalid_story_uses_safe_placeholder(tmp_path, story_text):
+    pack_root = tmp_path / "character"
+    pack_root.mkdir()
+    if story_text is not None:
+        (pack_root / "story.yaml").write_text(story_text, encoding="utf-8")
+
+    controller = SimpleNamespace(
+        daniya_adapter=SimpleNamespace(character_pack=SimpleNamespace(root=pack_root))
+    )
+    manager = MenuManager(window=object(), controller=controller)
+
+    chapters = manager._load_story_chapters()
+
+    assert chapters == manager._STORY_CHAPTERS
+    assert chapters[0][1] == "剧情未配置"

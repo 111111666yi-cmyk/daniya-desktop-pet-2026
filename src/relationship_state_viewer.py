@@ -7,16 +7,17 @@ from typing import Any
 
 from core.character_loader import load_character
 from core.memory_engine import data_root as relation_data_root
-from core.relationship_engine import load_state, save_state
+from core.relationship_engine import save_state, state_path
 
 from .backup_manager import BackupManager
 from .utils import runtime_root
 
 
 class RelationshipStateViewer:
-    def __init__(self, backup_manager: BackupManager | None = None) -> None:
+    def __init__(self, backup_manager: BackupManager | None = None, character_id: str = "daniya") -> None:
         self.backup_manager = backup_manager or BackupManager(runtime_root())
         self.data_dir = relation_data_root()
+        self.character_id = character_id
 
     def status(self) -> dict[str, Any]:
         paths = self.paths()
@@ -45,7 +46,7 @@ class RelationshipStateViewer:
 
     def paths(self) -> dict[str, Path]:
         return {
-            "relationship_state": self.data_dir / "relationship_state.json",
+            "relationship_state": state_path(self.character_id),
             "event_log": self.data_dir / "event_log.json",
             "user_memory": self.data_dir / "user_memory.json",
         }
@@ -62,9 +63,9 @@ class RelationshipStateViewer:
             backup = self.backup_manager.backup_file(path, "relationship_state_reset")
         except Exception as exc:
             return False, f"重置已取消：备份失败（{exc.__class__.__name__}）。", None
-        pack = load_character("daniya")
+        pack = load_character(self.character_id)
         initial = dict(pack.relationship.get("initial_state") or {})
-        initial.setdefault("character_id", "daniya")
+        initial.setdefault("character_id", self.character_id)
         initial.setdefault("relationship_stage", "default_stay")
         save_state(initial)
         return True, "关系状态已备份并重置。", backup

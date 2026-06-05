@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -31,12 +32,15 @@ def data_root() -> Path:
     return Path(os.environ.get("DANIYA_RELATION_DATA_DIR", runtime_root() / "data" / "daniya_relation"))
 
 
-def state_path() -> Path:
-    return data_root() / "relationship_state.json"
+def state_path(character_id: str = "daniya") -> Path:
+    if character_id == "daniya":
+        return data_root() / "relationship_state.json"
+    safe_id = re.sub(r"[^A-Za-z0-9._-]+", "_", character_id).strip("._") or "character"
+    return data_root() / f"relationship_state.{safe_id}.json"
 
 
 def init_state_if_missing(character_pack: CharacterPack) -> dict[str, Any]:
-    path = state_path()
+    path = state_path(character_pack.character_id)
     if path.exists():
         return load_state(character_pack.character_id, character_pack.relationship)
     state = _initial_state(character_pack.character_id, character_pack.relationship)
@@ -45,13 +49,21 @@ def init_state_if_missing(character_pack: CharacterPack) -> dict[str, Any]:
 
 
 def load_state(character_id: str = "daniya", relationship_config: dict[str, Any] | None = None) -> dict[str, Any]:
-    path = state_path()
+    path = state_path(character_id)
     fallback = _initial_state(character_id, relationship_config or {})
     if not path.exists():
+        migrated = _migrate_legacy_state(character_id)
+        if migrated is not None:
+            return clamp_metrics(migrated)
         save_state(fallback)
         return fallback
     data = _read_json(path, fallback)
     if not isinstance(data, dict):
+        return fallback
+    stored_character_id = str(data.get("character_id") or "")
+    if stored_character_id and stored_character_id != character_id:
+        _preserve_foreign_state(data)
+        save_state(fallback)
         return fallback
     state = dict(fallback)
     state.update(data)
@@ -60,7 +72,8 @@ def load_state(character_id: str = "daniya", relationship_config: dict[str, Any]
 
 
 def save_state(state: dict[str, Any]) -> None:
-    path = state_path()
+    character_id = str(state.get("character_id") or "daniya")
+    path = state_path(character_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     with _state_lock:
         path.write_text(json.dumps(clamp_metrics(state), ensure_ascii=False, indent=2), encoding="utf-8")
@@ -160,3 +173,29 @@ def _read_json(path: Path, fallback: Any) -> Any:
         return fallback
     except OSError:
         return fallback
+
+
+def _migrate_legacy_state(character_id: str) -> dict[str, Any] | None:
+    if character_id == "daniya":
+        return None
+    legacy_path = state_path("daniya")
+    if not legacy_path.exists():
+        return None
+    try:
+        data = json.loads(legacy_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(data, dict) or str(data.get("character_id") or "") != character_id:
+        return None
+    save_state(data)
+    return data
+
+
+def _preserve_foreign_state(state: dict[str, Any]) -> None:
+    foreign_id = str(state.get("character_id") or "")
+    if not foreign_id or foreign_id == "daniya":
+        return
+    foreign_path = state_path(foreign_id)
+    if foreign_path.exists():
+        return
+    save_state(state)

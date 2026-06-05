@@ -376,18 +376,16 @@ class AppController(QObject):
 
     def reload_character(self, character_id: str | None = None) -> bool:
         from .character_pack_editor import CharacterPackEditor
-        if character_id is not None:
-            self.app_config["current_character"] = character_id
-            self.config_manager.save_app_config(self.app_config)
-        else:
-            character_id = self.app_config.get("current_character", "daniya")
+        requested_character_id = character_id or self.app_config.get("current_character", "daniya")
 
         # 1. Re-initialize DaniyaEngineAdapter
         self.daniya_adapter = DaniyaEngineAdapter(
             model_client=self.chat_client,
-            config=DaniyaEngineAdapterConfig(character_id=character_id)
+            config=DaniyaEngineAdapterConfig(character_id=requested_character_id)
         )
         resolved_char_id = self.daniya_adapter.character_pack.character_id
+        self.app_config["current_character"] = resolved_char_id
+        self.config_manager.save_app_config(self.app_config)
 
         # 2. Re-initialize AssetManager
         self.asset_manager = AssetManager(self.app_config, resolved_char_id)
@@ -411,12 +409,13 @@ class AppController(QObject):
         # If settings window is open, update its references as well
         if self.settings_window is not None and self.settings_window.isVisible():
             self.settings_window.character_editor = CharacterPackEditor(character_id=resolved_char_id)
+            self.settings_window.relationship_viewer.character_id = resolved_char_id
             self.settings_window._refresh_char_info()
             self.settings_window._refresh_character_status()
             self.settings_window._refresh_action_status()
             self.settings_window._load_pack_file(self.settings_window.pack_file_combo.currentText())
 
-        print(f"[Daniya] Hot reloaded character ID: {resolved_char_id} (requested: {character_id})")
+        print(f"[Daniya] Hot reloaded character ID: {resolved_char_id} (requested: {requested_character_id})")
         return True
 
     def set_pet_feature(self, key: str, enabled: bool) -> None:

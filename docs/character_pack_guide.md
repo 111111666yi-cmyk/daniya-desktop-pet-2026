@@ -28,6 +28,7 @@
 | `actions.yaml` | 本地行为映射定义，动作关联文本和兜底图。 | 回退到 `template/actions.yaml` |
 | `lore.md` | 角色的背景百科/知识库（可选）。 | 视为无 lore，不报错。 |
 | `lore_index.yaml` | lore 部分的片段索引和关联关键词（可选）。 | 视为无 lore 索引，不报错。 |
+| `story.yaml` | 设置中心和右键菜单中的逐章剧情阅读内容（可选）。 | 显示“剧情未配置”安全占位，不影响对话。 |
 
 ---
 
@@ -87,6 +88,11 @@
    - `idle` / `sleep` -> `normal1.png`
    - `talk` -> `normal1.png` + `normal2.png`（循环播放）
    - `clicked` / `drag` / `happy` / `remind` -> `normal2.png`
+
+4. **角色切换与运行态数据**:
+   - Daniya 的关系状态继续保存在 `data/daniya_relation/relationship_state.json`，兼容旧版本。
+   - 其他角色使用 `relationship_state.{character_id}.json`，切换角色不会把上一角色的关系数值套到新角色。
+   - 用户记忆和事件日志仍在本地运行态目录中，并通过记录内的 `character_id` 区分来源。
 
 ---
 
