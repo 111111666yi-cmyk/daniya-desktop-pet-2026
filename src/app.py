@@ -174,7 +174,7 @@ class AppController(QObject):
         # [CHANGE-005-FIX] 使用线程安全的动画管理器包装，防止后台线程崩溃 GUI
         self.thread_safe_anim_manager = ThreadSafeAnimationManager(self.window.animation_manager)
         self.daniya_adapter.animation_manager = self.thread_safe_anim_manager
-        self.daniya_adapter.state_manager = self.window
+        self.daniya_adapter.state_manager = self.thread_safe_anim_manager
 
         self.window.message_submitted.connect(self.send_message)
         self.window.pet_clicked.connect(self.on_pet_clicked)
@@ -392,7 +392,7 @@ class AppController(QObject):
 
         # 3. Bind animation and state managers
         self.daniya_adapter.animation_manager = self.thread_safe_anim_manager
-        self.daniya_adapter.state_manager = self.window
+        self.daniya_adapter.state_manager = self.thread_safe_anim_manager
 
         # 4. Update window references and reload manifest/assets
         self.window.clear_render_cache()

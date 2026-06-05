@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ctypes
 import math
+import sys
 from pathlib import Path
 from typing import Any, Callable
 
@@ -14,6 +15,8 @@ from .asset_manager import AssetManager
 from .typewriter import Typewriter
 
 from .ui import ModernBubble, PetAvatar, StatusBadge, InputBar
+
+WINDOWS_NATIVE_AVAILABLE = sys.platform == "win32" and hasattr(ctypes, "windll")
 
 
 class WinPoint(ctypes.Structure):
@@ -462,7 +465,7 @@ class PetWindow(QWidget):
 
     def _tick_global_click(self) -> None:
         pet_config = self.app_config.get("pet", {})
-        if not bool(pet_config.get("click_to_call_enabled", False)):
+        if not WINDOWS_NATIVE_AVAILABLE or not bool(pet_config.get("click_to_call_enabled", False)):
             self._last_left_button_down = False
             return
         key_state = ctypes.windll.user32.GetAsyncKeyState(0x01)
@@ -482,6 +485,8 @@ class PetWindow(QWidget):
         return self._is_desktop_point(point)
 
     def _is_desktop_point(self, point: QPoint) -> bool:
+        if not WINDOWS_NATIVE_AVAILABLE:
+            return False
         user32 = ctypes.windll.user32
         user32.WindowFromPoint.argtypes = [WinPoint]
         user32.WindowFromPoint.restype = ctypes.c_void_p

@@ -3,7 +3,7 @@ from __future__ import annotations
 import ctypes
 import os
 from pathlib import Path
-from src.file_organizer import FileOrganizer
+from src.file_organizer import FileMoveItem, FileOrganizer, FileOrganizerPlan
 
 def test_file_organizer_safety_checks(tmp_path) -> None:
     organizer = FileOrganizer(data_dir=tmp_path)
@@ -144,3 +144,81 @@ def test_file_organizer_collision_protection(tmp_path) -> None:
     organizer.execute_plan(plan)
     assert (dst / "images" / "photo.png").read_text(encoding="utf-8") == "old photo"
     assert (dst / "images" / "photo_1.png").read_text(encoding="utf-8") == "new photo"
+
+
+def test_file_organizer_reserves_duplicate_names_within_preview(tmp_path) -> None:
+    organizer = FileOrganizer(data_dir=tmp_path / "logs")
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    (src / "one").mkdir(parents=True)
+    (src / "two").mkdir(parents=True)
+    dst.mkdir()
+    (src / "one" / "same.txt").write_text("one", encoding="utf-8")
+    (src / "two" / "same.txt").write_text("two", encoding="utf-8")
+
+    plan = organizer.generate_plan(str(src), str(dst))
+
+    assert plan.ok
+    assert sorted(item.filename for item in plan.moves) == ["same.txt", "same_1.txt"]
+    results = organizer.execute_plan(plan)
+    assert all(item["status"] == "success" for item in results)
+    assert {
+        (dst / "documents" / "same.txt").read_text(encoding="utf-8"),
+        (dst / "documents" / "same_1.txt").read_text(encoding="utf-8"),
+    } == {"one", "two"}
+
+
+def test_file_organizer_does_not_overwrite_file_created_after_preview(tmp_path) -> None:
+    organizer = FileOrganizer(data_dir=tmp_path / "logs")
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    dst.mkdir()
+    (src / "note.txt").write_text("new", encoding="utf-8")
+
+    plan = organizer.generate_plan(str(src), str(dst))
+    planned = Path(plan.moves[0].dst_path)
+    planned.parent.mkdir(parents=True)
+    planned.write_text("existing", encoding="utf-8")
+
+    results = organizer.execute_plan(plan)
+
+    assert results[0]["status"] == "success"
+    assert planned.read_text(encoding="utf-8") == "existing"
+    assert (planned.parent / "note_1.txt").read_text(encoding="utf-8") == "new"
+
+
+def test_file_organizer_rejects_sensitive_roots_and_tampered_moves(tmp_path) -> None:
+    organizer = FileOrganizer(data_dir=tmp_path / "logs")
+    safe_src = tmp_path / "safe"
+    safe_dst = tmp_path / "target"
+    sensitive_src = tmp_path / "data"
+    sensitive_dst = tmp_path / "release"
+    for path in (safe_src, safe_dst, sensitive_src, sensitive_dst):
+        path.mkdir()
+
+    assert not organizer.generate_plan(str(sensitive_src), str(safe_dst)).ok
+    assert not organizer.generate_plan(str(safe_src), str(sensitive_dst)).ok
+
+    secret = sensitive_src / "secret.txt"
+    secret.write_text("do not move", encoding="utf-8")
+    tampered = FileOrganizerPlan(
+        ok=True,
+        source_dir=str(sensitive_src),
+        target_dir=str(safe_dst),
+        moves=[
+            FileMoveItem(
+                src_path=str(secret),
+                dst_path=str(safe_dst / "documents" / "secret.txt"),
+                filename="secret.txt",
+                category="documents",
+            )
+        ],
+        skipped=[],
+    )
+
+    results = organizer.execute_plan(tampered)
+
+    assert results[0]["status"] == "skipped"
+    assert secret.exists()
+    assert not (safe_dst / "documents" / "secret.txt").exists()

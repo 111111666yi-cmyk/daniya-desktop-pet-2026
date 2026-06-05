@@ -56,15 +56,20 @@ class SystemStatusManager(QObject):
 
     def is_network_online(self) -> bool:
         # Check network connectivity quickly without blocking
+        probe = None
         try:
-            # Try connecting to DNS server
-            socket.setdefaulttimeout(1.5)
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(("8.8.8.8", 53))
-            s.close()
+            probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            probe.settimeout(1.5)
+            probe.connect(("8.8.8.8", 53))
             return True
         except Exception:
             return False
+        finally:
+            if probe is not None:
+                try:
+                    probe.close()
+                except OSError:
+                    pass
 
     def get_current_status(self) -> SystemStatus:
         cpu = 0.0

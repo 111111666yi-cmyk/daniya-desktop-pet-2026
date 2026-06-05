@@ -81,6 +81,7 @@ def test_physical_event_serialization_queue(mock_app_env, monkeypatch) -> None:
     monkeypatch.setattr("src.app.PhysicalEventWorker", MockWorker)
     
     controller = AppController(mock_app_env)
+    assert controller.daniya_adapter.state_manager is controller.thread_safe_anim_manager
     
     # Fire 3 events concurrently
     controller._fire_physical_event("event_1")

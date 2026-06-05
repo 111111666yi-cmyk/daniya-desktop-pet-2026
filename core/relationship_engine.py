@@ -11,7 +11,8 @@ from typing import Any
 from core.schema import CharacterPack
 from src.utils import runtime_root
 
-# [CHANGE-005-FIX] 状态文件写入锁
+# Relationship state reads and writes share one lock so a reader never
+# interprets an in-progress write as corrupt user data.
 _state_lock = threading.Lock()
 
 METRIC_FIELDS = {
@@ -76,7 +77,7 @@ def save_state(state: dict[str, Any]) -> None:
     path = state_path(character_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     with _state_lock:
-        path.write_text(json.dumps(clamp_metrics(state), ensure_ascii=False, indent=2), encoding="utf-8")
+        _write_state_unlocked(path, state)
 
 
 def apply_effect(state: dict[str, Any], effect: dict[str, Any] | None, reason: str) -> dict[str, Any]:
@@ -161,18 +162,19 @@ def _initial_state(character_id: str, relationship_config: dict[str, Any]) -> di
 
 
 def _read_json(path: Path, fallback: Any) -> Any:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        backup = path.with_suffix(path.suffix + f".broken-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+    with _state_lock:
         try:
-            path.rename(backup)
+            return json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            backup = path.with_suffix(path.suffix + f".broken-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+            try:
+                path.replace(backup)
+            except OSError:
+                pass
+            _write_state_unlocked(path, fallback)
+            return fallback
         except OSError:
-            pass
-        save_state(fallback)
-        return fallback
-    except OSError:
-        return fallback
+            return fallback
 
 
 def _migrate_legacy_state(character_id: str) -> dict[str, Any] | None:
@@ -181,10 +183,11 @@ def _migrate_legacy_state(character_id: str) -> dict[str, Any] | None:
     legacy_path = state_path("daniya")
     if not legacy_path.exists():
         return None
-    try:
-        data = json.loads(legacy_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
+    with _state_lock:
+        try:
+            data = json.loads(legacy_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
     if not isinstance(data, dict) or str(data.get("character_id") or "") != character_id:
         return None
     save_state(data)
@@ -199,3 +202,17 @@ def _preserve_foreign_state(state: dict[str, Any]) -> None:
     if foreign_path.exists():
         return
     save_state(state)
+
+
+def _write_state_unlocked(path: Path, state: dict[str, Any]) -> None:
+    content = json.dumps(clamp_metrics(state), ensure_ascii=False, indent=2)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    try:
+        tmp.write_text(content, encoding="utf-8")
+        tmp.replace(path)
+    except OSError:
+        path.write_text(content, encoding="utf-8")
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass

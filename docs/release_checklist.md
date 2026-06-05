@@ -1,8 +1,8 @@
 # Release Checklist
 
-Current source target: `v0.70`
+Current release target: `v0.70`
 
-Latest published Windows Release: `v0.65.2`
+Expected Windows asset: `DaniyaSummerPet-v0.70-win-x64.zip`
 
 ## Source Freeze
 
@@ -86,9 +86,9 @@ Complete `docs/V0.70_MANUAL_QA_CHECKLIST.md`.
 Automation must not claim PASS for:
 
 - real cloud Provider replies without a user-owned key and quota;
-- multi-monitor or mixed-DPI behavior on hardware not present;
-- subjective drag, right-click, animation, and long-text visual feel;
-- antivirus or SmartScreen behavior on another Windows installation.
+- a second physical mixed-DPI monitor when only one monitor is attached;
+- subjective physical mouse feel;
+- antivirus or SmartScreen behavior on another Windows installation or policy.
 
 ## Remote Gates
 
@@ -99,4 +99,4 @@ After pushing the reviewed v0.70 source commit:
 - inspect failures for tests, docs links, secrets, package assumptions, or public-surface wording;
 - run `Release Check` manually before uploading a v0.70 release asset.
 
-Do not upload or publish a v0.70 GitHub Release until local package evidence, remote Actions, and required manual sign-off are accepted.
+Publish the v0.70 GitHub Release only after local package evidence and remote Actions pass. Record any environment-limited manual items accurately instead of converting them to PASS.

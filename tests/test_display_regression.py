@@ -188,6 +188,62 @@ def test_pet_window_drag_cannot_leave_screen(monkeypatch):
         _close_window(app, window)
 
 
+def test_pet_window_supports_negative_origin_virtual_desktop(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = _app()
+    config = {
+        "window": {"start_x": 100, "start_y": 100, "always_on_top": False, "show_input": False},
+        "pet": {"pet_height": 96, "target_height": 96, "edge_peek_enabled": True},
+        "ui": {"bubble_max_width": 300, "input_min_width": 180},
+    }
+    window = PetWindow(AssetManager(config), config)
+    virtual_bounds = QRect(-1920, -180, 6400, 2340)
+    monkeypatch.setattr(window, "_desktop_bounds", lambda: virtual_bounds)
+    try:
+        window.resize(256, 304)
+        for requested in (
+            QPoint(-3000, -500),
+            QPoint(6000, 3000),
+            QPoint(-1800, 100),
+            QPoint(4200, 1500),
+        ):
+            clamped = window._clamped_position(requested)
+            assert virtual_bounds.contains(QRect(clamped, window.size()))
+
+        for side in ("left", "right"):
+            docked = window._docked_position(side, visible=32)
+            exposed = QRect(docked, window.size()).intersected(virtual_bounds)
+            assert exposed.width() == 32
+    finally:
+        _close_window(app, window)
+
+
+def test_pet_window_keeps_logical_size_across_mixed_dpi(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = _app()
+    config = {
+        "window": {"start_x": 100, "start_y": 100, "always_on_top": False, "show_input": False},
+        "pet": {"pet_height": 96, "target_height": 96},
+        "ui": {"bubble_max_width": 300, "input_min_width": 180},
+    }
+    window = PetWindow(AssetManager(config), config)
+    frame = window.asset_manager.frames_for_state("idle")[0]
+    try:
+        logical_sizes = []
+        for dpr in (1.0, 1.25, 1.5, 2.0):
+            monkeypatch.setattr(window, "_current_device_pixel_ratio", lambda value=dpr: value)
+            window.clear_render_cache()
+            scaled, _, _ = window._get_scaled_pixmap(frame, 96, dpr)
+            assert abs(scaled.devicePixelRatio() - dpr) < 0.01
+            window.render_pet_pixmap(frame)
+            pixmap = window.image_label.pixmap()
+            assert pixmap is not None and not pixmap.isNull()
+            logical_sizes.append((window.image_label.width(), window.image_label.height()))
+        assert len(set(logical_sizes)) == 1
+    finally:
+        _close_window(app, window)
+
+
 def test_v0415_actions_fallback_to_v041_playable_states(monkeypatch):
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
     app = _app()

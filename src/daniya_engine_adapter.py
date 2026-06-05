@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -25,15 +26,17 @@ class DaniyaEngineAdapter:
         self.model_client = _wrap_model_client(model_client)
         self.animation_manager = animation_manager
         self.state_manager = state_manager
+        self._engine_lock = threading.Lock()
         self.character_pack, self.load_errors = self._load_pack(self.config.character_id)
         self.engine = DialogueEngine(self.character_pack, model_client=self.model_client)
 
     def handle_user_text(self, user_text: str, context: dict[str, Any] | None = None) -> EngineResult:
-        result = self.engine.handle_user_message(user_text, context=context)
-        if self.load_errors:
-            result.errors.extend(self.load_errors)
-        self._dispatch_action(result)
-        return result
+        with self._engine_lock:
+            result = self.engine.handle_user_message(user_text, context=context)
+            if self.load_errors:
+                result.errors.extend(self.load_errors)
+            self._dispatch_action(result)
+            return result
 
     def handle_physical_event(self, physical_event: str, context: dict[str, Any] | None = None) -> EngineResult:
         context = dict(context or {})

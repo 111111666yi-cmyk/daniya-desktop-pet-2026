@@ -50,6 +50,7 @@ class ReminderManager(QObject):
                 "time": reminder_time.strftime(TIME_FORMAT),
                 "text": clean_text,
                 "done": False,
+                "notified": False,
             }
         )
         self._save(records)

@@ -7,7 +7,11 @@
 - Added packaged-content requirements for the v0.70 automated acceptance report and manual QA checklist.
 - Fixed edge-peek drag completion so Settings Center, active speech, input, and focus-mode pauses cannot leave a half-hidden window with an empty dock state.
 - Replaced the undeclared optional `pywin32` hidden-file check with the Windows API through `ctypes`, keeping file-organizer privacy behavior consistent between local and GitHub builds.
-- Re-ran repository checks, full tests, isolated startup, Windows packaging, zip scanning, packaged-executable smoke, and remote GitHub Actions verification.
+- Serialized relationship and memory file access and switched state replacement to atomic temporary files, preventing concurrent readers from treating an in-progress write as corrupt user data.
+- Serialized dialogue-engine transactions and routed physical-event state changes through the thread-safe animation bridge instead of touching the Qt window from a worker.
+- Hardened file organization against sensitive roots, hidden paths, duplicate preview destinations, post-preview collisions, and tampered execution plans.
+- Removed process-wide socket timeout mutation, guarded Windows-native click probing on other platforms, narrowed overly broad story keywords, and persisted the initial reminder notification state explicitly.
+- Re-ran repository checks, 312 tests, isolated source startup, Windows packaging, zip scanning, packaged-executable interaction QA, virtual mixed-DPI regression checks, SmartScreen observation, and local antivirus invocation.
 
 ## v0.69 (2026-06-05) - Character Pack Stability
 

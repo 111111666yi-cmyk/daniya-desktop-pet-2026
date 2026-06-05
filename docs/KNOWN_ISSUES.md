@@ -5,9 +5,10 @@
 | ID | Level | Status | Required evidence |
 |---|---|---|---|
 | QA70-PROVIDER-001 | P1 | MANUAL REQUIRED | One real cloud reply using a user-owned API Key and available quota. Do not record the key. |
-| QA70-MONITOR-001 | P2 | MANUAL REQUIRED | Drag, edge peek, and window recovery on every available monitor, including mixed DPI when available. |
-| QA70-GUI-001 | P2 | MANUAL REQUIRED | Direct observation of drag feel, right-click menu, Settings Center, input, bubbles, typewriter timing, and long-text layout. |
-| QA70-SMARTSCREEN-001 | P3 | MANUAL REQUIRED | Downloaded zip/exe behavior under the target Windows antivirus and SmartScreen policy. |
+| QA70-MONITOR-001 | P2 | PARTIAL / MANUAL REQUIRED | Single physical 2880x1800 monitor at 200% DPI and virtual negative-origin/DPR 1.0-2.0 tests passed. A second physical mixed-DPI monitor was not available. |
+| QA70-GUI-001 | P2 | ASSISTED PASS / HUMAN FEEL REQUIRED | Packaged GUI interaction, input, edge peek, preview-only file organization, default-off controls, and long bubble layout passed message-level Windows automation. Final subjective mouse feel still requires a human pass. |
+| QA70-SMARTSCREEN-001 | P3 | WARNING OBSERVED | The unsigned EXE with `ZoneId=3` triggered `smartscreen.exe` and Windows cancelled launch. Users may need to confirm the warning; code signing is not included. |
+| QA70-ANTIVIRUS-001 | P3 | PARTIAL / MANUAL REQUIRED | Lenovo Anti-Virus powered by Huorong scan was invoked for the final candidate. No deletion or quarantine was observed, but the custom result window was not machine-readable. |
 
 Closed by automated v0.66-v0.69 work:
 
@@ -21,7 +22,7 @@ Closed by automated v0.66-v0.69 work:
 | ID | Level | Item | Status / Rationale |
 |---|---|---|---|
 | QA60-ZAI-001 | P1 | Z.AI real API reply not accepted | MANUAL REQUIRED: v0.61 source now has a standard `zai` text Provider entry, but live-provider QA still requires a user-owned `ZAI_API_KEY`, quota, and one observed real reply. Do not mark live-provider QA PASS until that evidence exists. |
-| QA60-BUBBLE-001 | P3 | Long text bubble visual not accepted | NEEDS POLISH: local fallback replies are short; a live model or dedicated long local response is needed for visual acceptance. This does not block the v0.60 release candidate. |
+| QA60-BUBBLE-001 | P3 | Long text bubble visual acceptance | CLOSED IN v0.70 ASSISTED QA: a dedicated long local response wrapped without overflow or overlap in the packaged application. |
 | QA60-MONITOR-001 | P2 | Multi-monitor drag not accepted | BLOCKED: current Windows session exposes only one monitor. |
 | QA60-SHORTCUT-001 | P3 | First-run wizard optional desktop shortcut creation | SOURCE FIXED / NEEDS PACKAGE QA: a non-default checkbox now creates a `daniya521` desktop shortcut and failure does not block setup completion. Rebuild and manually verify before closing. |
 | QA60-WINDOW-001 | P1 | Pet/settings window lifecycle can make the app disappear | SOURCE FIXED / NEEDS PACKAGE QA: the app now disables quit-on-last-window-closed behavior, so Settings Center minimize/close and pet hidden/tray states should not terminate the process. Rebuild and manually verify before closing. |

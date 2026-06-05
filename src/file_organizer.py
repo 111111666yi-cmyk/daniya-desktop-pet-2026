@@ -94,12 +94,18 @@ class FileOrganizer:
         if src == dst:
             return FileOrganizerPlan(False, source_dir, target_dir, [], [], "源目录和目标目录不能相同")
 
+        if self.is_sensitive_path(src) or self.is_hidden_path(src):
+            return FileOrganizerPlan(False, source_dir, target_dir, [], [], "源目录属于敏感或隐藏目录")
+        if self.is_sensitive_path(dst) or self.is_hidden_path(dst):
+            return FileOrganizerPlan(False, source_dir, target_dir, [], [], "目标目录属于敏感或隐藏目录")
+
         # Destination shouldn't be inside source folder (avoid infinite loops/cycles)
         if src in dst.parents:
             return FileOrganizerPlan(False, source_dir, target_dir, [], [], "目标目录不能是源目录的子目录")
 
         moves: list[FileMoveItem] = []
         skipped: list[tuple[str, str]] = []
+        reserved_destinations: set[str] = set()
 
         for root, dirs, files in os.walk(src):
             # Prune dirs in walk to skip forbidden directories
@@ -130,14 +136,11 @@ class FileOrganizer:
 
                 # Resolve target filename collision
                 target_category_dir = dst / category
-                target_file_path = target_category_dir / f
-                
-                # Check for collision and rename (e.g., file_1.txt)
-                count = 1
-                base_name = f_path.stem
-                while target_file_path.exists():
-                    target_file_path = target_category_dir / f"{base_name}_{count}{ext}"
-                    count += 1
+                target_file_path = self._unique_destination(
+                    target_category_dir / f,
+                    reserved=reserved_destinations,
+                )
+                reserved_destinations.add(os.path.normcase(str(target_file_path)))
 
                 moves.append(FileMoveItem(
                     src_path=str(f_path),
@@ -153,9 +156,21 @@ class FileOrganizer:
         if not plan.ok:
             return []
 
+        reserved_destinations: set[str] = set()
         for move in plan.moves:
-            src = Path(move.src_path)
-            dst = Path(move.dst_path)
+            src = Path(move.src_path).resolve()
+            dst = Path(move.dst_path).resolve()
+
+            if (
+                self.is_sensitive_path(src)
+                or self.is_sensitive_path(dst)
+                or self.is_hidden_path(src)
+                or self.is_hidden_path(dst)
+            ):
+                move.status = "skipped"
+                move.error_message = "敏感或隐藏路径已跳过"
+                results.append(self._move_item_to_dict(move))
+                continue
 
             if not src.exists():
                 move.status = "failed"
@@ -164,6 +179,10 @@ class FileOrganizer:
                 continue
 
             try:
+                dst = self._unique_destination(dst, reserved=reserved_destinations)
+                reserved_destinations.add(os.path.normcase(str(dst)))
+                move.dst_path = str(dst)
+                move.filename = dst.name
                 # Ensure destination folder category exists
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 # Move file
@@ -223,3 +242,13 @@ class FileOrganizer:
             path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
         except Exception:
             pass
+
+    def _unique_destination(self, path: Path, reserved: set[str] | None = None) -> Path:
+        if reserved is None:
+            reserved = set()
+        candidate = path
+        count = 1
+        while candidate.exists() or os.path.normcase(str(candidate)) in reserved:
+            candidate = path.with_name(f"{path.stem}_{count}{path.suffix}")
+            count += 1
+        return candidate

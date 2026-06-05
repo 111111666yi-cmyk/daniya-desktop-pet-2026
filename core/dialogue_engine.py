@@ -152,8 +152,8 @@ class DialogueEngine:
 
         # 3. 剧情触发 (Story)
         story_keywords = [
-            "剧情", "背景", "虚无", "暗面", "身份谜团", "残心会", "财星会", "到底", "真相",
-            "故事", "过去", "回忆", "经历", "西格丽卡", "名字是什么意思", "为什么叫", "什么意思",
+            "剧情", "背景", "虚无", "暗面", "身份谜团", "残心会", "财星会", "真相",
+            "故事", "过去", "回忆", "经历", "西格丽卡", "名字是什么意思", "为什么叫",
             "Досвидания", "До свидания", "俄罗斯方块记录", "游戏厅", "破纪录"
         ]
         is_story_by_keyword = any(normalize_text(kw) in normalized for kw in story_keywords)
@@ -402,7 +402,7 @@ def _should_defer_special_for_story_question(user_text: str, match: dict[str, An
     if match.get("match_type") not in {"contains", "fuzzy"}:
         return False
     text = normalize_text(user_text)
-    story_keywords = ["剧情", "背景", "虚无", "暗面", "身份谜团", "残心会", "财星会", "到底", "真相"]
+    story_keywords = ["剧情", "背景", "虚无", "暗面", "身份谜团", "残心会", "财星会", "真相"]
     return any(normalize_text(keyword) in text for keyword in story_keywords)
 
 

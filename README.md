@@ -1,8 +1,8 @@
 # Daniya Summer Desktop Pet
 
-**Current source milestone: v0.70 Integration Acceptance**
+**Current release: v0.70**
 
-[Source](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026) · [Latest published package: v0.65.2](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/tag/v0.65.2) · [Documentation](docs/index.md) · [Release Checklist](docs/release_checklist.md)
+[Source](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026) · [Download v0.70](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/tag/v0.70) · [Documentation](docs/index.md) · [Release Checklist](docs/release_checklist.md)
 
 达妮娅夏日桌宠是一个 Windows 桌面陪伴应用，基于 Python + PySide6 构建。它提供透明置顶桌宠、拖拽移动、气泡对话、设置中心、角色关系、记忆备忘录、提醒、文件整理预览、系统状态感知、隐私剪贴板交互和专注/游戏模式。
 
@@ -12,7 +12,7 @@
 
 ### 方式一：下载 Windows 包
 
-1. 从 GitHub Releases 下载当前已发布的 `DaniyaSummerPet-v0.65.2-win-x64.zip`。
+1. 从 GitHub Releases 下载 `DaniyaSummerPet-v0.70-win-x64.zip`。
 2. 解压到桌面、下载目录或其他普通文件夹。
 3. 运行 `DaniyaSummerPet.exe`。
 
@@ -55,7 +55,7 @@ python main.py
 
 ## Defaults And Privacy
 
-v0.70 源码和后续打包产物继续采用安静启动策略：
+v0.70 采用安静启动策略：
 
 - 默认不展开输入框。
 - 默认关闭空闲小动作。
@@ -121,18 +121,18 @@ ZAI_API_KEY=your_key_here
 
 | 项目 | 当前状态 |
 |---|---|
-| 源码里程碑 | `v0.70`，执行全链路验收与打包检查 |
-| 最新公开 Windows Release | `v0.65.2` |
+| 当前版本 | `v0.70` |
+| Windows Release | `DaniyaSummerPet-v0.70-win-x64.zip` |
 | 自动检查 | pytest、敏感文件、角色包、配置模板、文档链接、公开面审查 |
 | 发布包检查 | `pack.bat`、zip 内容扫描、隔离运行态 exe 启动烟测 |
-| 仍需人工证据 | 真实 Provider Key、多显示器、主观 GUI 手感和长文本视觉 |
+| 仍需外部证据 | 真实 Provider Key、第二块实体混合 DPI 显示器、不同 Windows/杀软策略 |
 
 v0.70 本地验收结果记录在 [V0.70 Integration Acceptance](docs/V0.70_INTEGRATION_ACCEPTANCE.md)，人工项目见 [V0.70 Manual QA Checklist](docs/V0.70_MANUAL_QA_CHECKLIST.md)。
 
-Latest published release asset:
+Release asset:
 
 ```text
-DaniyaSummerPet-v0.65.2-win-x64.zip
+DaniyaSummerPet-v0.70-win-x64.zip
 SHA256: publish with the final uploaded artifact; verify locally with `Get-FileHash`.
 ```
 
