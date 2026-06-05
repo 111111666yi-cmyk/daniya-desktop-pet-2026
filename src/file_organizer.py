@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import json
 import os
 import shutil
@@ -71,10 +72,11 @@ class FileOrganizer:
         # Windows hidden attribute check
         try:
             if os.name == "nt":
-                import win32con
-                import win32file
-                attrs = win32file.GetFileAttributesW(str(path))
-                if attrs & win32con.FILE_ATTRIBUTE_HIDDEN:
+                get_attributes = ctypes.windll.kernel32.GetFileAttributesW
+                get_attributes.argtypes = [ctypes.c_wchar_p]
+                get_attributes.restype = ctypes.c_uint32
+                attrs = get_attributes(str(path))
+                if attrs != 0xFFFFFFFF and attrs & 0x2:
                     return True
         except Exception:
             pass

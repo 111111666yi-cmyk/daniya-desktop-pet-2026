@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import os
 from pathlib import Path
 from src.file_organizer import FileOrganizer
@@ -34,6 +35,29 @@ def test_file_organizer_safety_checks(tmp_path) -> None:
     assert organizer.is_sensitive_path(Path("assets") / "private" / "secret.png")
     assert organizer.is_sensitive_path(Path("config") / "api_config.json")
     assert organizer.is_sensitive_path(Path("config") / "multimodal_config.json")
+
+
+def test_file_organizer_detects_windows_hidden_attribute(tmp_path) -> None:
+    if os.name != "nt":
+        return
+
+    hidden_file = tmp_path / "hidden-by-attribute.txt"
+    hidden_file.write_text("private", encoding="utf-8")
+    kernel32 = ctypes.windll.kernel32
+    get_attributes = kernel32.GetFileAttributesW
+    get_attributes.argtypes = [ctypes.c_wchar_p]
+    get_attributes.restype = ctypes.c_uint32
+    set_attributes = kernel32.SetFileAttributesW
+    set_attributes.argtypes = [ctypes.c_wchar_p, ctypes.c_uint32]
+    set_attributes.restype = ctypes.c_int
+    original = get_attributes(str(hidden_file))
+    assert original != 0xFFFFFFFF
+    assert set_attributes(str(hidden_file), original | 0x2)
+    try:
+        assert FileOrganizer(data_dir=tmp_path).is_hidden_path(hidden_file)
+    finally:
+        assert set_attributes(str(hidden_file), original)
+
 
 def test_file_organizer_classification_and_execution(tmp_path) -> None:
     organizer = FileOrganizer(data_dir=tmp_path)

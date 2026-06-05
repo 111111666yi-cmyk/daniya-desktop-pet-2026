@@ -6,6 +6,7 @@
 - Unified public version, package, installation, release-check, known-issue, and QA documentation for the v0.70 source milestone.
 - Added packaged-content requirements for the v0.70 automated acceptance report and manual QA checklist.
 - Fixed edge-peek drag completion so Settings Center, active speech, input, and focus-mode pauses cannot leave a half-hidden window with an empty dock state.
+- Replaced the undeclared optional `pywin32` hidden-file check with the Windows API through `ctypes`, keeping file-organizer privacy behavior consistent between local and GitHub builds.
 - Re-ran repository checks, full tests, isolated startup, Windows packaging, zip scanning, packaged-executable smoke, and remote GitHub Actions verification.
 
 ## v0.69 (2026-06-05) - Character Pack Stability
