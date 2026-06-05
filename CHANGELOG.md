@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.65.2 (2026-06-05) - Acceptance Package Revision
+
+- Aligned the application version, public configuration templates, documentation, tag, and Windows package name on `v0.65.2`.
+- Rebuilt the Windows package from the accepted v0.65 code state without adding v0.66 features or changing product behavior.
+- Re-ran the full repository, package-content, and packaged-executable verification gates before publishing the source tag.
+
 ## v0.65.1 (2026-06-05) - Manual Acceptance Hotfix
 
 - Passed local simulated mouse acceptance for the v0.65 desktop flows: startup, quiet defaults, input toggle, edge peek, Provider status, file organizer preview, focus mode, persistence, and basic UI stability.
