@@ -56,7 +56,7 @@ def test_system_status_sampling_and_alerts(monkeypatch) -> None:
     manager.check_status()
     assert len(alerts) == 3
     assert alerts[2][0] == "memory"
-    assert "内存快满了" in alerts[2][1]
+    assert "内存使用率" in alerts[2][1]
 
     # 5. Test Low Battery Alert
     time.sleep(1.1)
@@ -75,7 +75,7 @@ def test_system_status_sampling_and_alerts(monkeypatch) -> None:
     manager.check_status()
     assert len(alerts) == 5
     assert alerts[4][0] == "network"
-    assert "网络断开了" in alerts[4][1]
+    assert "网络连接断开了" in alerts[4][1]
 
     # 7. Test Disabled Manager (no alert should trigger)
     time.sleep(1.1)

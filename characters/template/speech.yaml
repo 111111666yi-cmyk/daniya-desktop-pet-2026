@@ -9,6 +9,23 @@ speech_style:
 forbidden_style:
   - 待填写
 
+utility_responses:
+  reminder_saved: "提醒记下了。到时间我会叫你。"
+  reminder_due: "时间到了：{text}。"
+  reminder_ambiguous: "时间还不够明确。请告诉我具体时间。"
+  reminder_parse_failed: "没有识别出明确时间，提醒未创建。"
+  file_organizer_disabled: "文件整理当前关闭，请先在设置中开启。"
+  file_organizer_completed: "整理完成：成功 {moved}，失败 {failed}。"
+  clipboard_sensitive: "检测到可能的敏感内容，已停止显示、保存和发送。"
+  clipboard_too_long: "文本长度为 {length}，需要用户确认后继续。"
+  clipboard_safe: "检测到新文本，等待用户确认。"
+  system_cpu: "CPU 使用率为 {value}%。"
+  system_memory: "内存使用率为 {value}%。"
+  system_battery: "电量剩余 {value}%。"
+  system_network: "网络连接已断开。"
+  focus_enter: "专注模式已开启。"
+  focus_exit: "专注模式已关闭。"
+
 special_responses:
   - trigger:
       - 示例关键词

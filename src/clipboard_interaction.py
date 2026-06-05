@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Callable
 from PySide6.QtCore import QObject, Signal
 
 # Sensitive patterns with lookaround assertions to support Unicode and Chinese boundary contexts
@@ -31,6 +31,7 @@ class ClipboardInteraction(QObject):
         self.max_chars = max(100, int(max_chars))
         self.show_preview = bool(show_preview)
         self.sensitive_block_enabled = bool(sensitive_block_enabled)
+        self.message_lookup: Callable[..., str] | None = None
 
         if self.clipboard:
             self.clipboard.dataChanged.connect(self.on_clipboard_change)
@@ -50,7 +51,10 @@ class ClipboardInteraction(QObject):
                     return {
                         "ok": False,
                         "status": "sensitive",
-                        "message": "检测到疑似敏感或隐私内容（如密钥/密码/身份信息），已自动忽略。",
+                        "message": self._message(
+                            "clipboard_sensitive",
+                            "这段内容可能包含隐私或凭据，我不会显示、保存或发送它。",
+                        ),
                         "clean_text": ""
                     }
 
@@ -59,7 +63,11 @@ class ClipboardInteraction(QObject):
             return {
                 "ok": True,
                 "status": "too_long",
-                "message": f"剪贴板文本过长（已复制 {len(text)} 字），需要你确认后才能分析。",
+                "message": self._message(
+                    "clipboard_too_long",
+                    "这段文字有 {length} 个字。需要你确认后才能继续处理。",
+                    length=len(text),
+                ),
                 "clean_text": text[:self.max_chars] if self.show_preview else ""
             }
 
@@ -67,9 +75,21 @@ class ClipboardInteraction(QObject):
         return {
             "ok": True,
             "status": "safe",
-            "message": f"检测到剪贴板有新文本（{len(text)} 字）。需要帮你分析一下吗？",
+            "message": self._message(
+                "clipboard_safe",
+                "剪贴板里有一段新文字。需要我处理时再确认。",
+                length=len(text),
+            ),
             "clean_text": clean_text
         }
+
+    def _message(self, key: str, fallback: str, **values: Any) -> str:
+        if self.message_lookup is not None:
+            try:
+                return self.message_lookup(key, **values)
+            except Exception:
+                pass
+        return fallback.format(**values)
 
     def on_clipboard_change(self) -> None:
         if not self.enabled or not self.clipboard:

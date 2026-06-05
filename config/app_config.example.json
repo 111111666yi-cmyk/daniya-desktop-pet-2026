@@ -1,5 +1,5 @@
 {
-  "version": "v0.66",
+  "version": "v0.67",
   "quiet_defaults_migration": "v0.61-quiet-defaults",
   "current_character": "daniya",
   "window": {
@@ -32,17 +32,17 @@
     "context_limit": 8,
     "temperature": 0.8,
     "max_tokens": 360,
-    "fallback_reply": "Daniya is offline right now, but local fallback is available.",
+    "fallback_reply": "……那边暂时没有回音。我先在这里。",
     "fallback_replies": [
-      "Daniya is offline right now, but local fallback is available.",
-      "The cloud service is unavailable, so local fallback is active.",
-      "No API reply was received; Daniya is staying with the local fallback."
+      "……那边暂时没有回音。我先在这里。",
+      "……现在连不上。你可以稍后再试。",
+      "……这次没有收到回复。先别重复发送。"
     ],
-    "api_error_fallback_reply": "The API request failed, so local fallback is being used.",
+    "api_error_fallback_reply": "……刚才没有连上。我先在这里。",
     "api_error_fallback_replies": [
-      "The API request failed, so local fallback is being used.",
-      "The provider did not return a usable response; local fallback is active.",
-      "The model connection is unavailable right now, so Daniya is using local fallback."
+      "……刚才没有连上。我先在这里。",
+      "……连接暂时不稳定。稍后再试。",
+      "……那边没有回音。这次先停在这里。"
     ]
   },
   "api": {

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.67 (2026-06-05) - Daniya Character Experience Regression
+
+- Moved reminder, file organizer, clipboard, system-status, and focus-mode character copy into each character pack's `speech.yaml`.
+- Replaced engineering-facing and overly playful utility messages with concise Daniya-style wording that avoids meta language and does not obscure the user's task.
+- Added regression tests for character-pack utility copy, neutral template fallback, sensitive clipboard wording, system alerts, reminders, and connection fallback.
+
 ## v0.66 (2026-06-05) - Unified Settings Center
 
 - Reorganized the Settings Center into twelve focused pages: models, pet, character resources, relationships, system, reminders, file organizer, system status, clipboard, focus mode, privacy, and diagnostics.

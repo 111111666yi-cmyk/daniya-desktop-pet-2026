@@ -80,6 +80,23 @@ forbidden_style:
   - 客服式解释
   - 无关扩写
 
+utility_responses:
+  reminder_saved: "……记下了。到时间我会叫你。"
+  reminder_due: "……时间到了：【{text}】。别忘了。"
+  reminder_ambiguous: "……时间还不够明确。告诉我具体一点，比如“十分钟后”。"
+  reminder_parse_failed: "……这次没看懂时间，提醒没有创建。"
+  file_organizer_disabled: "……文件整理现在是关闭的。先去设置里开启，再生成预览。"
+  file_organizer_completed: "……整理结束了。成功 {moved}，失败 {failed}。记录留在本机。"
+  clipboard_sensitive: "……这段内容可能有隐私或凭据。我不会显示、保存，也不会发出去。"
+  clipboard_too_long: "……这段文字有 {length} 个字。要继续处理，先由你确认。"
+  clipboard_safe: "……剪贴板里有一段新文字。需要我处理时再确认。"
+  system_cpu: "……CPU 使用率到 {value}% 了。先看看是不是有程序占得太多。"
+  system_memory: "……内存使用率到 {value}% 了。暂时不用的程序可以先关掉。"
+  system_battery: "……电量只剩 {value}% 了。记得接电源。"
+  system_network: "……网络断开了。恢复后再继续需要联网的事情。"
+  focus_enter: "……专注模式开了。我会安静一点。"
+  focus_exit: "……专注模式关掉了。"
+
 special_responses:
   - id: same_person
     trigger:

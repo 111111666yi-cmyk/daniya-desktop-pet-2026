@@ -55,7 +55,7 @@ def test_natural_reminder_relative_wiring(mock_app_env, monkeypatch) -> None:
     controller.send_message("一会儿提醒我睡觉", base_time=base_time)
     assert len(controller.reminder_manager.records()) == 1
     assert controller.pending_reminder_result is not None
-    assert "时间太模糊" in spoken_text[-1]
+    assert "时间还不够明确" in spoken_text[-1]
 
     # Provide the time
     controller.send_message("十分钟后", base_time=base_time)
@@ -69,7 +69,7 @@ def test_natural_reminder_relative_wiring(mock_app_env, monkeypatch) -> None:
     controller.send_message("十分钟后提醒我复习，然后帮我写代码", base_time=base_time)
     assert len(controller.reminder_manager.records()) == 2
     assert controller.pending_reminder_result is not None
-    assert "时间太模糊" in spoken_text[-1]
+    assert "时间还不够明确" in spoken_text[-1]
 
     # Provide the time
     controller.send_message("十分钟后", base_time=base_time)

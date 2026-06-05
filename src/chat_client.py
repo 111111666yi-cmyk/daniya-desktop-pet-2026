@@ -79,7 +79,7 @@ class ChatClient:
         """返回本地回退回复"""
         if self.provider_manager:
             return sanitize_user_addressing(self.provider_manager.local_fallback(api_error=not missing_key))
-        return sanitize_user_addressing("达妮娅刚刚走神了一下……但我还在哦。")
+        return sanitize_user_addressing("……刚才没有连上。我先在这里。")
 
 
 def mask_key(api_key: str) -> str:

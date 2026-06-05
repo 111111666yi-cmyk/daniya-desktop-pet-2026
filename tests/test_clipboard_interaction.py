@@ -16,13 +16,13 @@ def test_clipboard_interaction_checks() -> None:
     res2 = inter.check_text("hello daniya, how are you?")
     assert res2["ok"]
     assert res2["status"] == "safe"
-    assert "help" in res2["message"] or "分析" in res2["message"]
+    assert "确认" in res2["message"]
 
     # 3. Sensitive items (API key, password, phone, ID)
     res_key = inter.check_text("my key is sk-abcdefghijklmnopqrstuvwxyz123456")
     assert not res_key["ok"]
     assert res_key["status"] == "sensitive"
-    assert "忽略" in res_key["message"]
+    assert "不会显示、保存" in res_key["message"]
 
     res_bearer = inter.check_text("Authorization: Bearer mytoken12345")
     assert not res_bearer["ok"]

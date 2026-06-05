@@ -34,7 +34,7 @@ def test_natural_reminder_service(tmp_path, monkeypatch) -> None:
     # 2. Ambiguous need confirm
     ok, reply, res = service.process_chat_message("一会儿提醒我喝水", base_time=base)
     assert ok is True
-    assert "时间太模糊" in reply
+    assert "时间还不够明确" in reply
     assert res is not None
     assert res.need_confirm
 

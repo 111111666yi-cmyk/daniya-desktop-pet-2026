@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 
 from PySide6.QtCore import QObject, QTimer, Signal
@@ -18,6 +18,7 @@ class ReminderManager(QObject):
     def __init__(self, config_manager: ConfigManager) -> None:
         super().__init__()
         self.config_manager = config_manager
+        self.message_lookup: Callable[..., str] | None = None
         self.path = config_manager.data_dir / "reminders.json"
         if not self.path.exists():
             self._save([])
@@ -52,7 +53,18 @@ class ReminderManager(QObject):
             }
         )
         self._save(records)
-        return True, "……记下了。到时候别装作看不见。"
+        return True, self.message("reminder_saved", "提醒记下了。到时间我会叫你。")
+
+    def set_message_lookup(self, lookup: Callable[..., str] | None) -> None:
+        self.message_lookup = lookup
+
+    def message(self, key: str, fallback: str, **values: Any) -> str:
+        if self.message_lookup is not None:
+            try:
+                return self.message_lookup(key, **values)
+            except Exception:
+                pass
+        return fallback.format(**values)
 
     def mark_done(self, reminder_id: str) -> None:
         records = self.records()

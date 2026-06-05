@@ -207,8 +207,8 @@ class ProviderManager:
                 self._fallback_index += 1
                 return reply
         if api_error:
-            return str(chat_config.get("api_error_fallback_reply", "达妮娅刚刚走神了一下……但我还在哦。"))
-        return str(chat_config.get("fallback_reply", "达妮娅现在还没有连上大脑，但我已经在这里啦！"))
+            return str(chat_config.get("api_error_fallback_reply", "……刚才没有连上。我先在这里。"))
+        return str(chat_config.get("fallback_reply", "……那边暂时没有回音。我先在这里。"))
 
     def test_profile_model(
         self,

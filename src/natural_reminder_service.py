@@ -28,12 +28,15 @@ class NaturalReminderService:
             # Requires user confirmation (e.g. ambiguous time, mixed intent)
             if result.kind == "ambiguous" and result.scheduled_at:
                 suggested_time = result.scheduled_at.strftime("%Y-%m-%d %H:%M")
-                reply = f"……我只听懂了大概的时段。你是想在【{suggested_time}】提醒你【{result.reminder_text}】吗？确认的话跟我说“确认”或直接点。"
+                reply = f"……我只听懂了大概的时段。是【{suggested_time}】提醒你【{result.reminder_text}】吗？确认的话告诉我。"
             elif result.kind == "ambiguous":
-                reply = f"……提醒【{result.reminder_text}】的时间太模糊了。什么时候叫你？告诉我一个具体点的时间，比如“十分钟后”或“晚上八点”。"
+                reply = self.reminder_manager.message(
+                    "reminder_ambiguous",
+                    "时间还不够明确。告诉我具体一点，比如“十分钟后”。",
+                )
             else:
                 # Mixed intent
-                reply = f"……你想让我提醒你【{result.reminder_text}】对吧？但是你后面还带了别的事情，到时候我只弹气泡，其它的你自己搞定哦。"
+                reply = f"……提醒内容是【{result.reminder_text}】，对吗？确认后我只记这件事。"
             return True, reply, result
 
         # Parse success and no confirmation needed
@@ -41,9 +44,12 @@ class NaturalReminderService:
             time_str = result.scheduled_at.strftime("%Y-%m-%d %H:%M")
             success, msg = self.reminder_manager.add(time_str, result.reminder_text)
             if success:
-                reply = f"……记下了。会在【{time_str}】提醒你【{result.reminder_text}】。到时候别装作看不见。"
+                reply = f"{msg}【{time_str}】【{result.reminder_text}】"
             else:
                 reply = msg
             return True, reply, result
 
-        return True, "……时间解析出了点小问题，没法直接创建提醒。", result
+        return True, self.reminder_manager.message(
+            "reminder_parse_failed",
+            "这次没看懂时间，提醒没有创建。",
+        ), result

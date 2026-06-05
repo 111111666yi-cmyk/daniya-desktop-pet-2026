@@ -110,7 +110,7 @@ def test_chat_error_fallback_handling(setup_provider_manager, monkeypatch):
     response, source = pm.chat([{"role": "user", "content": "hello"}])
 
     assert source == "local"
-    assert "达妮娅刚刚走神了一下" in response
+    assert "没有连上" in response
 
     assert pm.last_source == "local_fallback"
     assert "API Timeout" in pm.last_error

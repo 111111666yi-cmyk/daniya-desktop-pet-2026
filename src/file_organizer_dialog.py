@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, Callable
 
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -23,9 +24,10 @@ from .utils import runtime_root
 
 
 class FileOrganizerDialog(QDialog):
-    def __init__(self, enabled: bool, parent=None) -> None:
+    def __init__(self, enabled: bool, parent=None, message_lookup: Callable[..., str] | None = None) -> None:
         super().__init__(parent)
         self.enabled = bool(enabled)
+        self.message_lookup = message_lookup
         self.organizer = FileOrganizer(runtime_root() / "data" / "file_organizer")
         self.current_plan: FileOrganizerPlan | None = None
 
@@ -105,7 +107,10 @@ class FileOrganizerDialog(QDialog):
 
     def _generate_preview(self) -> None:
         if not self.enabled:
-            self.status.setText("文件整理助手开关关闭，未扫描。")
+            self.status.setText(self._message(
+                "file_organizer_disabled",
+                "文件整理现在是关闭的。先在设置里开启，再生成预览。",
+            ))
             self.status.setStyleSheet("color: #856404;")
             return
         source = self.source_input.text().strip()
@@ -126,7 +131,12 @@ class FileOrganizerDialog(QDialog):
         results = self.organizer.execute_plan(self.current_plan)
         moved = sum(1 for item in results if item.get("status") == "success")
         failed = sum(1 for item in results if item.get("status") == "failed")
-        self.status.setText(f"执行完成：成功 {moved}，失败 {failed}。move_log 已写入运行时目录。")
+        self.status.setText(self._message(
+            "file_organizer_completed",
+            "整理完成：成功 {moved}，失败 {failed}。记录已保存在本机。",
+            moved=moved,
+            failed=failed,
+        ))
         self.status.setStyleSheet("color: #155724;" if failed == 0 else "color: #856404;")
         self.execute_btn.setEnabled(False)
 
@@ -180,3 +190,11 @@ class FileOrganizerDialog(QDialog):
         self.execute_btn.setEnabled(False)
         self.table.setRowCount(0)
         self.status.setText("目录已变更，请重新生成预览。")
+
+    def _message(self, key: str, fallback: str, **values: Any) -> str:
+        if self.message_lookup is not None:
+            try:
+                return self.message_lookup(key, **values)
+            except Exception:
+                pass
+        return fallback.format(**values)

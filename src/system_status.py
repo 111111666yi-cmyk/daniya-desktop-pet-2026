@@ -3,7 +3,7 @@ from __future__ import annotations
 import socket
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 from PySide6.QtCore import QObject, QTimer, Signal
 
 try:
@@ -39,6 +39,7 @@ class SystemStatusManager(QObject):
         self.memory_threshold = max(1, min(100, int(memory_threshold)))
         self.battery_threshold = max(1, min(100, int(battery_threshold)))
         self.network_check_enabled = bool(network_check_enabled)
+        self.message_lookup: Callable[..., str] | None = None
         self.enabled = True
         self.last_alert_times: dict[str, float] = {}
 
@@ -104,19 +105,27 @@ class SystemStatusManager(QObject):
 
         # Check CPU
         if status.cpu_percent > float(self.cpu_threshold):
-            self._trigger_alert("cpu", f"……电脑CPU占用太高了（{status.cpu_percent}%）。你在烤红薯吗？", now)
+            self._trigger_alert("cpu", self._message("system_cpu", "CPU 使用率到了 {value}%。", value=f"{status.cpu_percent:.0f}"), now)
 
         # Check Memory
         if status.memory_percent > float(self.memory_threshold):
-            self._trigger_alert("memory", f"……内存快满了（{status.memory_percent}%）。要不要关掉一些没用的浏览器标签页？", now)
+            self._trigger_alert("memory", self._message("system_memory", "内存使用率到了 {value}%。", value=f"{status.memory_percent:.0f}"), now)
 
         # Check Battery
         if status.battery_percent is not None and status.battery_percent < float(self.battery_threshold) and not status.is_battery_charging:
-            self._trigger_alert("battery", f"……电量只剩 {status.battery_percent}% 了，还没接电源。等会儿关机了别哭哦。", now)
+            self._trigger_alert("battery", self._message("system_battery", "电量只剩 {value}% 了。", value=f"{status.battery_percent:.0f}"), now)
 
         # Check Network
         if not status.network_online:
-            self._trigger_alert("network", "……网络断开了。是不是网线被家里的猫咬断了？", now)
+            self._trigger_alert("network", self._message("system_network", "网络连接断开了。"), now)
+
+    def _message(self, key: str, fallback: str, **values: Any) -> str:
+        if self.message_lookup is not None:
+            try:
+                return self.message_lookup(key, **values)
+            except Exception:
+                pass
+        return fallback.format(**values)
 
     def _trigger_alert(self, alert_type: str, message: str, current_time: float) -> None:
         last_time = self.last_alert_times.get(alert_type, 0.0)

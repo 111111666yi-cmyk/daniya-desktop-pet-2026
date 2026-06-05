@@ -7,6 +7,8 @@ from collections import deque
 from PySide6.QtCore import QObject, QThread, QTimer, Qt, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox
 
+from core.utility_copy import utility_text
+
 from .affinity_manager import AffinityManager
 from .asset_manager import AssetManager
 from .bookmark_manager import BookmarkManager
@@ -151,6 +153,9 @@ class AppController(QObject):
             config=DaniyaEngineAdapterConfig(character_id=char_id)
         )
         resolved_char_id = self.daniya_adapter.character_pack.character_id
+        self.reminder_manager.set_message_lookup(self.utility_text)
+        self.system_status_manager.message_lookup = self.utility_text
+        self.clipboard_interaction.message_lookup = self.utility_text
         self.asset_manager = AssetManager(self.app_config, resolved_char_id)
 
         self.window = PetWindow(self.asset_manager, self.app_config)
@@ -222,11 +227,11 @@ class AppController(QObject):
                         time_str = result.scheduled_at.strftime("%Y-%m-%d %H:%M")
                         success, msg = self.reminder_manager.add(time_str, result.reminder_text)
                         if success:
-                            self.window.speak(f"……记下了。会在【{time_str}】提醒你【{result.reminder_text}】。到时候别装作看不见。")
+                            self.window.speak(f"{msg}【{time_str}】【{result.reminder_text}】")
                         else:
                             self.window.speak(msg)
                     else:
-                        self.window.speak("……时间还是不明确哦。什么时候叫你？比如说“十分钟后”。")
+                        self.window.speak(self.utility_text("reminder_ambiguous"))
                         self.pending_reminder_result = result
                     return
                 elif clean_text in cancel_keywords:
@@ -249,7 +254,7 @@ class AppController(QObject):
                             time_str = new_res.scheduled_at.strftime("%Y-%m-%d %H:%M")
                             success, msg = self.reminder_manager.add(time_str, r_text)
                             if success:
-                                self.window.speak(f"……记下了。会在【{time_str}】提醒你【{r_text}】。到时候别装作看不见。")
+                                self.window.speak(f"{msg}【{time_str}】【{r_text}】")
                             else:
                                 self.window.speak(msg)
                             return
@@ -410,6 +415,7 @@ class AppController(QObject):
         dialog = FileOrganizerDialog(
             enabled=bool(self.app_config.get("file_organizer_enabled", False)),
             parent=self.window,
+            message_lookup=self.utility_text,
         )
         dialog.exec()
 
@@ -478,7 +484,7 @@ class AppController(QObject):
     def on_reminder_due(self, reminder_id: str, text: str) -> None:
         self.window.set_always_on_top(True)
         self.window.animation_manager.trigger_remind()
-        self.window.speak(f"……喂，时间到了：{text}。去处理一下。")
+        self.window.speak(self.utility_text("reminder_due", text=text))
         # [CHANGE-003+005] 提醒到期事件流入引擎（后台线程）
         self._fire_physical_event("reminder_due")
         box = QMessageBox(self.window)
@@ -578,9 +584,12 @@ class AppController(QObject):
 
     def _on_focus_state_changed(self, active: bool) -> None:
         if active:
-            self.window.speak("……专注模式开了。我会安静一点。")
+            self.window.speak(self.utility_text("focus_enter"))
         else:
-            self.window.speak("……专注模式关掉了。")
+            self.window.speak(self.utility_text("focus_exit"))
+
+    def utility_text(self, key: str, **values: Any) -> str:
+        return utility_text(self.daniya_adapter.character_pack, key, **values)
 
     def _on_system_status_alert(self, _alert_type: str, message: str) -> None:
         if not bool(self.app_config.get("system_status_enabled", False)):
