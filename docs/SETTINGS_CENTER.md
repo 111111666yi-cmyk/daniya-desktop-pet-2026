@@ -10,14 +10,20 @@ It is an operational panel for the current local desktop pet. It does not replac
 
 ## Pages
 
-- API / 模型: DeepSeek-compatible provider metadata, base URL, model, local fallback switch, API key save to `.env`, and non-blocking connection test.
-- 桌宠: pet size, always-on-top, opacity, idle chat, idle interval, hourly chime, reminders, and day/night mode.
-- 动作资源: current asset source, manifest status, action frame/fallback status, reload, and test action.
-- 角色包: current `characters/daniya/` status and safe editing for `character.yaml`, `speech.yaml`, `relationship.yaml`, and `events.yaml`.
-- 关系状态: current `relationship_state.json`, export, and backup-before-reset.
-- 事件: read-only recent `event_log.json` entries.
-- 数据: `data/daniya_relation/` readability, backup export, and open data directory.
+- 模型与引擎: Provider metadata, API connection tests, local fallback, local-model services, and model switching.
+- 桌宠: size, input visibility, always-on-top, opacity, idle behavior, hourly chime, edge peek, and day/night mode.
+- 角色与资源: character switching, action preview, character-pack summary, validation, and guarded editing.
+- 关系与事件: relationship state, memory memo, event history, export, reset, and clear controls.
+- 系统: runtime data, backup, first-run wizard, and help.
+- 提醒: reminder service and natural-language reminder recognition.
+- 文件整理: explicit enable switch, preview launcher, current state, and safe-default reset.
+- 系统状态: low-frequency local checks, thresholds, current state, one-shot local test, and safe-default reset.
+- 剪贴板: text-only interaction, local sensitive-content blocking, state clearing, local filter test, and privacy-default reset.
+- 专注模式: manual/automatic focus controls, suppression options, current state, exit, and default reset.
+- 隐私与安全: local-data boundary summary and one-click shutdown for high-risk optional features.
 - 诊断: character validation, API config, manifest, action resources, writable data directory, and gitignore safety checks.
+
+v0.66 organizes these controls into separate pages without changing the existing configuration keys or enabling high-risk features by default.
 
 ## Safety Rules
 

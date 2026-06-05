@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.66 (2026-06-05) - Unified Settings Center
+
+- Reorganized the Settings Center into twelve focused pages: models, pet, character resources, relationships, system, reminders, file organizer, system status, clipboard, focus mode, privacy, and diagnostics.
+- Added visible state summaries and restore-default actions for the v0.61-v0.65 user-facing controls.
+- Kept file organization, system monitoring, clipboard interaction, focus mode, and other high-risk behavior disabled by default.
+
 ## v0.65.2 (2026-06-05) - Acceptance Package Revision
 
 - Aligned the application version, public configuration templates, documentation, tag, and Windows package name on `v0.65.2`.

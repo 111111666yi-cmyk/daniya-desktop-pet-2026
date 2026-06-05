@@ -382,15 +382,30 @@ controller = AppController(app)
 controller.open_settings_center()
 app.processEvents()
 tabs = [controller.settings_window.tabs.tabText(i) for i in range(controller.settings_window.tabs.count())]
-assert len(tabs) == 5
-assert tabs[0] == '\u6a21\u578b\u4e0e\u5f15\u64ce'
-assert tabs[1] == '\u684c\u5ba0'
-assert tabs[2] == '\u89d2\u8272\u4e0e\u8d44\u6e90'
-assert tabs[3] == '\u5173\u7cfb\u4e0e\u4e8b\u4ef6'
-assert tabs[4] == '\u7cfb\u7edf'
+assert tabs == [
+    '\u6a21\u578b\u4e0e\u5f15\u64ce',
+    '\u684c\u5ba0',
+    '\u89d2\u8272\u4e0e\u8d44\u6e90',
+    '\u5173\u7cfb\u4e0e\u4e8b\u4ef6',
+    '\u7cfb\u7edf',
+    '\u63d0\u9192',
+    '\u6587\u4ef6\u6574\u7406',
+    '\u7cfb\u7edf\u72b6\u6001',
+    '\u526a\u8d34\u677f',
+    '\u4e13\u6ce8\u6a21\u5f0f',
+    '\u9690\u79c1\u4e0e\u5b89\u5168',
+    '\u8bca\u65ad',
+]
 assert controller.settings_window.pack_editor_text.isReadOnly() is False
 buttons = [button.text() for button in controller.settings_window.findChildren(QPushButton)]
 assert '\u6e05\u7a7a\u8bb0\u5fc6' in buttons
+assert '\u6062\u590d\u5b89\u5168\u9ed8\u8ba4' in buttons
+assert '\u6062\u590d\u9690\u79c1\u9ed8\u8ba4' in buttons
+assert '\u9000\u51fa\u4e13\u6ce8\u6a21\u5f0f' in buttons
+assert controller.settings_window.file_organizer_enabled.isChecked() is False
+assert controller.settings_window.system_status_enabled.isChecked() is False
+assert controller.settings_window.clipboard_enabled.isChecked() is False
+assert controller.settings_window.focus_enabled.isChecked() is False
 print('SETTINGS_WINDOW_OK', flush=True)
 os._exit(0)
 """

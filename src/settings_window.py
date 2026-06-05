@@ -407,6 +407,13 @@ class SettingsWindow(QDialog):
         self._build_character_resources_tab()
         self._build_relationship_events_tab()
         self._build_system_tab()
+        self._build_reminder_tab()
+        self._build_file_organizer_tab()
+        self._build_system_status_tab()
+        self._build_clipboard_tab()
+        self._build_focus_tab()
+        self._build_privacy_tab()
+        self._build_diagnostics_tab()
 
         close = QPushButton("关闭")
         close.clicked.connect(self.accept)
@@ -1247,8 +1254,6 @@ class SettingsWindow(QDialog):
         self.edge_peek = QCheckBox("左右边缘趴墙")
         self.edge_peek.setToolTip("开启后，把达妮娅拖到屏幕左右边缘时会半隐藏趴在边上；默认关闭，避免首次运行时自己动。")
         self.edge_peek.setChecked(bool(pet.get("edge_peek_enabled", False)))
-        self.reminder_enabled = QCheckBox("提醒功能")
-        self.reminder_enabled.setChecked(bool(app_config.get("reminder_enabled", True)))
         self.day_night = QCheckBox("昼夜作息")
         self.day_night.setChecked(bool(app_config.get("day_night_enabled", True)))
 
@@ -1262,7 +1267,6 @@ class SettingsWindow(QDialog):
         form.addRow("小动作等待", self.idle_behavior_seconds)
         form.addRow("整点报时", self.hourly_chime)
         form.addRow("趴墙", self.edge_peek)
-        form.addRow("提醒", self.reminder_enabled)
         form.addRow("昼夜作息", self.day_night)
         layout.addLayout(form)
         save = QPushButton("保存并尽量即时生效"); save.setIcon(get_icon("save"))
@@ -1567,8 +1571,6 @@ class SettingsWindow(QDialog):
         data_layout.addWidget(self.data_raw_text)
         layout.addWidget(data_group)
 
-        self._build_integrated_features_section(layout)
-
         onboarding_group = QGroupBox("首次启动向导")
         onboarding_layout = QVBoxLayout(onboarding_group)
         onboarding_layout.addWidget(QLabel("需要重新查看新手流程、API 配置或素材放置说明时，可以重新打开向导。"))
@@ -1619,25 +1621,50 @@ class SettingsWindow(QDialog):
         help_layout.addWidget(self.help_content)
         layout.addWidget(help_group)
 
-        diag_group = QGroupBox("系统诊断")
-        diag_layout = QVBoxLayout(diag_group)
-        self.diagnostics_text = QTextEdit()
-        self.diagnostics_text.setReadOnly(True)
-        run = QPushButton("运行诊断"); run.setIcon(get_icon("settings"))
-        run.clicked.connect(self._run_diagnostics)
-        diag_layout.addWidget(run, alignment=Qt.AlignmentFlag.AlignLeft)
-        diag_layout.addWidget(self.diagnostics_text)
-        layout.addWidget(diag_group)
-
         self.tabs.addTab(tab, get_icon("settings"), "系统")
         self._refresh_data()
 
-    def _build_integrated_features_section(self, parent_layout: Any) -> None:
+    def _build_reminder_tab(self) -> None:
         config = self.settings_manager.load_app_config()
-        group = QGroupBox("预览功能与专注控制")
-        layout = QVBoxLayout(group)
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        description = QLabel("提醒由用户主动创建；自然语言提醒只解析明确的时间表达，不会代替用户决定任务。")
+        description.setWordWrap(True)
+        layout.addWidget(description)
         form = QFormLayout()
+        self.reminder_enabled = QCheckBox("启用到期提醒")
+        self.reminder_enabled.setChecked(bool(config.get("reminder_enabled", True)))
+        self.natural_reminder_enabled = QCheckBox("启用自然语言提醒识别")
+        self.natural_reminder_enabled.setChecked(bool(config.get("natural_reminder_enabled", True)))
+        form.addRow("提醒服务", self.reminder_enabled)
+        form.addRow("自然语言", self.natural_reminder_enabled)
+        layout.addLayout(form)
+        self.reminder_status = QLabel()
+        self.reminder_status.setWordWrap(True)
+        buttons = QHBoxLayout()
+        save = QPushButton("保存提醒设置"); save.setIcon(get_icon("save"))
+        reset = QPushButton("恢复提醒默认"); reset.setIcon(get_icon("refresh"))
+        save.clicked.connect(self._save_reminder_settings)
+        reset.clicked.connect(self._reset_reminder_defaults)
+        buttons.addWidget(save)
+        buttons.addWidget(reset)
+        buttons.addStretch(1)
+        layout.addLayout(buttons)
+        layout.addWidget(self.reminder_status)
+        layout.addStretch(1)
+        self._refresh_reminder_status()
+        self.tabs.addTab(tab, get_icon("remind"), "提醒")
 
+    def _build_file_organizer_tab(self) -> None:
+        config = self.settings_manager.load_app_config()
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        description = QLabel(
+            "高风险功能，默认关闭。只会在你主动选择源目录和目标目录后生成预览；执行前仍需二次确认。"
+        )
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        form = QFormLayout()
         self.file_organizer_enabled = QCheckBox("启用文件整理助手（预览）")
         self.file_organizer_enabled.setChecked(bool(config.get("file_organizer_enabled", False)))
         open_organizer = QPushButton("打开文件整理助手"); open_organizer.setIcon(get_icon("document"))
@@ -1647,7 +1674,31 @@ class SettingsWindow(QDialog):
         file_row.addWidget(open_organizer)
         file_row.addStretch(1)
         form.addRow("文件整理", file_row)
+        layout.addLayout(form)
+        self.file_organizer_status = QLabel()
+        self.file_organizer_status.setWordWrap(True)
+        buttons = QHBoxLayout()
+        save = QPushButton("保存文件整理设置"); save.setIcon(get_icon("save"))
+        reset = QPushButton("恢复安全默认"); reset.setIcon(get_icon("refresh"))
+        save.clicked.connect(self._save_integrated_features)
+        reset.clicked.connect(self._reset_file_organizer_defaults)
+        buttons.addWidget(save)
+        buttons.addWidget(reset)
+        buttons.addStretch(1)
+        layout.addLayout(buttons)
+        layout.addWidget(self.file_organizer_status)
+        layout.addStretch(1)
+        self._refresh_integrated_feature_status()
+        self.tabs.addTab(tab, get_icon("document"), "文件整理")
 
+    def _build_system_status_tab(self) -> None:
+        config = self.settings_manager.load_app_config()
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        description = QLabel("默认关闭，仅在本机低频检查 CPU、内存、电池、磁盘和可选网络状态，不向 Provider 上传硬件信息。")
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        form = QFormLayout()
         self.system_status_enabled = QCheckBox("启用系统状态感知")
         self.system_status_enabled.setChecked(bool(config.get("system_status_enabled", False)))
         self.system_status_interval = QSpinBox()
@@ -1673,7 +1724,34 @@ class SettingsWindow(QDialog):
         form.addRow("内存阈值", self.system_status_memory)
         form.addRow("电池阈值", self.system_status_battery)
         form.addRow("网络检查", self.system_status_network)
+        layout.addLayout(form)
+        self.system_status_result = QLabel()
+        self.system_status_result.setWordWrap(True)
+        buttons = QHBoxLayout()
+        save = QPushButton("保存系统状态设置"); save.setIcon(get_icon("save"))
+        test = QPushButton("读取一次当前状态"); test.setIcon(get_icon("info"))
+        reset = QPushButton("恢复安全默认"); reset.setIcon(get_icon("refresh"))
+        save.clicked.connect(self._save_integrated_features)
+        test.clicked.connect(self._test_system_status)
+        reset.clicked.connect(self._reset_system_status_defaults)
+        buttons.addWidget(save)
+        buttons.addWidget(test)
+        buttons.addWidget(reset)
+        buttons.addStretch(1)
+        layout.addLayout(buttons)
+        layout.addWidget(self.system_status_result)
+        layout.addStretch(1)
+        self._refresh_integrated_feature_status()
+        self.tabs.addTab(tab, get_icon("laptop"), "系统状态")
 
+    def _build_clipboard_tab(self) -> None:
+        config = self.settings_manager.load_app_config()
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        description = QLabel("隐私功能，默认关闭。只处理文本，不自动发送 API，不保存完整剪贴板内容；敏感内容会在本地拦截。")
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        form = QFormLayout()
         self.clipboard_enabled = QCheckBox("启用剪贴板互动")
         self.clipboard_enabled.setChecked(bool(config.get("clipboard_interaction_enabled", False)))
         self.clipboard_max_chars = QSpinBox()
@@ -1690,7 +1768,37 @@ class SettingsWindow(QDialog):
         form.addRow("剪贴板预览", self.clipboard_show_preview)
         form.addRow("剪贴板 API", self.clipboard_allow_api)
         form.addRow("敏感拦截", self.clipboard_sensitive_block)
+        layout.addLayout(form)
+        self.clipboard_result = QLabel()
+        self.clipboard_result.setWordWrap(True)
+        buttons = QHBoxLayout()
+        save = QPushButton("保存剪贴板设置"); save.setIcon(get_icon("save"))
+        clear = QPushButton("清空互动状态"); clear.setIcon(get_icon("refresh"))
+        test = QPushButton("测试本地拦截"); test.setIcon(get_icon("info"))
+        reset = QPushButton("恢复隐私默认"); reset.setIcon(get_icon("refresh"))
+        save.clicked.connect(self._save_integrated_features)
+        clear.clicked.connect(self._clear_clipboard_state)
+        test.clicked.connect(self._test_clipboard_filter)
+        reset.clicked.connect(self._reset_clipboard_defaults)
+        buttons.addWidget(save)
+        buttons.addWidget(clear)
+        buttons.addWidget(test)
+        buttons.addWidget(reset)
+        buttons.addStretch(1)
+        layout.addLayout(buttons)
+        layout.addWidget(self.clipboard_result)
+        layout.addStretch(1)
+        self._refresh_integrated_feature_status()
+        self.tabs.addTab(tab, get_icon("document"), "剪贴板")
 
+    def _build_focus_tab(self) -> None:
+        config = self.settings_manager.load_app_config()
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        description = QLabel("默认关闭。专注模式只静默非必要主动提示，不会拦截用户输入、设置窗口、安全警告或重要提醒。")
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        form = QFormLayout()
         self.focus_enabled = QCheckBox("启用专注 / 游戏模式")
         self.focus_enabled.setChecked(bool(config.get("focus_mode_enabled", False)))
         self.focus_manual = QCheckBox("手动进入专注模式")
@@ -1723,15 +1831,201 @@ class SettingsWindow(QDialog):
         form.addRow("", self.focus_silence_system)
         form.addRow("", self.focus_silence_clipboard)
         form.addRow("重要提醒", self.focus_allow_important)
-
         layout.addLayout(form)
-        self.integrated_result = QLabel("")
-        self.integrated_result.setWordWrap(True)
-        save = QPushButton("保存预览功能设置"); save.setIcon(get_icon("save"))
+        self.focus_result = QLabel()
+        self.focus_result.setWordWrap(True)
+        buttons = QHBoxLayout()
+        save = QPushButton("保存专注模式设置"); save.setIcon(get_icon("save"))
+        exit_focus = QPushButton("退出专注模式"); exit_focus.setIcon(get_icon("refresh"))
+        reset = QPushButton("恢复专注默认"); reset.setIcon(get_icon("refresh"))
         save.clicked.connect(self._save_integrated_features)
-        layout.addWidget(save, alignment=Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(self.integrated_result)
-        parent_layout.addWidget(group)
+        exit_focus.clicked.connect(self._exit_focus_mode)
+        reset.clicked.connect(self._reset_focus_defaults)
+        buttons.addWidget(save)
+        buttons.addWidget(exit_focus)
+        buttons.addWidget(reset)
+        buttons.addStretch(1)
+        layout.addLayout(buttons)
+        layout.addWidget(self.focus_result)
+        layout.addStretch(1)
+        self._refresh_integrated_feature_status()
+        self.tabs.addTab(tab, get_icon("chip"), "专注模式")
+
+    def _build_privacy_tab(self) -> None:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        group = QGroupBox("本地数据与隐私边界")
+        group_layout = QVBoxLayout(group)
+        text = QLabel(
+            "API Key、聊天记录、提醒、记忆和关系状态只保存在本机运行态目录。"
+            " `.env`、`data/`、`assets/private/`、`models/`、`backups/`、`dist/`、`build/` 和 `release/`"
+            " 不应进入 Git。剪贴板、系统状态和文件整理均默认关闭。"
+        )
+        text.setWordWrap(True)
+        group_layout.addWidget(text)
+        self.privacy_status = QLabel()
+        self.privacy_status.setWordWrap(True)
+        group_layout.addWidget(self.privacy_status)
+        buttons = QHBoxLayout()
+        refresh = QPushButton("刷新隐私状态"); refresh.setIcon(get_icon("refresh"))
+        defaults = QPushButton("关闭高风险功能"); defaults.setIcon(get_icon("settings"))
+        refresh.clicked.connect(self._refresh_privacy_status)
+        defaults.clicked.connect(self._restore_privacy_defaults)
+        buttons.addWidget(refresh)
+        buttons.addWidget(defaults)
+        buttons.addStretch(1)
+        group_layout.addLayout(buttons)
+        layout.addWidget(group)
+        layout.addStretch(1)
+        self._refresh_privacy_status()
+        self.tabs.addTab(tab, get_icon("info"), "隐私与安全")
+
+    def _build_diagnostics_tab(self) -> None:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        description = QLabel("诊断只显示脱敏后的配置、资源和运行态结果，不显示完整 API Key。")
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        self.diagnostics_text = QTextEdit()
+        self.diagnostics_text.setReadOnly(True)
+        run = QPushButton("运行诊断"); run.setIcon(get_icon("settings"))
+        run.clicked.connect(self._run_diagnostics)
+        layout.addWidget(run, alignment=Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(self.diagnostics_text)
+        self.tabs.addTab(tab, get_icon("settings"), "诊断")
+
+    def _save_reminder_settings(self) -> None:
+        config = self.settings_manager.load_app_config()
+        config["reminder_enabled"] = self.reminder_enabled.isChecked()
+        config["natural_reminder_enabled"] = self.natural_reminder_enabled.isChecked()
+        self.settings_manager.save_app_config(config)
+        self.controller.app_config.update(config)
+        self._refresh_reminder_status()
+
+    def _reset_reminder_defaults(self) -> None:
+        self.reminder_enabled.setChecked(True)
+        self.natural_reminder_enabled.setChecked(True)
+        self._save_reminder_settings()
+
+    def _refresh_reminder_status(self) -> None:
+        enabled = self.reminder_enabled.isChecked()
+        natural = self.natural_reminder_enabled.isChecked()
+        self.reminder_status.setText(
+            f"当前状态：到期提醒{'已启用' if enabled else '已关闭'}；自然语言识别{'已启用' if natural else '已关闭'}。"
+        )
+
+    def _reset_file_organizer_defaults(self) -> None:
+        self.file_organizer_enabled.setChecked(False)
+        self._save_integrated_features()
+
+    def _reset_system_status_defaults(self) -> None:
+        self.system_status_enabled.setChecked(False)
+        self.system_status_interval.setValue(300)
+        self.system_status_cooldown.setValue(300)
+        self.system_status_cpu.setValue(90)
+        self.system_status_memory.setValue(90)
+        self.system_status_battery.setValue(20)
+        self.system_status_network.setChecked(False)
+        self._save_integrated_features()
+
+    def _test_system_status(self) -> None:
+        status = self.controller.system_status_manager.get_current_status()
+        battery = "不可用" if status.battery_percent is None else f"{status.battery_percent:.0f}%"
+        self.system_status_result.setText(
+            f"本地读取结果：CPU {status.cpu_percent:.0f}%；内存 {status.memory_percent:.0f}%；"
+            f"磁盘 {status.disk_percent:.0f}%；电池 {battery}。本次结果未发送给 Provider。"
+        )
+
+    def _clear_clipboard_state(self) -> None:
+        self.controller.clipboard_interaction.last_text = ""
+        self.clipboard_result.setText("剪贴板互动状态已清空；未读取或保存当前剪贴板正文。")
+
+    def _test_clipboard_filter(self) -> None:
+        result = self.controller.clipboard_interaction.check_text("测试文本，不包含敏感信息。")
+        self.clipboard_result.setText(f"本地过滤测试：{result.get('message', '完成')} 未调用 Provider。")
+
+    def _reset_clipboard_defaults(self) -> None:
+        self.clipboard_enabled.setChecked(False)
+        self.clipboard_max_chars.setValue(1000)
+        self.clipboard_show_preview.setChecked(False)
+        self.clipboard_allow_api.setChecked(True)
+        self.clipboard_sensitive_block.setChecked(True)
+        self._save_integrated_features()
+
+    def _exit_focus_mode(self) -> None:
+        self.focus_manual.setChecked(False)
+        self.controller.focus_mode_manager.exit_focus_mode()
+        self._save_integrated_features()
+
+    def _reset_focus_defaults(self) -> None:
+        self.focus_enabled.setChecked(False)
+        self.focus_manual.setChecked(False)
+        self.focus_auto.setChecked(False)
+        self.focus_whitelist.clear()
+        self.focus_silence_idle.setChecked(True)
+        self.focus_silence_hourly.setChecked(True)
+        self.focus_silence_edge.setChecked(True)
+        self.focus_silence_system.setChecked(True)
+        self.focus_silence_clipboard.setChecked(True)
+        self.focus_allow_important.setChecked(True)
+        self._save_integrated_features()
+
+    def _refresh_integrated_feature_status(self) -> None:
+        if hasattr(self, "file_organizer_status"):
+            self.file_organizer_status.setText(
+                f"当前状态：{'已启用，仍需手动选择目录和确认执行' if self.file_organizer_enabled.isChecked() else '已关闭'}。"
+            )
+        if hasattr(self, "system_status_result") and not self.system_status_result.text():
+            self.system_status_result.setText(
+                f"当前状态：{'已启用低频本地检查' if self.system_status_enabled.isChecked() else '已关闭'}。"
+            )
+        if hasattr(self, "clipboard_result") and not self.clipboard_result.text():
+            self.clipboard_result.setText(
+                f"当前状态：{'已启用本地文本监听' if self.clipboard_enabled.isChecked() else '已关闭，不监听剪贴板'}。"
+            )
+        if hasattr(self, "focus_result"):
+            active = bool(getattr(self.controller.focus_mode_manager, "is_active", False))
+            self.focus_result.setText(
+                f"当前状态：配置{'已启用' if self.focus_enabled.isChecked() else '已关闭'}；"
+                f"运行态{'正在专注' if active else '未进入专注'}。"
+            )
+
+    def _refresh_privacy_status(self) -> None:
+        config = self.settings_manager.load_app_config()
+        active = [
+            name
+            for name, enabled in (
+                ("文件整理", config.get("file_organizer_enabled", False)),
+                ("系统状态", config.get("system_status_enabled", False)),
+                ("剪贴板", config.get("clipboard_interaction_enabled", False)),
+                ("专注模式", config.get("focus_mode_enabled", False)),
+            )
+            if bool(enabled)
+        ]
+        self.privacy_status.setText(
+            "高风险功能状态：" + ("、".join(active) + " 已启用。" if active else "均为关闭。")
+        )
+
+    def _restore_privacy_defaults(self) -> None:
+        config = self.settings_manager.load_app_config()
+        config["file_organizer_enabled"] = False
+        config["system_status_enabled"] = False
+        config["clipboard_interaction_enabled"] = False
+        config["focus_mode_enabled"] = False
+        config["focus_mode_manual"] = False
+        config["focus_mode_auto_game_detect"] = False
+        self.settings_manager.save_app_config(config)
+        self.controller.app_config.update(config)
+        self.controller.apply_integrated_feature_config()
+        if hasattr(self, "file_organizer_enabled"):
+            self.file_organizer_enabled.setChecked(False)
+            self.system_status_enabled.setChecked(False)
+            self.clipboard_enabled.setChecked(False)
+            self.focus_enabled.setChecked(False)
+            self.focus_manual.setChecked(False)
+            self.focus_auto.setChecked(False)
+        self._refresh_integrated_feature_status()
+        self._refresh_privacy_status()
 
     def _save_integrated_features(self) -> None:
         config = self.settings_manager.load_app_config()
@@ -1764,7 +2058,9 @@ class SettingsWindow(QDialog):
         self.controller.app_config.update(config)
         self.controller.apply_integrated_feature_config()
         self.controller.window.set_context_menu(self.controller.menu_manager.create_menu())
-        self.integrated_result.setText("已保存。预览功能开关和运行时状态已即时同步。")
+        self._refresh_integrated_feature_status()
+        if hasattr(self, "privacy_status"):
+            self._refresh_privacy_status()
 
     def _masked_api_key_for_provider(self, provider: str, prov_conf: dict[str, Any] | None = None) -> str:
         from .chat_client import mask_key
@@ -1873,7 +2169,6 @@ class SettingsWindow(QDialog):
         config["idle_behavior_enabled"] = self.idle_behavior.isChecked()
         config["idle_behavior_seconds"] = self.idle_behavior_seconds.value()
         config["hourly_chime_enabled"] = self.hourly_chime.isChecked()
-        config["reminder_enabled"] = self.reminder_enabled.isChecked()
         config["day_night_enabled"] = self.day_night.isChecked()
         self.settings_manager.save_app_config(config)
         self.controller.app_config.update(config)
