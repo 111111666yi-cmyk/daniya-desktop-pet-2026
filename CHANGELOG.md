@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.65.1 (2026-06-05) - Manual Acceptance Hotfix
+
+- Passed local simulated mouse acceptance for the v0.65 desktop flows: startup, quiet defaults, input toggle, edge peek, Provider status, file organizer preview, focus mode, persistence, and basic UI stability.
+- Fixed the real drag/snap path so left and right edge peek stays half-hidden after render-frame clamping.
+- File organizer previews now record skipped sensitive directories such as `assets/private` instead of silently omitting them from the audit result.
+- Restored the public runtime default `window.show_input=false` so first launch remains quiet and CI public-surface checks stay green.
+
 ## Unreleased - v0.62-v0.65 Recovery Wiring
 
 - Fixed the hidden input bar recovery path: when `window.show_input=false` hides the parent `InputBar`, enabling it from Settings now restores the whole widget and expands the editable field.

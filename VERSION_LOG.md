@@ -4,6 +4,15 @@
 
 ---
 
+## v0.65.1 — Manual Acceptance Hotfix (2026-06-05)
+
+- 完成本地鼠标模拟验收：启动、安静默认、输入框开关、左右边缘趴墙、Provider 状态、文件整理预览、专注模式、设置持久化和基础 UI 稳定性均通过。
+- 修复真实拖拽吸附路径：左右趴墙在渲染帧约束后仍保持半隐藏，不再退化为普通贴边。
+- 文件整理预览会把 `assets/private` 等敏感目录记录到 skipped 结果中，避免审计输出看不到被跳过的目录。
+- 公开默认配置恢复 `window.show_input=false`，保持首次启动安静，并与 public surface CI 检查一致。
+
+---
+
 ## Unreleased — v0.62-v0.65 Wiring Recovery
 
 - 修复 `show_input=false` 后输入框无法恢复的问题：显示输入框时会重新显示 `InputBar` 父控件并展开输入栏。

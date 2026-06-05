@@ -1,8 +1,8 @@
 # Daniya Summer Desktop Pet
 
-**DaniyaSummerPet v0.65 Integrated Preview**
+**DaniyaSummerPet v0.65.1 Manual Acceptance Hotfix**
 
-[Latest Release](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/tag/v0.65) · [Download ZIP](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/download/v0.65/DaniyaSummerPet-v0.65-win-x64.zip) · [Documentation](docs/index.md) · [Release Checklist](docs/release_checklist.md)
+[Latest Tag](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/tree/v0.65.1) · [Documentation](docs/index.md) · [Release Checklist](docs/release_checklist.md)
 
 达妮娅夏日桌宠是一个 Windows 桌面陪伴应用，基于 Python + PySide6 构建。它提供透明置顶桌宠、拖拽移动、气泡对话、设置中心、角色关系、记忆备忘录、提醒、文件整理预览、系统状态感知、隐私剪贴板交互和专注/游戏模式。
 
@@ -12,7 +12,7 @@
 
 ### 方式一：下载 Windows 包
 
-1. 从 [v0.65 Release](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/tag/v0.65) 下载 `DaniyaSummerPet-v0.65-win-x64.zip`。
+1. 下载维护者发布的 `DaniyaSummerPet-v0.65.1-win-x64.zip`。
 2. 解压到桌面、下载目录或其他普通文件夹。
 3. 运行 `DaniyaSummerPet.exe`。
 
@@ -55,7 +55,7 @@ python main.py
 
 ## Defaults And Privacy
 
-v0.65 默认采用安静启动策略：
+v0.65.1 默认采用安静启动策略：
 
 - 默认不展开输入框。
 - 默认关闭空闲小动作。
@@ -119,23 +119,23 @@ ZAI_API_KEY=your_key_here
 
 ## Validation Status
 
-v0.65 已完成自动化验证：
+v0.65.1 已完成自动化验证：
 
-- `pytest -q`: `278 passed, 3 skipped`
+- `pytest -q`: `281 passed, 3 skipped`
 - `tools/check_sensitive_files.py`: PASS
 - `tools/check_character_packs.py`: PASS
 - `tools/check_config_templates.py`: PASS
 - `tools/check_docs_links.py`: PASS
 - `tools/check_public_surface.py`: PASS
-- `tools/check_release_zip.py release\DaniyaSummerPet-v0.65-win-x64.zip`: PASS
-- GitHub Actions `Test`: PASS
-- GitHub Actions `Public Surface Audit`: PASS
+- `tools/check_release_zip.py release\DaniyaSummerPet-v0.65.1-win-x64.zip`: PASS
+- GitHub Actions `Test`: release upload前必须为 PASS
+- GitHub Actions `Public Surface Audit`: release upload前必须为 PASS
 
 Release asset:
 
 ```text
-DaniyaSummerPet-v0.65-win-x64.zip
-SHA256: 0c91629ebd15c3aad4ae22d62c81bba7be3fa0443b4315440320cdda4e94c33d
+DaniyaSummerPet-v0.65.1-win-x64.zip
+SHA256: publish with the final uploaded artifact; verify locally with `Get-FileHash`.
 ```
 
 ## Useful Docs
@@ -170,7 +170,7 @@ Before publishing a Windows package:
 
 ```bat
 pack.bat
-python tools\check_release_zip.py release\DaniyaSummerPet-v0.65-win-x64.zip
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.65.1-win-x64.zip
 ```
 
 Keep changes stage-scoped. Do not commit `.env`, runtime `data/`, private assets, model files, packaged `release/` output, `dist/`, or `build/`.
