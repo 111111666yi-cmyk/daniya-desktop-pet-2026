@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.68 (2026-06-05) - Feedback Coordination
+
+- Added one coordinator for non-essential bubbles, character actions, optional sound hooks, completion, and cooldown handling.
+- Prevented idle chat, hourly chimes, system alerts, clipboard notices, and idle-behavior bubbles from interrupting dragging, active input, existing speech, Settings Center work, or focus-mode suppression.
+- Kept user-initiated chat, reminder confirmation, clicks, and important due reminders on their existing immediate-response paths.
+- Added regression coverage for overlap prevention, interaction guards, focus-specific suppression, cooldown, wiring, and return-to-idle behavior.
+
 ## v0.67 (2026-06-05) - Daniya Character Experience Regression
 
 - Moved reminder, file organizer, clipboard, system-status, and focus-mode character copy into each character pack's `speech.yaml`.

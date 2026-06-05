@@ -28,6 +28,7 @@ from .natural_reminder_service import NaturalReminderService
 from .settings_window import SettingsWindow
 from .clipboard_interaction import ClipboardInteraction
 from .focus_mode import FocusModeManager
+from .feedback_coordinator import FeedbackCoordinator
 from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
 
@@ -162,7 +163,7 @@ class AppController(QObject):
         # Inject behavior engine checkers
         self.window.behavior_engine.idle_behavior.is_allowed = self.is_idle_behavior_allowed
         self.window.behavior_engine.idle_behavior.is_night = self.is_night_behavior
-        self.window.edge_peek_allowed_callback = lambda: not self._focus_suppresses("focus_mode_silence_edge_peek")
+        self.window.edge_peek_allowed_callback = self._edge_peek_allowed
 
         self.idle_manager = IdleManager(self.app_config, self.window.can_show_idle_message)
         self.menu_manager = MenuManager(self.window, self)
@@ -199,6 +200,18 @@ class AppController(QObject):
         self._drag_debounce.timeout.connect(self._fire_drag_event)
         self._pending_phys_events: deque[str] = deque(maxlen=32)
         self._phys_busy = False
+        self.feedback_coordinator = FeedbackCoordinator(
+            show_text=self.window.speak,
+            trigger_action=self._trigger_feedback_action,
+            return_to_idle=self.window.animation_manager.play_idle,
+            is_dragging=self._is_feedback_dragging,
+            is_settings_open=self._is_settings_open,
+            is_user_busy=self._is_feedback_user_busy,
+            is_talking=lambda: self.window.typewriter.is_typing or self.window.bubble.isVisible(),
+            is_focus_suppressed=self._focus_suppresses,
+        )
+        self.window.behavior_engine.speak_callback = self._speak_idle_behavior
+        self.window.typewriter.sequence_finished.connect(self.feedback_coordinator.complete)
         self.apply_integrated_feature_config()
 
     def show(self) -> None:
@@ -303,9 +316,13 @@ class AppController(QObject):
     def is_idle_behavior_allowed(self) -> bool:
         if self._focus_suppresses("focus_mode_silence_idle_chat"):
             return False
+        if self._is_feedback_dragging():
+            return False
         if self.worker is not None and self.worker.isRunning():
             return False
         if self.window.typewriter.is_typing:
+            return False
+        if self.window.bubble.isVisible():
             return False
         if self.window.input_box.isVisible() and self.window.input_box.hasFocus() and self.window.input_box.text().strip():
             return False
@@ -508,16 +525,20 @@ class AppController(QObject):
             QTimer.singleShot(1000, lambda: self._check_affinity_upgrade(upgraded))
 
     def speak_remind(self, text: str) -> None:
-        if self._focus_suppresses("focus_mode_silence_hourly_chime"):
-            return
-        if not self.window.can_show_idle_message():
-            return
-        self.window.animation_manager.trigger_remind()
-        self.window.speak(text)
+        self.feedback_coordinator.present(
+            source="hourly_chime",
+            text=text,
+            action="remind",
+            focus_config_key="focus_mode_silence_hourly_chime",
+        )
 
     def speak_happy(self, text: str) -> None:
-        self.window.animation_manager.trigger_happy()
-        self.window.speak(text)
+        self.feedback_coordinator.present(
+            source="idle_chat",
+            text=text,
+            action="happy",
+            focus_config_key="focus_mode_silence_idle_chat",
+        )
 
     def play_rps(self, choice: str) -> None:
         self.idle_manager.mark_activity()
@@ -582,38 +603,83 @@ class AppController(QObject):
             and bool(self.app_config.get(config_key, False))
         )
 
+    def _is_feedback_dragging(self) -> bool:
+        detector = self.window.behavior_engine.detector
+        return bool(
+            self.window.drag_start_global is not None
+            or detector.is_dragging
+            or getattr(detector, "is_pressed", False)
+        )
+
+    def _is_settings_open(self) -> bool:
+        return self.settings_window is not None and self.settings_window.isVisible()
+
+    def _is_feedback_user_busy(self) -> bool:
+        if self.worker is not None and self.worker.isRunning():
+            return True
+        if self.reminder_boxes:
+            return True
+        return bool(
+            self.window.input_box.isVisible()
+            and self.window.input_box.hasFocus()
+            and self.window.input_box.text().strip()
+        )
+
+    def _edge_peek_allowed(self) -> bool:
+        if self._focus_suppresses("focus_mode_silence_edge_peek"):
+            return False
+        if self._is_feedback_dragging() or self._is_settings_open() or self._is_feedback_user_busy():
+            return False
+        return not self.window.typewriter.is_typing and not self.window.bubble.isVisible()
+
+    def _trigger_feedback_action(self, action: str) -> None:
+        if action == "happy":
+            self.window.animation_manager.trigger_happy()
+        elif action == "remind":
+            self.window.animation_manager.trigger_remind()
+        elif action == "idle":
+            self.window.animation_manager.play_idle()
+
+    def _speak_idle_behavior(self, text: str) -> None:
+        self.feedback_coordinator.present(
+            source="idle_behavior",
+            text=text,
+            action="keep",
+            focus_config_key="focus_mode_silence_idle_chat",
+        )
+
     def _on_focus_state_changed(self, active: bool) -> None:
-        if active:
-            self.window.speak(self.utility_text("focus_enter"))
-        else:
-            self.window.speak(self.utility_text("focus_exit"))
+        self.feedback_coordinator.present(
+            source="focus_enter" if active else "focus_exit",
+            text=self.utility_text("focus_enter" if active else "focus_exit"),
+            action="remind" if active else "happy",
+        )
 
     def utility_text(self, key: str, **values: Any) -> str:
         return utility_text(self.daniya_adapter.character_pack, key, **values)
 
-    def _on_system_status_alert(self, _alert_type: str, message: str) -> None:
+    def _on_system_status_alert(self, alert_type: str, message: str) -> None:
         if not bool(self.app_config.get("system_status_enabled", False)):
             return
-        if self._focus_suppresses("focus_mode_silence_system_status"):
-            return
-        if self.settings_window is not None and self.settings_window.isVisible():
-            return
-        if not self.window.can_show_idle_message():
-            return
-        self.window.animation_manager.trigger_remind()
-        self.window.speak(message)
+        self.feedback_coordinator.present(
+            source=f"system_status:{alert_type}",
+            text=message,
+            action="remind",
+            focus_config_key="focus_mode_silence_system_status",
+        )
 
     def _on_clipboard_alert(self, result: dict[str, object]) -> None:
         if not bool(self.app_config.get("clipboard_interaction_enabled", False)):
             return
-        if self._focus_suppresses("focus_mode_silence_clipboard"):
-            return
-        if self.settings_window is not None and self.settings_window.isVisible():
-            return
         status = str(result.get("status", ""))
         message = str(result.get("message", ""))
         if status in {"safe", "too_long", "sensitive"} and message:
-            self.window.speak(message)
+            self.feedback_coordinator.present(
+                source=f"clipboard:{status}",
+                text=message,
+                action="remind",
+                focus_config_key="focus_mode_silence_clipboard",
+            )
 
     def quit(self) -> None:
         # Wait for any running chat worker or physical event workers to finish safely
