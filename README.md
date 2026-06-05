@@ -119,17 +119,7 @@ ZAI_API_KEY=your_key_here
 
 ## Validation Status
 
-v0.65.2 已完成自动化验证：
 
-- `pytest -q`: `281 passed, 3 skipped`
-- `tools/check_sensitive_files.py`: PASS
-- `tools/check_character_packs.py`: PASS
-- `tools/check_config_templates.py`: PASS
-- `tools/check_docs_links.py`: PASS
-- `tools/check_public_surface.py`: PASS
-- `tools/check_release_zip.py release\DaniyaSummerPet-v0.65.2-win-x64.zip`: PASS
-- GitHub Actions `Test`: release upload前必须为 PASS
-- GitHub Actions `Public Surface Audit`: release upload前必须为 PASS
 
 Release asset:
 
