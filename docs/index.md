@@ -17,6 +17,8 @@
 - [Character Pack Guide](character_pack_guide.md)
 - [Asset Policy](asset_policy.md)
 - [Release Checklist](release_checklist.md)
+- [v0.70 Integration Acceptance](V0.70_INTEGRATION_ACCEPTANCE.md)
+- [v0.70 Manual QA Checklist](V0.70_MANUAL_QA_CHECKLIST.md)
 - [Development Workflow](dev_workflow.md)
 
 ## Architecture Notes

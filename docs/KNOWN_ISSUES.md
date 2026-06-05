@@ -1,5 +1,21 @@
 # KNOWN_ISSUES
 
+## v0.70 Acceptance Boundaries (2026-06-05)
+
+| ID | Level | Status | Required evidence |
+|---|---|---|---|
+| QA70-PROVIDER-001 | P1 | MANUAL REQUIRED | One real cloud reply using a user-owned API Key and available quota. Do not record the key. |
+| QA70-MONITOR-001 | P2 | MANUAL REQUIRED | Drag, edge peek, and window recovery on every available monitor, including mixed DPI when available. |
+| QA70-GUI-001 | P2 | MANUAL REQUIRED | Direct observation of drag feel, right-click menu, Settings Center, input, bubbles, typewriter timing, and long-text layout. |
+| QA70-SMARTSCREEN-001 | P3 | MANUAL REQUIRED | Downloaded zip/exe behavior under the target Windows antivirus and SmartScreen policy. |
+
+Closed by automated v0.66-v0.69 work:
+
+- Settings Center page organization and default-state visibility.
+- Daniya utility wording regression.
+- Passive bubble/action overlap and idle-return coordination.
+- Character discovery, fallback, hot reload, and per-character relationship-state isolation.
+
 ## v0.60 Manual QA Open Items (2026-06-02)
 
 | ID | Level | Item | Status / Rationale |
@@ -28,14 +44,13 @@ Still manual before tag or GitHub Release:
 - Right-click menu feel.
 - Long text bubble visual behavior.
 
-更新日期：2026-05-31
+更新日期：2026-06-05
 审计阶段：第二阶段，动态验证后
 
 ## 暂不修复清单
 
 | ID | 等级 | 问题 | 为什么暂不修 |
 |---|---|---|---|
-| FA-STATE-001 | P2 | 多个模块可写动作/行为状态 | 第二阶段未稳定复现卡死；无证据不改状态机 |
 | FA-TIMER-001 | P2 | 多 QTimer / QPropertyAnimation / worker 叠加 | 第二阶段连续点击/双击/typewriter/reload 通过；无证据不改 Timer |
 | FA-CONFIG-001 | P2 | tracked `config/app_config.json` 包含运行态字段 | 涉及兼容性和配置迁移，不适合第一阶段修 |
 | FA-REL-001 | P3 | 本地 `release/` 有旧 v0.44 产物 | 已被 `.gitignore` 覆盖，不影响 Git；打包前清理即可 |
@@ -49,6 +64,7 @@ Still manual before tag or GitHub Release:
 | FA-PKG-001 | P1 | `pack.bat` 已改为 config 白名单 package input，release/dist/zip 不包含 ignored 本地 config |
 | FA-PKG-002 | P2 | `pack.bat` 已排除本地审计截图/debug/tmp/log，release/dist/zip 不包含 `docs/v0.51_patch_audit/` |
 | FA-CHAR-001 | P2 | v0.56 已确认 `characters/test_dummy/` 为 local-only，加入 `.gitignore`；正式回归只要求 `characters/daniya` 与 `characters/template` |
+| FA-STATE-001 | P2 | v0.68 已增加统一被动反馈协调、交互保护、冷却和完成后回 idle 回归测试。 |
 | KI-001 | P4 | **[已解决]** 自然语言提醒解析与创建已在 v0.61 接入输入框主链路，并通过 `natural_reminder_enabled` 开关安全隔离。 |
 
 ## 既有 Known Issues (环境与边界限制说明)

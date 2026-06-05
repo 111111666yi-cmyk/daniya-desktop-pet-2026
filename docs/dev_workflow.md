@@ -10,7 +10,7 @@ This document describes the expected development and validation flow for Daniya 
 4. Update the stage report under `docs/`.
 5. Wait for user confirmation before moving to the next version.
 
-Do not implement v0.44, v0.45, or later roadmap tasks during v0.43 cleanup.
+Do not mix future-stage features into the current accepted version stage.
 
 ## Character Pack Workflow
 
@@ -65,7 +65,7 @@ python tools\check_public_surface.py
 Release zip scan:
 
 ```bat
-python tools\check_release_zip.py release\DaniyaSummerPet-v0.65.2-win-x64.zip
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.70-win-x64.zip
 ```
 
 Startup:

@@ -61,7 +61,9 @@ class SnapController(QObject):
             target_y = max(min_y, min(max_y, target_y))
 
         pet_config = getattr(self.window, "app_config", {}).get("pet", {})
-        if bool(pet_config.get("edge_peek_enabled", False)):
+        edge_peek_allowed = getattr(self.window, "edge_peek_allowed_callback", None)
+        can_edge_peek = not callable(edge_peek_allowed) or bool(edge_peek_allowed())
+        if bool(pet_config.get("edge_peek_enabled", False)) and can_edge_peek:
             edge_side = None
             if snap_state.startswith("left"):
                 edge_side = "left"
@@ -73,6 +75,8 @@ class SnapController(QObject):
                 target_x = docked.x()
                 target_y = docked.y()
                 self.window.dock_side = edge_side
+        elif hasattr(self.window, "dock_side"):
+            self.window.dock_side = None
 
         target_pos = QPoint(target_x, target_y)
         if target_pos != pos and self.config.drag_return_enabled:

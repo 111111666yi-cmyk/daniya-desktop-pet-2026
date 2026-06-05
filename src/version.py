@@ -1,4 +1,4 @@
 """Application version metadata."""
 
-APP_VERSION = "v0.69"
-RELEASE_NAME = "DaniyaSummerPet v0.69 Character Pack Stability"
+APP_VERSION = "v0.70"
+RELEASE_NAME = "DaniyaSummerPet v0.70 Integration Acceptance"
