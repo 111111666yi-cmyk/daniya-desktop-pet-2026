@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import socket
+import threading
 import time
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -42,6 +43,7 @@ class SystemStatusManager(QObject):
         self.message_lookup: Callable[..., str] | None = None
         self.enabled = True
         self.last_alert_times: dict[str, float] = {}
+        self._cached_network_online: bool = True
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.check_status)
@@ -90,7 +92,7 @@ class SystemStatusManager(QObject):
             except Exception:
                 pass
 
-        net = True if not self.network_check_enabled else self.is_network_online()
+        net = self._cached_network_online
 
         return SystemStatus(
             cpu_percent=cpu,
@@ -101,9 +103,17 @@ class SystemStatusManager(QObject):
             disk_percent=disk
         )
 
+    def _refresh_network_async(self) -> None:
+        def _probe() -> None:
+            self._cached_network_online = self.is_network_online()
+        threading.Thread(target=_probe, daemon=True).start()
+
     def check_status(self) -> None:
         if not self.enabled:
             return
+
+        if self.network_check_enabled:
+            self._refresh_network_async()
 
         status = self.get_current_status()
         now = time.time()

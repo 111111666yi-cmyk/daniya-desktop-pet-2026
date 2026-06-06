@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import threading
 from typing import Any
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
 try:
     import psutil
@@ -52,21 +53,22 @@ class FocusModeManager(QObject):
     def scan_processes(self) -> None:
         if not self.auto_detect or not psutil:
             return
+        threading.Thread(target=self._scan_processes_bg, daemon=True).start()
 
+    def _scan_processes_bg(self) -> None:
         try:
-            # Gather current process names safely and locally without logs
             current_processes = {p.info["name"].lower() for p in psutil.process_iter(["name"]) if p.info and p.info.get("name")}
-            
-            # Check if any whitelisted game is currently running
             game_running = any(g.lower() in current_processes for g in self.game_whitelist)
-            
-            if game_running:
-                if not self.is_active:
-                    self.auto_focus_active = True
-                    self.enter_focus_mode()
-            else:
-                if self.is_active and self.auto_focus_active:
-                    # Only exit automatically if focus mode was triggered by auto-detect
-                    self.exit_focus_mode()
         except Exception:
-            pass
+            return
+        self._apply_scan_result(game_running)
+
+    @Slot()
+    def _apply_scan_result(self, game_running: bool) -> None:
+        if game_running:
+            if not self.is_active:
+                self.auto_focus_active = True
+                self.enter_focus_mode()
+        else:
+            if self.is_active and self.auto_focus_active:
+                self.exit_focus_mode()

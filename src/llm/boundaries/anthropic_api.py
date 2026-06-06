@@ -23,6 +23,9 @@ def chat(
     timeout: int = 30,
 ) -> str:
     """向 Anthropic Messages API 发送请求，返回响应文本。"""
+    if not api_key:
+        raise AuthError("未配置 Claude API Key，请在设置中填写。")
+
     headers = {
         "Content-Type": "application/json",
         "x-api-key": api_key,

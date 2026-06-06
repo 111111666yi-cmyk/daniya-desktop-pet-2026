@@ -99,8 +99,10 @@ def lore_ids_from_text(user_text: str) -> list[str]:
     return found
 
 
+_MAX_EVENT_LOG_BYTES = 512 * 1024  # 512 KB
+
+
 def append_event_log(record: dict[str, Any]) -> None:
-    # [CHANGE-005-FIX] 改为 JSONL 追加模式，不再每次读取+重写整个文件
     path = data_root() / "event_log.jsonl"
     path.parent.mkdir(parents=True, exist_ok=True)
     record = dict(record)
@@ -109,6 +111,17 @@ def append_event_log(record: dict[str, Any]) -> None:
     with _file_lock:
         with open(path, "a", encoding="utf-8") as f:
             f.write(line)
+        try:
+            if path.stat().st_size > _MAX_EVENT_LOG_BYTES:
+                _rotate_event_log(path)
+        except OSError:
+            pass
+
+
+def _rotate_event_log(path: Path) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    keep = lines[len(lines) // 2:]
+    path.write_text("".join(keep), encoding="utf-8")
 
 
 def load_event_log() -> list[dict[str, Any]]:

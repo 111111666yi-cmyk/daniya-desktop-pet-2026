@@ -63,13 +63,9 @@ class ChatClient:
             print("[Daniya] Chat response: provider=none, model=none, source=local, fallback_used=True, error_summary=\"provider_manager_missing\"")
             return sanitize_user_addressing(self.local_reply(missing_key=True)), "local"
             
-        # 兼容旧代码：由于 DialogueEngine 的适配器只传了单个 prompt 字符串，
-        # 我们用 history_manager 获取额外的历史记录（如果 DialogueEngine 自己没有做的话）
-        # 不过在 v0.415，DialogueEngine 的 Prompt 已经包含了所有历史和状态。
-        # 此处的 _messages 组装主要为了兼容可能没有过 PromptBuilder 的纯文本 fallback
         messages = self.provider_manager.prompt_to_messages(
             prompt=user_text,
-            history_messages=self.history_manager.recent_messages(self.context_limit)
+            history_messages=None,
         )
         
         reply, source = self.provider_manager.chat(messages)

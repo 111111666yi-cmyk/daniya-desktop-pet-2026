@@ -226,8 +226,8 @@ class ConfigManager:
         except Exception:
             try:
                 path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-            except Exception:
-                pass
+            except Exception as inner_exc:
+                print(f"[Daniya] CRITICAL: failed to save config {path}: {inner_exc}")
 
     def _backup_broken_json(self, path: Path) -> None:
         if not path.exists():

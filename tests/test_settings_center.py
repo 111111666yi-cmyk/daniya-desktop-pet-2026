@@ -369,6 +369,12 @@ def test_settings_window_opens_with_expected_tabs_in_subprocess(tmp_path):
     runtime_root = tmp_path / "runtime"
     runtime_root.mkdir()
     shutil.copytree(Path("characters"), runtime_root / "characters")
+    shutil.copytree(Path("config"), runtime_root / "config")
+    app_cfg_path = runtime_root / "config" / "app_config.json"
+    app_cfg = json.loads(app_cfg_path.read_text(encoding="utf-8"))
+    for key in ["file_organizer_enabled", "system_status_enabled", "clipboard_enabled", "focus_mode_enabled"]:
+        app_cfg[key] = False
+    app_cfg_path.write_text(json.dumps(app_cfg, ensure_ascii=False, indent=2), encoding="utf-8")
     env["DANIYA_RUNTIME_ROOT"] = str(runtime_root)
     script = r"""
 import os, sys

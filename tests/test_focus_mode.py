@@ -49,7 +49,7 @@ def test_auto_detect_focus_mode(monkeypatch) -> None:
     proc2.info = {"name": "python.exe"}
     mock_psutil.process_iter.return_value = [proc1, proc2]
 
-    manager.scan_processes()
+    manager._scan_processes_bg()
     assert not manager.is_active
     assert len(emits) == 0
 
@@ -58,14 +58,14 @@ def test_auto_detect_focus_mode(monkeypatch) -> None:
     game_proc.info = {"name": "eldenring.exe"}
     mock_psutil.process_iter.return_value = [proc1, proc2, game_proc]
 
-    manager.scan_processes()
+    manager._scan_processes_bg()
     assert manager.is_active
     assert manager.should_suppress_notifications()
     assert emits == [True]
 
     # 3. Game closes
     mock_psutil.process_iter.return_value = [proc1, proc2]
-    manager.scan_processes()
+    manager._scan_processes_bg()
     assert not manager.is_active
     assert emits == [True, False]
 
@@ -81,7 +81,7 @@ def test_empty_process_whitelist_disables_auto_match(monkeypatch) -> None:
     game_proc.info = {"name": "eldenring.exe"}
     mock_psutil.process_iter.return_value = [game_proc]
 
-    manager.scan_processes()
+    manager._scan_processes_bg()
 
     assert manager.game_whitelist == set()
     assert not manager.is_active

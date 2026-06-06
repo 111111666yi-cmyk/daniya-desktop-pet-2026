@@ -240,8 +240,8 @@ class FileOrganizer:
     def _save_log(self, path: Path, results: list[dict[str, Any]]) -> None:
         try:
             path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"[Daniya] Failed to save file organizer log {path}: {exc}")
 
     def _unique_destination(self, path: Path, reserved: set[str] | None = None) -> Path:
         if reserved is None:

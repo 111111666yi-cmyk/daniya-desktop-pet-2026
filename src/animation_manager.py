@@ -52,8 +52,7 @@ class AnimationManager(QObject):
         self.current_action = action_name
         
         try:
-            from unittest.mock import Mock
-            if hasattr(self.asset_manager, "select_frames_for_state") and not isinstance(self.asset_manager.select_frames_for_state, Mock):
+            if hasattr(self.asset_manager, "select_frames_for_state") and callable(self.asset_manager.select_frames_for_state):
                 frames = self.asset_manager.select_frames_for_state(action_name)
                 self.current_frames = [str(f) for f in frames]
             else:

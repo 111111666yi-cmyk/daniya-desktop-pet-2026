@@ -131,7 +131,9 @@ class SnapController(QObject):
         path = self.state_file_path()
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+            tmp.replace(path)
         except OSError as exc:
             print(f"[SnapController] Failed to save window state: {exc}")
 

@@ -163,10 +163,10 @@ def add_ellipsis_if_needed(text: str) -> str:
 
 
 def remove_unrelated_topic_expansion(text: str) -> str:
-    markers = ["顺便", "另外", "除此之外", "话说回来", "我还想提醒你"]
+    markers = ["顺便", "除此之外", "话说回来", "我还想提醒你"]
     for marker in markers:
         index = text.find(marker)
-        if index > 0:
+        if index > 10:
             text = text[:index]
     return _clean_spacing(text)
 

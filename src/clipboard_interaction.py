@@ -11,7 +11,7 @@ SENSITIVE_PATTERNS = [
     re.compile(r"(?:api[_-]?key|secret|token|password|passwd|密钥|密码)\s*[:=/\s-]\s*[A-Za-z0-9_.-]{8,}", re.IGNORECASE),
     re.compile(r"(?<!\d)\d{17}[\dXx](?!\d)"),  # ID Card
     re.compile(r"(?<!\d)1[3-9]\d{9}(?!\d)"),   # Mobile
-    re.compile(r"(?<!\d)\d{16,19}(?!\d)"),     # Bank Card
+    re.compile(r"(?<!\d)[3-6]\d{15,18}(?!\d)"),  # Bank Card (starts with 3-6)
 ]
 
 class ClipboardInteraction(QObject):
