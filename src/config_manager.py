@@ -122,6 +122,16 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "focus_mode_silence_system_status": True,
     "focus_mode_silence_clipboard": True,
     "focus_mode_allow_important_reminders": True,
+    "tts": {
+        "enabled": False,
+        "voice_id": "daniya_voice_v1",
+        "engine": "gpt-sovits",
+        "local_api_base_url": "http://127.0.0.1:9880",
+        "volume": 70,
+        "cache_enabled": True,
+        "max_text_length": 120,
+        "interaction_probability": 0.25,
+    },
 }
 
 DEFAULT_SYSTEM_PROMPT = """你是达妮娅的 Q 版夏日桌宠形态。

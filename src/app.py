@@ -203,7 +203,7 @@ class AppController(QObject):
         self._pending_phys_events: deque[str] = deque(maxlen=32)
         self._phys_busy = False
         self.feedback_coordinator = FeedbackCoordinator(
-            show_text=self.window.speak,
+            show_text=self._speak_with_tts,
             trigger_action=self._trigger_feedback_action,
             return_to_idle=self.window.animation_manager.play_idle,
             is_dragging=self._is_feedback_dragging,
@@ -215,6 +215,27 @@ class AppController(QObject):
         self.window.behavior_engine.speak_callback = self._speak_idle_behavior
         self.window.typewriter.sequence_finished.connect(self.feedback_coordinator.complete)
         self.apply_integrated_feature_config()
+        self._init_tts()
+
+    def _init_tts(self) -> None:
+        from core.tts.voice_asset_manager import VoiceAssetManager
+        from core.tts.tts_service import TTSService
+        from core.tts.audio_player import AudioPlayer
+        tts_config = self.app_config.get("tts", {})
+        self._voice_asset_manager = VoiceAssetManager()
+        self._audio_player = AudioPlayer(self.window)
+        self.tts_service = TTSService(self._voice_asset_manager, self._audio_player, tts_config)
+
+    def _tts_play(self, text: str, interaction: bool = False) -> None:
+        """Play TTS for text. If interaction=True, use probability gate."""
+        if self.tts_service is None or not self.tts_service.enabled:
+            return
+        if interaction:
+            import random
+            prob = self.app_config.get("tts", {}).get("interaction_probability", 0.25)
+            if random.random() > prob:
+                return
+        self.tts_service.play(text)
 
     def show(self) -> None:
         self.window.show_at_config_position()
@@ -311,6 +332,7 @@ class AppController(QObject):
         self.window.set_input_enabled(True)
         self.window.set_thinking_state(False)
         self.window.speak(reply)
+        self._tts_play(reply)
         self.worker = None
         if upgraded:
             QTimer.singleShot(2500, lambda: self._check_affinity_upgrade(upgraded))
@@ -502,7 +524,9 @@ class AppController(QObject):
     def on_reminder_due(self, reminder_id: str, text: str) -> None:
         self.window.set_always_on_top(True)
         self.window.animation_manager.trigger_remind()
-        self.window.speak(self.utility_text("reminder_due", text=text))
+        reminder_text = self.utility_text("reminder_due", text=text)
+        self.window.speak(reminder_text)
+        self._tts_play(reminder_text)
         # [CHANGE-003+005] 提醒到期事件流入引擎（后台线程）
         self._fire_physical_event("reminder_due")
         box = QMessageBox(self.window)
@@ -640,6 +664,11 @@ class AppController(QObject):
             self.window.animation_manager.trigger_remind()
         elif action == "idle":
             self.window.animation_manager.play_idle()
+
+    def _speak_with_tts(self, text: str) -> None:
+        """Wrapper for feedback coordinator: show bubble + TTS."""
+        self.window.speak(text)
+        self._tts_play(text)
 
     def _speak_idle_behavior(self, text: str) -> None:
         self.feedback_coordinator.present(
