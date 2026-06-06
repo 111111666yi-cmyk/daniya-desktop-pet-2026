@@ -10,6 +10,7 @@ data/daniya_relation/
 # Private or generated assets
 assets/private/
 assets/voices/*/
+assets/voice_clips/*/
 cache/tts/
 characters/*/assets/
 !characters/template/assets/

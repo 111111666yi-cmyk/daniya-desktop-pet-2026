@@ -6,7 +6,7 @@
     "start_x": 0,
     "start_y": 0,
     "always_on_top": true,
-    "show_input": false
+    "show_input": true
   },
   "pet": {
     "pet_height": 96,
@@ -22,7 +22,7 @@
       160
     ],
     "idle_animation_interval_ms": 10000,
-    "active_action_module": "A_sit_base",
+    "active_action_module": "B_stand_base_pack",
     "enabled_action_modules": {
       "A_sit_base": true,
       "B_stand_base_pack": true,
@@ -93,7 +93,7 @@
   "double_click_enabled": true,
   "long_press_ms": 600,
   "natural_reminder_enabled": true,
-  "file_organizer_enabled": false,
+  "file_organizer_enabled": true,
   "system_status_enabled": false,
   "system_status_interval_seconds": 300,
   "system_status_cooldown_seconds": 300,
@@ -125,5 +125,13 @@
     "cache_enabled": true,
     "max_text_length": 120,
     "interaction_probability": 0.25
+  },
+  "voice": {
+    "mode": "off",
+    "clip_pack_id": "daniya_clip_pack_v1",
+    "remote_manifest_url": "",
+    "auto_download_clip_pack": false,
+    "volume": 70,
+    "cache_enabled": true
   }
 }

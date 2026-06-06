@@ -221,21 +221,38 @@ class AppController(QObject):
         from core.tts.voice_asset_manager import VoiceAssetManager
         from core.tts.tts_service import TTSService
         from core.tts.audio_player import AudioPlayer
+        from core.tts.clip_pack import ClipPackVoiceService
+        from core.tts.voice_mode_router import VoiceModeRouter
         tts_config = self.app_config.get("tts", {})
         self._voice_asset_manager = VoiceAssetManager()
         self._audio_player = AudioPlayer(self.window)
         self.tts_service = TTSService(self._voice_asset_manager, self._audio_player, tts_config)
+        self._clip_pack_service = ClipPackVoiceService(audio_player=self._audio_player)
+        self.voice_router = VoiceModeRouter(
+            config=self.app_config,
+            clip_pack_service=self._clip_pack_service,
+            tts_service=self.tts_service,
+        )
 
     def _tts_play(self, text: str, interaction: bool = False) -> None:
         """Play TTS for text. If interaction=True, use probability gate."""
-        if self.tts_service is None or not self.tts_service.enabled:
-            return
-        if interaction:
-            import random
-            prob = self.app_config.get("tts", {}).get("interaction_probability", 0.25)
-            if random.random() > prob:
+        voice_mode = self.app_config.get("voice", {}).get("mode", "off")
+        if voice_mode == "local_gpt_sovits":
+            if self.tts_service is None or not self.tts_service.enabled:
                 return
-        self.tts_service.play(text)
+            if interaction:
+                import random
+                prob = self.app_config.get("tts", {}).get("interaction_probability", 0.25)
+                if random.random() > prob:
+                    return
+            self.tts_service.play(text)
+        elif voice_mode == "clip_pack":
+            if hasattr(self, "voice_router"):
+                self.voice_router.play_text(text)
+
+    def _voice_play_event(self, event_type: str, text: str | None = None) -> None:
+        if hasattr(self, "voice_router"):
+            self.voice_router.play_pet_event(event_type, text)
 
     def show(self) -> None:
         self.window.show_at_config_position()
