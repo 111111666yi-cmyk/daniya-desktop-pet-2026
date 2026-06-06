@@ -20,16 +20,25 @@ def test_sweet_names_and_customer_service_tone_removed():
     assert result.startswith("......")
 
 
-def test_long_comfort_is_shortened():
-    raw = (
-        "你真的已经很努力了。不要责怪自己。你要相信明天会更好。"
-        "如果你愿意可以随时告诉我。除此之外，我还可以帮你制定计划。"
-        "你一定能够振作起来，继续向前。"
-    )
+def test_long_reply_is_length_capped():
+    raw = "。".join(f"这是第{i}个需要说明的要点内容" for i in range(1, 9)) + "。"
     result = apply_daniya_speech_filter(raw, speech_config())
     assert len(result) <= 96
     assert len(result.splitlines()) <= 3
-    assert "除此之外" not in result
+
+
+def test_continuation_phrase_is_preserved():
+    raw = "第一步先备份配置。除此之外，记得检查端口是否被占用。"
+    result = apply_daniya_speech_filter(raw, speech_config())
+    assert "除此之外" in result
+    assert "检查端口" in result
+
+
+def test_digression_phrase_is_truncated():
+    raw = "这个问题先按文档里的步骤处理好。顺便，你今天吃饭了吗。"
+    result = apply_daniya_speech_filter(raw, speech_config())
+    assert "顺便" not in result
+    assert "吃饭" not in result
 
 
 def test_happy_to_see_you_is_rewritten():

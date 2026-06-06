@@ -16,6 +16,7 @@ characters/*/assets/
 !characters/template/assets/
 characters/test_dummy/
 models/
+runtime/
 backups/
 output/
 release/

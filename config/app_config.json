@@ -6,7 +6,7 @@
     "start_x": 0,
     "start_y": 0,
     "always_on_top": true,
-    "show_input": true
+    "show_input": false
   },
   "pet": {
     "pet_height": 96,
@@ -93,7 +93,7 @@
   "double_click_enabled": true,
   "long_press_ms": 600,
   "natural_reminder_enabled": true,
-  "file_organizer_enabled": true,
+  "file_organizer_enabled": false,
   "system_status_enabled": false,
   "system_status_interval_seconds": 300,
   "system_status_cooldown_seconds": 300,

@@ -132,6 +132,30 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
         "max_text_length": 120,
         "interaction_probability": 0.25,
     },
+    "voice": {
+        "mode": "off",
+        "clip_pack": {
+            "clip_pack_id": "daniya_clip_pack_v1",
+            "remote_manifest_url": "",
+            "auto_download": False,
+            "volume": 70,
+        },
+        "api_tts": {
+            "provider": "custom",
+            "endpoint": "",
+            "api_key": "",
+            "voice_id": "",
+            "timeout_sec": 30,
+            "cache_enabled": True,
+            "volume": 70,
+        },
+        "local_gpt_sovits": {
+            "voice_id": "daniya_voice_v1",
+            "api_base_url": "http://127.0.0.1:9880",
+            "volume": 70,
+            "cache_enabled": True,
+        },
+    },
 }
 
 DEFAULT_SYSTEM_PROMPT = """你是达妮娅的 Q 版夏日桌宠形态。

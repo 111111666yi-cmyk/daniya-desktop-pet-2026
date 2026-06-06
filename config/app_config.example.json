@@ -99,5 +99,39 @@
   "focus_mode_silence_edge_peek": true,
   "focus_mode_silence_system_status": true,
   "focus_mode_silence_clipboard": true,
-  "focus_mode_allow_important_reminders": true
+  "focus_mode_allow_important_reminders": true,
+  "tts": {
+    "enabled": false,
+    "voice_id": "daniya_voice_v1",
+    "engine": "gpt-sovits",
+    "local_api_base_url": "http://127.0.0.1:9880",
+    "volume": 70,
+    "cache_enabled": true,
+    "max_text_length": 120,
+    "interaction_probability": 0.25
+  },
+  "voice": {
+    "mode": "off",
+    "clip_pack": {
+      "clip_pack_id": "daniya_clip_pack_v1",
+      "remote_manifest_url": "",
+      "auto_download": false,
+      "volume": 70
+    },
+    "api_tts": {
+      "provider": "custom",
+      "endpoint": "",
+      "api_key": "",
+      "voice_id": "",
+      "timeout_sec": 30,
+      "cache_enabled": true,
+      "volume": 70
+    },
+    "local_gpt_sovits": {
+      "voice_id": "daniya_voice_v1",
+      "api_base_url": "http://127.0.0.1:9880",
+      "volume": 70,
+      "cache_enabled": true
+    }
+  }
 }

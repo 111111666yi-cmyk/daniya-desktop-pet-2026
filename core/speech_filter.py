@@ -163,7 +163,9 @@ def add_ellipsis_if_needed(text: str) -> str:
 
 
 def remove_unrelated_topic_expansion(text: str) -> str:
-    markers = ["顺便", "除此之外", "话说回来", "我还想提醒你"]
+    # "除此之外 / 另外" continue the same answer, so they are not treated as
+    # off-topic digressions; only genuine topic changes / nagging are truncated.
+    markers = ["顺便", "话说回来", "我还想提醒你"]
     for marker in markers:
         index = text.find(marker)
         if index > 10:
