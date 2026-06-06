@@ -135,6 +135,16 @@ class MenuManager:
         random_action = games.addAction(ic("info"), "随机数 1-100")
         random_action.triggered.connect(self.controller.random_100)
 
+        if self.controller.app_config.get("pomodoro", {}).get("enabled", True):
+            focus_menu = companion.addMenu(ic("refresh"), "专注番茄钟")
+            if getattr(self.controller, "pomodoro", None) is not None and self.controller.pomodoro.active:
+                cancel_focus = focus_menu.addAction(ic("settings"), "结束专注")
+                cancel_focus.triggered.connect(self.controller.cancel_pomodoro)
+            else:
+                for mins in (25, 45):
+                    act = focus_menu.addAction(ic("chip"), f"{mins} 分钟")
+                    act.triggered.connect(lambda checked=False, m=mins: self.controller.start_pomodoro(m))
+
         bookmarks = companion.addMenu(ic("cloud"), "传送门")
         for item in self.controller.bookmark_manager.records():
             action = bookmarks.addAction(item["name"])

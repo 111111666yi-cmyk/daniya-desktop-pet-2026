@@ -156,6 +156,18 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
             "cache_enabled": True,
         },
     },
+    "pomodoro": {
+        "enabled": True,
+        "default_minutes": 25,
+        "distraction_process_list": [
+            "steam.exe", "epicgameslauncher.exe", "wegame.exe",
+            "genshinimpact.exe", "yuanshen.exe", "qqgame.exe",
+            "potplayermini64.exe", "potplayer.exe", "vlc.exe",
+        ],
+        "scan_interval_sec": 30,
+        "warn_cooldown_sec": 60,
+        "reward_affinity": 3,
+    },
 }
 
 DEFAULT_SYSTEM_PROMPT = """你是达妮娅的 Q 版夏日桌宠形态。

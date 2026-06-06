@@ -29,6 +29,7 @@ from .reminder_manager import ReminderManager
 from .natural_reminder_service import NaturalReminderService
 from .clipboard_interaction import ClipboardInteraction
 from .focus_mode import FocusModeManager
+from .pomodoro import PomodoroSession
 from .feedback_coordinator import FeedbackCoordinator
 from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
@@ -147,6 +148,7 @@ class AppController(QObject):
         self.system_status_manager = SystemStatusManager()
         self.clipboard_interaction = ClipboardInteraction(self.qapp.clipboard())
         self.focus_mode_manager = FocusModeManager()
+        self.pomodoro = PomodoroSession(self.app_config.get("pomodoro", {}))
 
         # [CHANGE-001] v0.415 引擎适配器初始化
         # 将 chat_client 作为 model_client 传入，适配器内部通过 _wrap_model_client
@@ -192,6 +194,8 @@ class AppController(QObject):
         self.system_status_manager.status_alert.connect(self._on_system_status_alert)
         self.clipboard_interaction.clipboard_alert.connect(self._on_clipboard_alert)
         self.focus_mode_manager.focus_state_changed.connect(self._on_focus_state_changed)
+        self.pomodoro.distraction_detected.connect(self._on_pomodoro_distraction)
+        self.pomodoro.completed.connect(self._on_pomodoro_completed)
         self.window.update_affinity(self.affinity_manager.badge())
         self.worker: ChatWorker | None = None
         self.reminder_boxes: list[QMessageBox] = []
@@ -479,6 +483,7 @@ class AppController(QObject):
 
     def apply_integrated_feature_config(self) -> None:
         config = self.config_manager._normalize_app_config(self.app_config)
+        self.pomodoro.update_config(config.get("pomodoro", {}))
         self.app_config.update(config)
 
         self.system_status_manager.sample_interval_ms = int(config.get("system_status_interval_seconds", 300)) * 1000
@@ -703,6 +708,23 @@ class AppController(QObject):
             text=self.utility_text("focus_enter" if active else "focus_exit"),
             action="remind" if active else "happy",
         )
+
+    def start_pomodoro(self, minutes: int | None = None) -> None:
+        mins = self.pomodoro.start(minutes)
+        self._speak_with_tts(f"……开始专注。{mins} 分钟。我看着你。")
+
+    def cancel_pomodoro(self) -> None:
+        if self.pomodoro.active:
+            self.pomodoro.cancel()
+            self._speak_with_tts("……提前停了。也行。")
+
+    def _on_pomodoro_distraction(self, name: str) -> None:
+        self._speak_with_tts("……喂。别分心。")
+
+    def _on_pomodoro_completed(self) -> None:
+        self.affinity_manager.add_value(self.pomodoro.reward_affinity)
+        self.window.update_affinity(self.affinity_manager.badge())
+        self._speak_with_tts("……时间到。这次你做到了。")
 
     def utility_text(self, key: str, **values: Any) -> str:
         return utility_text(self.daniya_adapter.character_pack, key, **values)
