@@ -546,74 +546,160 @@ class SettingsWindow(QDialog):
         parent_layout.addStretch(1)
 
     def _build_multimodal_section(self, parent_layout: Any) -> None:
-        """多模态配置 — 分为 TTS / 图像 / 视频三个独立功能组，均可保存。"""
-        from .provider_capability_schema import ProviderCapabilitySchema
-        schema = ProviderCapabilitySchema(root=self.settings_manager.root)
-        mm_config = self.settings_manager.load_multimodal_config()
+        """多模态配置 — TTS 真实状态面板 + 图像/视频标记为未来功能。"""
+        from core.tts.voice_asset_manager import VoiceAssetManager
+        from core.tts.tts_service import TTSService, TTSStatus
 
-        # ── TTS 语音 ──
-        tts_group = QGroupBox("TTS 语音播报")
-        tts_layout = QFormLayout(tts_group)
-        self.tts_combo = QComboBox()
-        self.tts_combo.addItems(["none", "cloud_tts (OpenAI TTS)", "edge_tts (本地)", "system_tts (系统内置)"])
-        self.tts_combo.setCurrentText(mm_config.get("tts", "none"))
-        self.tts_lang = QComboBox()
-        self.tts_lang.addItems(["zh-CN", "zh-TW", "en-US", "ja-JP"])
-        self.tts_lang.setCurrentText(mm_config.get("tts_lang", "zh-CN"))
-        tts_layout.addRow("引擎", self.tts_combo)
-        tts_layout.addRow("语言", self.tts_lang)
-        tts_save = QPushButton("保存 TTS 设置"); tts_save.setIcon(get_icon("save"))
-        tts_save.clicked.connect(lambda: self._save_multimodal("tts"))
-        tts_reset = QPushButton("重置 TTS"); tts_reset.setIcon(get_icon("refresh"))
-        tts_reset.clicked.connect(lambda: self._reset_multimodal("tts"))
-        tts_btns = QWidget()
-        tts_btn_row = QHBoxLayout(tts_btns); tts_btn_row.setContentsMargins(0,0,0,0)
-        tts_btn_row.addWidget(tts_save); tts_btn_row.addWidget(tts_reset); tts_btn_row.addStretch(1)
-        tts_layout.addRow(tts_btns)
+        tts_config = self.settings_manager.load_app_config().get("tts", {})
+
+        # ── TTS 语音 — 真实状态面板 ──
+        tts_group = QGroupBox("TTS 本地语音（GPT-SoVITS）")
+        tts_layout = QVBoxLayout(tts_group)
+
+        self.tts_enabled_check = QCheckBox("启用 TTS 语音播报")
+        self.tts_enabled_check.setChecked(bool(tts_config.get("enabled", False)))
+        tts_layout.addWidget(self.tts_enabled_check)
+
+        form = QFormLayout()
+        self.tts_voice_id = QLineEdit(str(tts_config.get("voice_id", "daniya_voice_v1")))
+        self.tts_voice_id.setPlaceholderText("声线包 ID，如 daniya_voice_v1")
+        self.tts_api_url = QLineEdit(str(tts_config.get("local_api_base_url", "http://127.0.0.1:9880")))
+        self.tts_volume = QSpinBox()
+        self.tts_volume.setRange(0, 100)
+        self.tts_volume.setValue(int(tts_config.get("volume", 70)))
+        form.addRow("声线包 ID", self.tts_voice_id)
+        form.addRow("GPT-SoVITS API 地址", self.tts_api_url)
+        form.addRow("音量", self.tts_volume)
+        tts_layout.addLayout(form)
+
+        self.tts_status_label = QLabel("状态：检查中…")
+        self.tts_status_label.setWordWrap(True)
+        tts_layout.addWidget(self.tts_status_label)
+
+        btn_row = QHBoxLayout()
+        import_btn = QPushButton("导入本地声线包"); import_btn.setIcon(get_icon("download"))
+        import_btn.clicked.connect(self._import_voice_pack)
+        verify_btn = QPushButton("校验声线包"); verify_btn.setIcon(get_icon("info"))
+        verify_btn.clicked.connect(self._verify_voice_pack)
+        check_engine_btn = QPushButton("检查 GPT-SoVITS 服务"); check_engine_btn.setIcon(get_icon("internet"))
+        check_engine_btn.clicked.connect(self._check_tts_engine)
+        test_btn = QPushButton("测试播放"); test_btn.setIcon(get_icon("chip"))
+        test_btn.clicked.connect(self._test_tts_play)
+        save_btn = QPushButton("保存 TTS 设置"); save_btn.setIcon(get_icon("save"))
+        save_btn.clicked.connect(self._save_tts_settings)
+        clear_cache_btn = QPushButton("清理 TTS 缓存"); clear_cache_btn.setIcon(get_icon("refresh"))
+        clear_cache_btn.clicked.connect(self._clear_tts_cache)
+        for b in [import_btn, verify_btn, check_engine_btn, test_btn, save_btn, clear_cache_btn]:
+            btn_row.addWidget(b)
+        btn_row.addStretch(1)
+        tts_layout.addLayout(btn_row)
         parent_layout.addWidget(tts_group)
 
-        # ── 图像生成 ──
-        img_group = QGroupBox("文生图 / 图生图")
-        img_layout = QFormLayout(img_group)
-        self.t2i_combo = QComboBox()
-        self.t2i_combo.addItems(["none", "openai_dalle", "stable_diffusion_local", "comfyui_local", "custom_api"])
-        self.t2i_combo.setCurrentText(mm_config.get("image", "none"))
-        self.i2i_combo = QComboBox()
-        self.i2i_combo.addItems(["none", "stable_diffusion_local", "comfyui_local", "custom_api"])
-        self.i2i_combo.setCurrentText(mm_config.get("image_to_image", "none"))
-        img_layout.addRow("文生图引擎", self.t2i_combo)
-        img_layout.addRow("图生图引擎", self.i2i_combo)
-        img_save = QPushButton("保存图像设置"); img_save.setIcon(get_icon("save"))
-        img_save.clicked.connect(lambda: self._save_multimodal("image"))
-        img_reset = QPushButton("重置图像"); img_reset.setIcon(get_icon("refresh"))
-        img_reset.clicked.connect(lambda: self._reset_multimodal("image"))
-        img_btns = QWidget()
-        img_btn_row = QHBoxLayout(img_btns); img_btn_row.setContentsMargins(0,0,0,0)
-        img_btn_row.addWidget(img_save); img_btn_row.addWidget(img_reset); img_btn_row.addStretch(1)
-        img_layout.addRow(img_btns)
+        self._refresh_tts_status()
+
+        # ── 图像生成 — 未来功能 ──
+        img_group = QGroupBox("图像生成")
+        img_layout = QVBoxLayout(img_group)
+        img_label = QLabel("未来功能，当前版本不可用。")
+        img_label.setStyleSheet("color: gray; padding: 12px;")
+        img_layout.addWidget(img_label)
         parent_layout.addWidget(img_group)
 
-        # ── 视频生成 ──
+        # ── 视频生成 — 未来功能 ──
         vid_group = QGroupBox("视频生成")
-        vid_layout = QFormLayout(vid_group)
-        self.video_combo = QComboBox()
-        self.video_combo.addItems(["none", "stable_video_diffusion_local", "runway_api", "custom_api"])
-        self.video_combo.setCurrentText(mm_config.get("video", "none"))
-        vid_layout.addRow("视频引擎", self.video_combo)
-        vid_save = QPushButton("保存视频设置"); vid_save.setIcon(get_icon("save"))
-        vid_save.clicked.connect(lambda: self._save_multimodal("video"))
-        vid_reset = QPushButton("重置视频"); vid_reset.setIcon(get_icon("refresh"))
-        vid_reset.clicked.connect(lambda: self._reset_multimodal("video"))
-        vid_btns = QWidget()
-        vid_btn_row = QHBoxLayout(vid_btns); vid_btn_row.setContentsMargins(0,0,0,0)
-        vid_btn_row.addWidget(vid_save); vid_btn_row.addWidget(vid_reset); vid_btn_row.addStretch(1)
-        vid_layout.addRow(vid_btns)
+        vid_layout = QVBoxLayout(vid_group)
+        vid_label = QLabel("未来功能，当前版本不可用。")
+        vid_label.setStyleSheet("color: gray; padding: 12px;")
+        vid_layout.addWidget(vid_label)
         parent_layout.addWidget(vid_group)
-
-        hint = QLabel("多模态功能需要对应服务运行中。留空或选 none 则不启用。")
-        hint.setWordWrap(True); hint.setStyleSheet("color: gray; margin-top: 8px;")
-        parent_layout.addWidget(hint)
         parent_layout.addStretch(1)
+
+    def _refresh_tts_status(self) -> None:
+        from core.tts.voice_asset_manager import VoiceAssetManager, VoiceStatus
+        mgr = VoiceAssetManager()
+        voice_id = self.tts_voice_id.text().strip()
+        voices = mgr.list_installed_voices()
+        if not voices:
+            self.tts_status_label.setText("声线包状态：未导入\n请先导入 GPT-SoVITS 声线包。")
+            return
+        status, errors = mgr.verify_voice(voice_id)
+        lines = [f"声线包状态：{status.value}"]
+        if errors:
+            lines.append(f"问题：{'; '.join(errors[:3])}")
+        installed = ", ".join(v.display_name for v in voices)
+        lines.append(f"已安装声线：{installed}")
+        self.tts_status_label.setText("\n".join(lines))
+
+    def _import_voice_pack(self) -> None:
+        from core.tts.voice_asset_manager import VoiceAssetManager
+        path, _ = QFileDialog.getOpenFileName(self, "选择声线包 ZIP", "", "ZIP 文件 (*.zip)")
+        if not path:
+            return
+        try:
+            mgr = VoiceAssetManager()
+            voice = mgr.import_from_local_zip(Path(path))
+            QMessageBox.information(self, "导入成功", f"声线包 \"{voice.display_name}\" 导入成功。")
+            self._refresh_tts_status()
+        except Exception as exc:
+            QMessageBox.warning(self, "导入失败", str(exc))
+
+    def _verify_voice_pack(self) -> None:
+        from core.tts.voice_asset_manager import VoiceAssetManager
+        mgr = VoiceAssetManager()
+        voice_id = self.tts_voice_id.text().strip()
+        status, errors = mgr.verify_voice(voice_id)
+        if not errors:
+            QMessageBox.information(self, "校验结果", f"声线包 \"{voice_id}\" 校验通过。")
+        else:
+            QMessageBox.warning(self, "校验结果", f"声线包 \"{voice_id}\" 校验失败：\n" + "\n".join(errors))
+        self._refresh_tts_status()
+
+    def _check_tts_engine(self) -> None:
+        from core.tts.gpt_sovits_adapter import GPTSoVITSAdapter
+        url = self.tts_api_url.text().strip()
+        adapter = GPTSoVITSAdapter(api_base_url=url)
+        if adapter.health_check():
+            QMessageBox.information(self, "引擎状态", f"GPT-SoVITS 服务运行中（{url}）。")
+        else:
+            QMessageBox.warning(self, "引擎状态", f"GPT-SoVITS 服务未运行或不可达（{url}）。")
+
+    def _test_tts_play(self) -> None:
+        if not hasattr(self.controller, "tts_service") or self.controller.tts_service is None:
+            QMessageBox.warning(self, "测试失败", "TTS 服务未初始化，请先保存设置并重启应用。")
+            return
+        ok, msg = self.controller.tts_service.test_play(self.tts_voice_id.text().strip())
+        if ok:
+            QMessageBox.information(self, "测试播放", "测试播放成功。")
+        else:
+            QMessageBox.warning(self, "测试播放", f"测试播放失败：{msg}")
+
+    def _save_tts_settings(self) -> None:
+        config = self.settings_manager.load_app_config()
+        config["tts"] = {
+            "enabled": self.tts_enabled_check.isChecked(),
+            "voice_id": self.tts_voice_id.text().strip(),
+            "engine": "gpt-sovits",
+            "local_api_base_url": self.tts_api_url.text().strip(),
+            "volume": self.tts_volume.value(),
+            "cache_enabled": True,
+            "max_text_length": 120,
+            "interaction_probability": 0.25,
+        }
+        self.settings_manager.save_app_config(config)
+        if hasattr(self.controller, "tts_service") and self.controller.tts_service is not None:
+            self.controller.tts_service.update_config(config["tts"])
+            self.controller.tts_service.audio_player.set_volume(self.tts_volume.value())
+        self.tts_status_label.setText("TTS 设置已保存。")
+        self._refresh_tts_status()
+
+    def _clear_tts_cache(self) -> None:
+        if hasattr(self.controller, "tts_service") and self.controller.tts_service is not None:
+            count = self.controller.tts_service.clear_cache()
+            QMessageBox.information(self, "缓存清理", f"已清理 {count} 个缓存文件。")
+        else:
+            from core.tts.gpt_sovits_adapter import GPTSoVITSAdapter
+            count = GPTSoVITSAdapter().clear_cache()
+            QMessageBox.information(self, "缓存清理", f"已清理 {count} 个缓存文件。")
 
     def _build_profile_switcher(self, parent_layout: Any) -> None:
         group = QGroupBox("文本模型切换")
