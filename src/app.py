@@ -232,23 +232,22 @@ class AppController(QObject):
             config=self.app_config,
             clip_pack_service=self._clip_pack_service,
             tts_service=self.tts_service,
+            audio_player=self._audio_player,
         )
 
     def _tts_play(self, text: str, interaction: bool = False) -> None:
-        """Play TTS for text. If interaction=True, use probability gate."""
-        voice_mode = self.app_config.get("voice", {}).get("mode", "off")
-        if voice_mode == "local_gpt_sovits":
-            if self.tts_service is None or not self.tts_service.enabled:
+        """Route text to the active voice backend."""
+        if not hasattr(self, "voice_router"):
+            return
+        mode = self.app_config.get("voice", {}).get("mode", "off")
+        if mode == "off":
+            return
+        if interaction:
+            import random
+            prob = self.app_config.get("tts", {}).get("interaction_probability", 0.25)
+            if random.random() > prob:
                 return
-            if interaction:
-                import random
-                prob = self.app_config.get("tts", {}).get("interaction_probability", 0.25)
-                if random.random() > prob:
-                    return
-            self.tts_service.play(text)
-        elif voice_mode == "clip_pack":
-            if hasattr(self, "voice_router"):
-                self.voice_router.play_text(text)
+        self.voice_router.play_text(text)
 
     def _voice_play_event(self, event_type: str, text: str | None = None) -> None:
         if hasattr(self, "voice_router"):

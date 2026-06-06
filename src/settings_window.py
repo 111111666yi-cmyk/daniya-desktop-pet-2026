@@ -550,12 +550,15 @@ class SettingsWindow(QDialog):
         app_config = self.settings_manager.load_app_config()
         tts_config = app_config.get("tts", {})
         voice_config = app_config.get("voice", {})
+        clip_cfg = voice_config.get("clip_pack", {})
+        api_cfg = voice_config.get("api_tts", {})
+        gpt_cfg = voice_config.get("local_gpt_sovits", {})
 
         # ── 语音模式选择 ──
         mode_group = QGroupBox("语音合成 TTS")
         mode_layout = QVBoxLayout(mode_group)
 
-        mode_hint = QLabel("预录语音包模式适合日常使用。\n本地 GPT-SoVITS 动态合成需要单独安装运行时，面向进阶用户。")
+        mode_hint = QLabel("预录语音包模式适合日常使用。\nAPI TTS 和本地 GPT-SoVITS 面向进阶用户。")
         mode_hint.setWordWrap(True)
         mode_hint.setStyleSheet("color: #555; padding: 4px;")
         mode_layout.addWidget(mode_hint)
@@ -564,6 +567,7 @@ class SettingsWindow(QDialog):
         self.voice_mode_combo = QComboBox()
         self.voice_mode_combo.addItem("关闭", "off")
         self.voice_mode_combo.addItem("预录语音包", "clip_pack")
+        self.voice_mode_combo.addItem("API TTS（进阶，自备密钥）", "api_tts")
         self.voice_mode_combo.addItem("本地 GPT-SoVITS 动态合成（进阶）", "local_gpt_sovits")
         current_mode = voice_config.get("mode", "off")
         for i in range(self.voice_mode_combo.count()):
@@ -572,11 +576,6 @@ class SettingsWindow(QDialog):
                 break
         self.voice_mode_combo.currentIndexChanged.connect(self._on_voice_mode_changed)
         mode_form.addRow("语音模式", self.voice_mode_combo)
-
-        self.voice_volume = QSpinBox()
-        self.voice_volume.setRange(0, 100)
-        self.voice_volume.setValue(int(voice_config.get("volume", 70)))
-        mode_form.addRow("音量", self.voice_volume)
         mode_layout.addLayout(mode_form)
 
         self.voice_status_label = QLabel("状态：检查中…")
@@ -587,11 +586,13 @@ class SettingsWindow(QDialog):
         self._clip_pack_group = QGroupBox("预录语音包")
         clip_layout = QVBoxLayout(self._clip_pack_group)
         clip_form = QFormLayout()
-        self.clip_pack_id_edit = QLineEdit(str(voice_config.get("clip_pack_id", "daniya_clip_pack_v1")))
+        self.clip_pack_id_edit = QLineEdit(str(clip_cfg.get("clip_pack_id", "daniya_clip_pack_v1")))
         self.clip_pack_id_edit.setPlaceholderText("语音包 ID，如 daniya_clip_pack_v1")
+        self.clip_volume = QSpinBox(); self.clip_volume.setRange(0, 100)
+        self.clip_volume.setValue(int(clip_cfg.get("volume", 70)))
         clip_form.addRow("语音包 ID", self.clip_pack_id_edit)
+        clip_form.addRow("音量", self.clip_volume)
         clip_layout.addLayout(clip_form)
-
         clip_btn_row = QHBoxLayout()
         clip_import_btn = QPushButton("导入语音包"); clip_import_btn.setIcon(get_icon("download"))
         clip_import_btn.clicked.connect(self._import_clip_pack)
@@ -605,10 +606,53 @@ class SettingsWindow(QDialog):
         clip_layout.addLayout(clip_btn_row)
         mode_layout.addWidget(self._clip_pack_group)
 
+        # ── API TTS 面板 (api_tts) ──
+        self._api_tts_group = QGroupBox("API TTS（进阶，自备密钥）")
+        api_layout = QVBoxLayout(self._api_tts_group)
+        api_warn = QLabel("进阶模式。使用你自己的 API 密钥。本项目不提供 TTS API 服务。")
+        api_warn.setWordWrap(True)
+        api_warn.setStyleSheet("color: #c57600; padding: 4px;")
+        api_layout.addWidget(api_warn)
+        api_form = QFormLayout()
+        self.api_tts_provider = QComboBox()
+        self.api_tts_provider.addItem("自定义 API", "custom")
+        self.api_tts_provider.addItem("Fish Audio", "fish_audio")
+        self.api_tts_provider.addItem("MiniMax", "minimax")
+        cur_provider = api_cfg.get("provider", "custom")
+        for i in range(self.api_tts_provider.count()):
+            if self.api_tts_provider.itemData(i) == cur_provider:
+                self.api_tts_provider.setCurrentIndex(i)
+                break
+        self.api_tts_endpoint = QLineEdit(str(api_cfg.get("endpoint", "")))
+        self.api_tts_endpoint.setPlaceholderText("https://api.example.com/tts")
+        self.api_tts_key = QLineEdit(str(api_cfg.get("api_key", "")))
+        self.api_tts_key.setEchoMode(QLineEdit.EchoMode.Password)
+        self.api_tts_key.setPlaceholderText("sk-...")
+        self.api_tts_voice_id = QLineEdit(str(api_cfg.get("voice_id", "")))
+        self.api_tts_voice_id.setPlaceholderText("声音 ID")
+        self.api_tts_timeout = QSpinBox(); self.api_tts_timeout.setRange(5, 120)
+        self.api_tts_timeout.setValue(int(api_cfg.get("timeout_sec", 30)))
+        self.api_tts_cache = QCheckBox("启用缓存")
+        self.api_tts_cache.setChecked(bool(api_cfg.get("cache_enabled", True)))
+        self.api_tts_volume = QSpinBox(); self.api_tts_volume.setRange(0, 100)
+        self.api_tts_volume.setValue(int(api_cfg.get("volume", 70)))
+        api_form.addRow("提供商", self.api_tts_provider)
+        api_form.addRow("API 端点", self.api_tts_endpoint)
+        api_form.addRow("API 密钥", self.api_tts_key)
+        api_form.addRow("声音 ID", self.api_tts_voice_id)
+        api_form.addRow("超时（秒）", self.api_tts_timeout)
+        api_form.addRow("", self.api_tts_cache)
+        api_form.addRow("音量", self.api_tts_volume)
+        api_layout.addLayout(api_form)
+        api_test_btn = QPushButton("测试播放"); api_test_btn.setIcon(get_icon("chip"))
+        api_test_btn.clicked.connect(self._test_api_tts_play)
+        api_layout.addWidget(api_test_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+        mode_layout.addWidget(self._api_tts_group)
+
         # ── GPT-SoVITS 面板 (local_gpt_sovits) ──
         self._gpt_sovits_group = QGroupBox("本地 GPT-SoVITS 动态合成（进阶）")
         gpt_layout = QVBoxLayout(self._gpt_sovits_group)
-        adv_warn = QLabel("此模式需要单独安装并运行本地 GPT-SoVITS 运行时，面向进阶用户。")
+        adv_warn = QLabel("进阶本地模式。需要单独安装并运行本地 GPT-SoVITS 运行时。")
         adv_warn.setWordWrap(True)
         adv_warn.setStyleSheet("color: #c57600; padding: 4px;")
         gpt_layout.addWidget(adv_warn)
@@ -618,12 +662,11 @@ class SettingsWindow(QDialog):
         gpt_layout.addWidget(self.tts_enabled_check)
 
         gpt_form = QFormLayout()
-        self.tts_voice_id = QLineEdit(str(tts_config.get("voice_id", "daniya_voice_v1")))
+        self.tts_voice_id = QLineEdit(str(gpt_cfg.get("voice_id", tts_config.get("voice_id", "daniya_voice_v1"))))
         self.tts_voice_id.setPlaceholderText("声线包 ID，如 daniya_voice_v1")
-        self.tts_api_url = QLineEdit(str(tts_config.get("local_api_base_url", "http://127.0.0.1:9880")))
-        self.tts_volume = QSpinBox()
-        self.tts_volume.setRange(0, 100)
-        self.tts_volume.setValue(int(tts_config.get("volume", 70)))
+        self.tts_api_url = QLineEdit(str(gpt_cfg.get("api_base_url", tts_config.get("local_api_base_url", "http://127.0.0.1:9880"))))
+        self.tts_volume = QSpinBox(); self.tts_volume.setRange(0, 100)
+        self.tts_volume.setValue(int(gpt_cfg.get("volume", tts_config.get("volume", 70))))
         gpt_form.addRow("声线包 ID", self.tts_voice_id)
         gpt_form.addRow("GPT-SoVITS API 地址", self.tts_api_url)
         gpt_form.addRow("音量", self.tts_volume)
@@ -678,11 +721,14 @@ class SettingsWindow(QDialog):
     def _on_voice_mode_changed(self) -> None:
         mode = self.voice_mode_combo.currentData()
         self._clip_pack_group.setVisible(mode == "clip_pack")
+        self._api_tts_group.setVisible(mode == "api_tts")
         self._gpt_sovits_group.setVisible(mode == "local_gpt_sovits")
         if mode == "off":
             self.voice_status_label.setText("语音已关闭。")
         elif mode == "clip_pack":
             self._refresh_clip_pack_status()
+        elif mode == "api_tts":
+            self._refresh_api_tts_status()
         elif mode == "local_gpt_sovits":
             self._refresh_tts_status()
 
@@ -697,6 +743,16 @@ class SettingsWindow(QDialog):
             self.voice_status_label.setText(f"语音包 \"{pack_id}\" 未安装。请先导入语音包。")
         else:
             self.voice_status_label.setText(f"语音包 \"{pack_id}\" 校验失败：{'; '.join(errors[:3])}")
+
+    def _refresh_api_tts_status(self) -> None:
+        from core.tts.api_tts_adapter import mask_key
+        endpoint = self.api_tts_endpoint.text().strip()
+        key = self.api_tts_key.text().strip()
+        if not endpoint:
+            self.voice_status_label.setText("API TTS：未配置端点。请填写 API 端点和密钥。")
+        else:
+            masked = mask_key(key) if key else "未设置"
+            self.voice_status_label.setText(f"API TTS：端点 {endpoint}\n密钥 {masked}")
 
     def _import_clip_pack(self) -> None:
         path = QFileDialog.getExistingDirectory(self, "选择语音包文件夹")
@@ -738,7 +794,7 @@ class SettingsWindow(QDialog):
         from core.tts.audio_player import AudioPlayer
         pack_id = self.clip_pack_id_edit.text().strip()
         player = AudioPlayer(self)
-        player.set_volume(self.voice_volume.value())
+        player.set_volume(self.clip_volume.value())
         svc = ClipPackVoiceService(audio_player=player)
         ok, msg = svc.test_play(pack_id)
         if ok:
@@ -746,16 +802,62 @@ class SettingsWindow(QDialog):
         else:
             QMessageBox.warning(self, "测试播放", f"测试播放失败：{msg}")
 
+    def _test_api_tts_play(self) -> None:
+        from core.tts.api_tts_adapter import ApiTTSAdapter, ApiTTSError
+        from core.tts.audio_player import AudioPlayer
+        cfg = {
+            "provider": self.api_tts_provider.currentData(),
+            "endpoint": self.api_tts_endpoint.text().strip(),
+            "api_key": self.api_tts_key.text().strip(),
+            "voice_id": self.api_tts_voice_id.text().strip(),
+            "timeout_sec": self.api_tts_timeout.value(),
+            "cache_enabled": self.api_tts_cache.isChecked(),
+        }
+        if not cfg["endpoint"]:
+            QMessageBox.warning(self, "测试失败", "请先填写 API 端点。")
+            return
+        try:
+            adapter = ApiTTSAdapter(cfg)
+            wav = adapter.synthesize("测试语音播放")
+            if wav and wav.exists():
+                player = AudioPlayer(self)
+                player.set_volume(self.api_tts_volume.value())
+                player.play_wav(wav)
+                QMessageBox.information(self, "测试播放", "API TTS 测试播放成功。")
+            else:
+                QMessageBox.warning(self, "测试播放", "API 未返回音频数据。")
+        except ApiTTSError as exc:
+            QMessageBox.warning(self, "测试播放", f"API TTS 测试失败：{exc}")
+        except Exception as exc:
+            QMessageBox.warning(self, "测试播放", f"测试异常：{exc}")
+
     def _save_voice_settings(self) -> None:
         config = self.settings_manager.load_app_config()
         mode = self.voice_mode_combo.currentData()
+        prev_voice = config.get("voice", {})
         config["voice"] = {
             "mode": mode,
-            "clip_pack_id": self.clip_pack_id_edit.text().strip(),
-            "remote_manifest_url": config.get("voice", {}).get("remote_manifest_url", ""),
-            "auto_download_clip_pack": False,
-            "volume": self.voice_volume.value(),
-            "cache_enabled": True,
+            "clip_pack": {
+                "clip_pack_id": self.clip_pack_id_edit.text().strip(),
+                "remote_manifest_url": prev_voice.get("clip_pack", {}).get("remote_manifest_url", ""),
+                "auto_download": False,
+                "volume": self.clip_volume.value(),
+            },
+            "api_tts": {
+                "provider": self.api_tts_provider.currentData(),
+                "endpoint": self.api_tts_endpoint.text().strip(),
+                "api_key": self.api_tts_key.text().strip(),
+                "voice_id": self.api_tts_voice_id.text().strip(),
+                "timeout_sec": self.api_tts_timeout.value(),
+                "cache_enabled": self.api_tts_cache.isChecked(),
+                "volume": self.api_tts_volume.value(),
+            },
+            "local_gpt_sovits": {
+                "voice_id": self.tts_voice_id.text().strip(),
+                "api_base_url": self.tts_api_url.text().strip(),
+                "volume": self.tts_volume.value(),
+                "cache_enabled": True,
+            },
         }
         if mode == "local_gpt_sovits":
             config["tts"] = {
@@ -775,7 +877,9 @@ class SettingsWindow(QDialog):
         if hasattr(self.controller, "voice_router"):
             self.controller.voice_router.update_config(config)
         if hasattr(self.controller, "_audio_player"):
-            self.controller._audio_player.set_volume(self.voice_volume.value())
+            vol = {"clip_pack": self.clip_volume, "api_tts": self.api_tts_volume, "local_gpt_sovits": self.tts_volume}.get(mode)
+            if vol:
+                self.controller._audio_player.set_volume(vol.value())
         self.voice_status_label.setText("语音设置已保存。")
         self._on_voice_mode_changed()
 
