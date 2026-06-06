@@ -4,7 +4,7 @@ import sys
 import traceback
 from collections import deque
 from datetime import datetime
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from PySide6.QtCore import QObject, QThread, QTimer, Qt, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox
@@ -27,12 +27,14 @@ from .pet_window import PetWindow
 from .profile_manager import ProfileManager
 from .reminder_manager import ReminderManager
 from .natural_reminder_service import NaturalReminderService
-from .settings_window import SettingsWindow
 from .clipboard_interaction import ClipboardInteraction
 from .focus_mode import FocusModeManager
 from .feedback_coordinator import FeedbackCoordinator
 from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
+
+if TYPE_CHECKING:
+    from .settings_window import SettingsWindow
 
 
 class ThreadSafeAnimationManager(QObject):
@@ -621,6 +623,7 @@ class AppController(QObject):
                 self.settings_window.raise_()
                 self.settings_window.activateWindow()
                 return
+            from .settings_window import SettingsWindow
             self.settings_window = SettingsWindow(self, None)
             self.settings_window.finished.connect(lambda _result: setattr(self, "settings_window", None))
             self.settings_window.show()
@@ -905,6 +908,9 @@ def run() -> None:
             # 用户关闭了向导而没有完成设置
             sys.exit(0)
 
+    import time
+    controller_start = time.perf_counter()
     controller = AppController(app)
     controller.show()
+    print(f"[Daniya] cold start (controller init+show): {(time.perf_counter() - controller_start) * 1000:.0f} ms")
     sys.exit(app.exec())
