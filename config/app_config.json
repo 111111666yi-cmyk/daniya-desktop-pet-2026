@@ -22,7 +22,7 @@
       160
     ],
     "idle_animation_interval_ms": 10000,
-    "active_action_module": "B_stand_base_pack",
+    "active_action_module": "A_sit_base",
     "enabled_action_modules": {
       "A_sit_base": true,
       "B_stand_base_pack": true,
@@ -31,7 +31,7 @@
       "E_QQ_pet_drag_system": true
     },
     "hover_animation_enabled": false,
-    "edge_peek_enabled": false,
+    "edge_peek_enabled": true,
     "edge_dock_visible_px": 32,
     "edge_dock_hover_visible_px": 52,
     "click_to_call_enabled": false,
