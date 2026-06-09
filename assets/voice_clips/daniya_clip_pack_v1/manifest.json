@@ -1,0 +1,66 @@
+{
+  "clip_pack_id": "daniya_clip_pack_v1",
+  "character_id": "daniya",
+  "display_name": "Daniya Voice Clip Pack",
+  "version": "1.0.0",
+  "engine": "clip-pack",
+  "official": false,
+  "user_imported": true,
+  "license_status": "user_responsible",
+  "default_volume": 70,
+  "created": "2026-06-08",
+  "categories": {
+    "click": [
+      "click_001.wav",
+      "click_002.wav",
+      "click_003.wav",
+      "click_004.wav"
+    ],
+    "comfort": [
+      "comfort_001.wav",
+      "comfort_002.wav",
+      "comfort_003.wav",
+      "comfort_004.wav"
+    ],
+    "drag": [
+      "drag_001.wav",
+      "drag_002.wav",
+      "drag_003.wav",
+      "drag_004.wav"
+    ],
+    "error": [
+      "error_001.wav",
+      "error_002.wav",
+      "error_003.wav",
+      "error_004.wav"
+    ],
+    "idle": [
+      "idle_001.wav",
+      "idle_002.wav",
+      "idle_003.wav",
+      "idle_004.wav"
+    ],
+    "reminder": [
+      "reminder_001.wav",
+      "reminder_002.wav",
+      "reminder_003.wav",
+      "reminder_004.wav"
+    ],
+    "sleep": [
+      "sleep_001.wav",
+      "sleep_002.wav",
+      "sleep_003.wav",
+      "sleep_004.wav"
+    ],
+    "wake": [
+      "wake_001.wav",
+      "wake_002.wav",
+      "wake_003.wav",
+      "wake_004.wav"
+    ]
+  },
+  "fallback": {
+    "missing_category": "silent",
+    "missing_file": "silent"
+  }
+}
