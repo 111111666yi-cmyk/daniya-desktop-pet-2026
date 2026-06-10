@@ -585,6 +585,10 @@ class SettingsWindow(QDialog):
         # ── 语音包面板 (clip_pack) ──
         self._clip_pack_group = QGroupBox("预录语音包")
         clip_layout = QVBoxLayout(self._clip_pack_group)
+        clip_hint = QLabel("推荐普通用户使用。导入官方语音包后即可离线播放固定语音。")
+        clip_hint.setWordWrap(True)
+        clip_hint.setStyleSheet("color: #555; padding: 2px;")
+        clip_layout.addWidget(clip_hint)
         clip_form = QFormLayout()
         self.clip_pack_id_edit = QLineEdit(str(clip_cfg.get("clip_pack_id", "daniya_clip_pack_v1")))
         self.clip_pack_id_edit.setPlaceholderText("语音包 ID，如 daniya_clip_pack_v1")
@@ -594,7 +598,7 @@ class SettingsWindow(QDialog):
         clip_form.addRow("音量", self.clip_volume)
         clip_layout.addLayout(clip_form)
         clip_btn_row = QHBoxLayout()
-        clip_import_btn = QPushButton("导入语音包"); clip_import_btn.setIcon(get_icon("download"))
+        clip_import_btn = QPushButton("导入语音包 (ZIP/文件夹)"); clip_import_btn.setIcon(get_icon("download"))
         clip_import_btn.clicked.connect(self._import_clip_pack)
         clip_verify_btn = QPushButton("校验语音包"); clip_verify_btn.setIcon(get_icon("info"))
         clip_verify_btn.clicked.connect(self._verify_clip_pack)
@@ -609,7 +613,7 @@ class SettingsWindow(QDialog):
         # ── API TTS 面板 (api_tts) ──
         self._api_tts_group = QGroupBox("API TTS（进阶，自备密钥）")
         api_layout = QVBoxLayout(self._api_tts_group)
-        api_warn = QLabel("进阶模式。使用你自己的 API 密钥。本项目不提供 TTS API 服务。")
+        api_warn = QLabel("需要你自己的第三方 TTS API、endpoint、api_key 和 voice_id。本项目不会提供官方 API 音色。")
         api_warn.setWordWrap(True)
         api_warn.setStyleSheet("color: #c57600; padding: 4px;")
         api_layout.addWidget(api_warn)
@@ -652,7 +656,7 @@ class SettingsWindow(QDialog):
         # ── GPT-SoVITS 面板 (local_gpt_sovits) ──
         self._gpt_sovits_group = QGroupBox("本地 GPT-SoVITS 动态合成（进阶）")
         gpt_layout = QVBoxLayout(self._gpt_sovits_group)
-        adv_warn = QLabel("进阶本地模式。需要单独安装并运行本地 GPT-SoVITS 运行时。")
+        adv_warn = QLabel("需要你先在本机启动 GPT-SoVITS 推理服务，并准备自己的模型或参考音频。")
         adv_warn.setWordWrap(True)
         adv_warn.setStyleSheet("color: #c57600; padding: 4px;")
         gpt_layout.addWidget(adv_warn)
@@ -755,24 +759,91 @@ class SettingsWindow(QDialog):
             self.voice_status_label.setText(f"API TTS：端点 {endpoint}\n密钥 {masked}")
 
     def _import_clip_pack(self) -> None:
-        path = QFileDialog.getExistingDirectory(self, "选择语音包文件夹")
-        if not path:
-            return
         from pathlib import Path as P
-        src = P(path)
+        import json, os, shutil, zipfile
+
+        clip_root = P(__file__).resolve().parents[1] / "assets" / "voice_clips"
+        clip_root.mkdir(parents=True, exist_ok=True)
+
+        path, _ = QFileDialog.getOpenFileName(
+            self, "选择语音包 ZIP（取消后可选择文件夹）", "",
+            "ZIP 语音包 (*.zip)",
+        )
+
+        if path and path.lower().endswith(".zip"):
+            tmp_dir = clip_root / f"_importing_{os.getpid()}"
+            try:
+                with zipfile.ZipFile(path, "r") as zf:
+                    for info in zf.infolist():
+                        if info.filename.startswith("/") or ".." in info.filename:
+                            QMessageBox.warning(
+                                self, "导入失败",
+                                f"ZIP 包含不安全路径：{info.filename}",
+                            )
+                            return
+                    zf.extractall(tmp_dir)
+
+                candidates = list(tmp_dir.rglob("manifest.json"))
+                if not candidates:
+                    QMessageBox.warning(self, "导入失败", "ZIP 中没有 manifest.json。")
+                    return
+
+                pack_root = candidates[0].parent
+                manifest = json.loads(candidates[0].read_text(encoding="utf-8"))
+                pack_id = manifest.get("clip_pack_id", pack_root.name)
+                dest = clip_root / pack_id
+
+                if dest.exists():
+                    reply = QMessageBox.question(
+                        self, "覆盖确认",
+                        f"语音包 \"{pack_id}\" 已存在。是否覆盖？",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    )
+                    if reply != QMessageBox.StandardButton.Yes:
+                        return
+                    shutil.rmtree(dest)
+
+                if pack_root == tmp_dir:
+                    tmp_dir.rename(dest)
+                else:
+                    shutil.move(str(pack_root), str(dest))
+
+                QMessageBox.information(
+                    self, "导入成功", f"语音包 \"{pack_id}\" 导入成功。",
+                )
+                self.clip_pack_id_edit.setText(pack_id)
+                self._refresh_clip_pack_status()
+            except zipfile.BadZipFile:
+                QMessageBox.warning(self, "导入失败", "无效的 ZIP 文件。")
+            except Exception as exc:
+                QMessageBox.warning(self, "导入失败", str(exc))
+            finally:
+                if tmp_dir.exists():
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
+            return
+
+        dir_path = QFileDialog.getExistingDirectory(self, "选择语音包文件夹")
+        if not dir_path:
+            return
+        src = P(dir_path)
         if not (src / "manifest.json").exists():
             QMessageBox.warning(self, "导入失败", "所选文件夹中没有 manifest.json。")
             return
-        import json, shutil
         try:
             manifest = json.loads((src / "manifest.json").read_text(encoding="utf-8"))
             pack_id = manifest.get("clip_pack_id", src.name)
         except Exception:
             pack_id = src.name
-        dest = P(__file__).resolve().parents[1] / "assets" / "voice_clips" / pack_id
+        dest = clip_root / pack_id
         if dest.exists():
-            QMessageBox.warning(self, "导入失败", f"语音包 \"{pack_id}\" 已存在。")
-            return
+            reply = QMessageBox.question(
+                self, "覆盖确认",
+                f"语音包 \"{pack_id}\" 已存在。是否覆盖？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+            shutil.rmtree(dest)
         shutil.copytree(src, dest)
         QMessageBox.information(self, "导入成功", f"语音包 \"{pack_id}\" 导入成功。")
         self.clip_pack_id_edit.setText(pack_id)

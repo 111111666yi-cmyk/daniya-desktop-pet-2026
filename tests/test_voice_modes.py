@@ -379,6 +379,178 @@ class TestRemoteManifest:
 
 # ── Safety tests ──
 
+class TestDownloadPackSHA256:
+    def test_inline_sha256_pass(self, tmp_path: Path) -> None:
+        import io, zipfile as zf_mod, hashlib
+        from core.tts.remote_clip_manifest import download_pack
+
+        buf = io.BytesIO()
+        with zf_mod.ZipFile(buf, "w") as zf:
+            zf.writestr("manifest.json", '{"clip_pack_id":"sha_ok"}')
+        zip_bytes = buf.getvalue()
+        correct = hashlib.sha256(zip_bytes).hexdigest()
+
+        with patch("core.tts.remote_clip_manifest._CLIP_PACK_ROOT", tmp_path), \
+             patch("core.tts.remote_clip_manifest.urlopen") as mock:
+            resp = MagicMock()
+            resp.read.return_value = zip_bytes
+            resp.__enter__ = lambda s: s
+            resp.__exit__ = MagicMock(return_value=False)
+            mock.return_value = resp
+
+            result = download_pack(
+                {"clip_pack_id": "sha_ok", "download_url": "http://x/a.zip", "sha256": correct},
+            )
+            assert (result / "manifest.json").exists()
+
+    def test_inline_sha256_mismatch(self, tmp_path: Path) -> None:
+        import io, zipfile as zf_mod
+        from core.tts.remote_clip_manifest import download_pack
+
+        buf = io.BytesIO()
+        with zf_mod.ZipFile(buf, "w") as zf:
+            zf.writestr("manifest.json", '{"clip_pack_id":"sha_bad"}')
+        zip_bytes = buf.getvalue()
+
+        with patch("core.tts.remote_clip_manifest._CLIP_PACK_ROOT", tmp_path), \
+             patch("core.tts.remote_clip_manifest.urlopen") as mock:
+            resp = MagicMock()
+            resp.read.return_value = zip_bytes
+            resp.__enter__ = lambda s: s
+            resp.__exit__ = MagicMock(return_value=False)
+            mock.return_value = resp
+
+            with pytest.raises(RemoteManifestError, match="SHA256 mismatch"):
+                download_pack(
+                    {"clip_pack_id": "sha_bad", "download_url": "http://x/a.zip", "sha256": "0" * 64},
+                )
+
+    def test_path_traversal_rejected(self, tmp_path: Path) -> None:
+        import io, zipfile as zf_mod
+        from core.tts.remote_clip_manifest import download_pack
+
+        buf = io.BytesIO()
+        with zf_mod.ZipFile(buf, "w") as zf:
+            zf.writestr("../escape.txt", "malicious")
+        zip_bytes = buf.getvalue()
+
+        with patch("core.tts.remote_clip_manifest._CLIP_PACK_ROOT", tmp_path), \
+             patch("core.tts.remote_clip_manifest.urlopen") as mock:
+            resp = MagicMock()
+            resp.read.return_value = zip_bytes
+            resp.__enter__ = lambda s: s
+            resp.__exit__ = MagicMock(return_value=False)
+            mock.return_value = resp
+
+            with pytest.raises(RemoteManifestError, match="Unsafe path"):
+                download_pack(
+                    {"clip_pack_id": "evil", "download_url": "http://x/e.zip"},
+                    verify_sha256=False,
+                )
+
+
+class TestDownloadPackMirrors:
+    def test_urls_array_validates(self) -> None:
+        from core.tts.remote_clip_manifest import _validate_manifest
+        _validate_manifest({
+            "packs": [{"clip_pack_id": "t", "urls": ["https://a.example/x.zip"]}],
+        })
+
+    def test_missing_all_urls_invalid(self) -> None:
+        from core.tts.remote_clip_manifest import _validate_manifest
+        with pytest.raises(RemoteManifestError, match="download_url"):
+            _validate_manifest({"packs": [{"clip_pack_id": "t"}]})
+
+    def test_mirror_fallback(self, tmp_path: Path) -> None:
+        """First URL fails -> second mirror succeeds."""
+        import io, zipfile as zf_mod
+        from urllib.error import URLError
+        from core.tts.remote_clip_manifest import download_pack
+
+        buf = io.BytesIO()
+        with zf_mod.ZipFile(buf, "w") as zf:
+            zf.writestr("manifest.json", '{"clip_pack_id":"mirror_ok"}')
+        zip_bytes = buf.getvalue()
+
+        good = MagicMock()
+        good.read.return_value = zip_bytes
+        good.__enter__ = lambda s: s
+        good.__exit__ = MagicMock(return_value=False)
+
+        calls = []
+
+        def fake_urlopen(req, timeout=0):
+            calls.append(req.full_url)
+            if "primary" in req.full_url:
+                raise URLError("connection refused")
+            return good
+
+        with patch("core.tts.remote_clip_manifest._CLIP_PACK_ROOT", tmp_path), \
+             patch("core.tts.remote_clip_manifest.urlopen", side_effect=fake_urlopen):
+            result = download_pack(
+                {
+                    "clip_pack_id": "mirror_ok",
+                    "urls": [
+                        "http://primary.example/a.zip",
+                        "http://mirror.example/a.zip",
+                    ],
+                },
+                verify_sha256=False,
+            )
+            assert (result / "manifest.json").exists()
+            assert len(calls) == 2
+
+    def test_all_mirrors_fail(self, tmp_path: Path) -> None:
+        from urllib.error import URLError
+        from core.tts.remote_clip_manifest import download_pack
+
+        with patch("core.tts.remote_clip_manifest._CLIP_PACK_ROOT", tmp_path), \
+             patch("core.tts.remote_clip_manifest.urlopen", side_effect=URLError("down")):
+            with pytest.raises(RemoteManifestError, match="all 2 URL"):
+                download_pack(
+                    {"clip_pack_id": "x", "urls": ["http://a.example/x.zip", "http://b.example/x.zip"]},
+                    verify_sha256=False,
+                )
+
+
+class TestClipPackZipImport:
+    def test_zip_extract_validate_move(self, tmp_path: Path) -> None:
+        import zipfile as zf_mod, os, shutil
+
+        source_root = tmp_path / "source"
+        _create_clip_pack(source_root, {"clip_pack_id": "zip_test"})
+        pack_src = source_root / "zip_test"
+
+        zip_path = tmp_path / "zip_test.zip"
+        with zf_mod.ZipFile(zip_path, "w") as zf:
+            for fpath in pack_src.rglob("*"):
+                if fpath.is_file():
+                    zf.write(fpath, fpath.relative_to(pack_src))
+
+        dest_root = tmp_path / "dest"
+        dest_root.mkdir()
+        tmp_extract = dest_root / f"_importing_{os.getpid()}"
+
+        with zf_mod.ZipFile(zip_path, "r") as zf:
+            for info in zf.infolist():
+                assert not info.filename.startswith("/")
+                assert ".." not in info.filename
+            zf.extractall(tmp_extract)
+
+        candidates = list(tmp_extract.rglob("manifest.json"))
+        assert len(candidates) == 1
+        manifest = json.loads(candidates[0].read_text(encoding="utf-8"))
+        assert manifest["clip_pack_id"] == "zip_test"
+
+        final = dest_root / manifest["clip_pack_id"]
+        shutil.move(str(tmp_extract), str(final))
+
+        with patch("core.tts.clip_pack._CLIP_PACK_ROOT", dest_root):
+            svc = ClipPackVoiceService()
+            ok, errors = svc.verify_pack("zip_test")
+            assert ok is True and errors == []
+
+
 class TestSafety:
     def test_no_voice_model_files_staged(self) -> None:
         import subprocess

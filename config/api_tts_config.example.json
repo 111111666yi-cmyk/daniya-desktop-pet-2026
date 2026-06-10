@@ -1,0 +1,9 @@
+{
+  "mode": "api_tts",
+  "provider": "custom",
+  "endpoint": "https://your-tts-provider.example.com/v1/tts",
+  "api_key": "YOUR_API_KEY_HERE",
+  "voice_id": "YOUR_VOICE_ID_HERE",
+  "timeout_sec": 30,
+  "cache_enabled": true
+}
