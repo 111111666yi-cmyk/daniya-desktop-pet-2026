@@ -140,6 +140,7 @@ echo [Daniya] Running PyInstaller...
   %ICON_ARGS% ^
   --add-data "assets\placeholder;assets\placeholder" ^
   --add-data "assets\icons;assets\icons" ^
+  --add-data "assets\voice_clips\daniya_clip_pack_v1;assets\voice_clips\daniya_clip_pack_v1" ^
   --add-data "%SAFE_CONFIG%;config" ^
   --add-data "characters\daniya\actions.yaml;characters\daniya" ^
   --add-data "characters\daniya\character.yaml;characters\daniya" ^
