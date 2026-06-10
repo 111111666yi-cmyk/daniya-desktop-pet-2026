@@ -1,0 +1,14 @@
+{
+  "latest_clip_pack": "daniya_clip_pack_v1",
+  "packs": [
+    {
+      "clip_pack_id": "daniya_clip_pack_v1",
+      "character_id": "daniya",
+      "display_name": "Daniya Voice Clip Pack",
+      "download_url": "TO_BE_FILLED_AFTER_UPLOAD",
+      "sha256": "37e25f5af3c271120b80ba63d3a6561261d3e05672cc506999f418bfdeef3d38",
+      "size_bytes": 2703213,
+      "license_status": "user_responsible"
+    }
+  ]
+}
