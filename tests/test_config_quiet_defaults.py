@@ -25,6 +25,7 @@ def test_default_app_config_is_quiet_by_default() -> None:
     assert DEFAULT_APP_CONFIG["system_status_enabled"] is False
     assert DEFAULT_APP_CONFIG["clipboard_interaction_enabled"] is False
     assert DEFAULT_APP_CONFIG["focus_mode_enabled"] is False
+    assert DEFAULT_APP_CONFIG["growth"]["enabled"] is False
     assert DEFAULT_APP_CONFIG["quiet_defaults_migration"] == QUIET_DEFAULTS_MIGRATION
 
 
@@ -52,6 +53,7 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     noisy["system_status_cooldown_seconds"] = 60
     noisy["clipboard_interaction_enabled"] = True
     noisy["focus_mode_enabled"] = True
+    noisy["growth"]["enabled"] = True
 
     failures = _check_quiet_defaults("config/app_config.json", noisy, APP_VERSION)
 
@@ -65,6 +67,7 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     assert any("system_status_enabled=false" in failure for failure in failures)
     assert any("clipboard_interaction_enabled=false" in failure for failure in failures)
     assert any("focus_mode_enabled=false" in failure for failure in failures)
+    assert any("growth.enabled=false" in failure for failure in failures)
     assert any("idle_behavior_seconds >= 600" in failure for failure in failures)
     assert any("system_status_interval_seconds >= 300" in failure for failure in failures)
     assert any("system_status_cooldown_seconds >= 300" in failure for failure in failures)

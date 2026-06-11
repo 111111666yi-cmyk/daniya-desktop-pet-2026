@@ -153,6 +153,8 @@ echo [Daniya] Running PyInstaller...
   --add-data "characters\daniya\relationship.yaml;characters\daniya" ^
   --add-data "characters\daniya\speech.yaml;characters\daniya" ^
   --add-data "characters\daniya\story.yaml;characters\daniya" ^
+  --add-data "characters\daniya\items.json;characters\daniya" ^
+  --add-data "characters\daniya\outfits.json;characters\daniya" ^
   --add-data "characters\template;characters\template" ^
   --add-data "web\story_ui;web\story_ui" ^
   --add-data "%SAFE_DOCS%;docs" ^

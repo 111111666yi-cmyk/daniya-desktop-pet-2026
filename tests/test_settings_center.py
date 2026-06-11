@@ -390,10 +390,11 @@ app.processEvents()
 tabs = [controller.settings_window.tabs.tabText(i) for i in range(controller.settings_window.tabs.count())]
 assert tabs == [
     '\u6a21\u578b\u4e0e\u5f15\u64ce',
-    '\u684c\u5ba0',
-    '\u89d2\u8272\u4e0e\u8d44\u6e90',
-    '\u5173\u7cfb\u4e0e\u4e8b\u4ef6',
-    '\u7cfb\u7edf',
+        '\u684c\u5ba0',
+        '\u89d2\u8272\u4e0e\u8d44\u6e90',
+        '\u5173\u7cfb\u4e0e\u4e8b\u4ef6',
+        '\u517b\u6210',
+        '\u7cfb\u7edf',
     '\u63d0\u9192',
     '\u6587\u4ef6\u6574\u7406',
     '\u7cfb\u7edf\u72b6\u6001',

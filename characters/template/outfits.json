@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "outfits": [
+    {
+      "id": "default",
+      "name": "默认服装",
+      "description": "角色包的基础服装记录。",
+      "price": 0,
+      "required_level": 1,
+      "required_affinity": 0
+    }
+  ]
+}

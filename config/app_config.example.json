@@ -1,5 +1,5 @@
 {
-  "version": "v0.80.1",
+  "version": "v0.81",
   "quiet_defaults_migration": "v0.61-quiet-defaults",
   "current_character": "daniya",
   "settings_mode": "simple",
@@ -60,6 +60,10 @@
   },
   "affinity": {
     "click_cooldown_seconds": 5
+  },
+  "growth": {
+    "enabled": false,
+    "daily_coin_reward": 25
   },
   "hourly_chime_enabled": false,
   "idle_chat_enabled": false,

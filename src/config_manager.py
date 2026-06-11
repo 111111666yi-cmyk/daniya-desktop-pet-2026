@@ -85,6 +85,10 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "affinity": {
         "click_cooldown_seconds": 5,
     },
+    "growth": {
+        "enabled": False,
+        "daily_coin_reward": 25,
+    },
     "hourly_chime_enabled": False,
     "idle_chat_enabled": False,
     "idle_chat_minutes": 10,
@@ -328,6 +332,16 @@ class ConfigManager:
 
         config["reminder_enabled"] = bool(config.get("reminder_enabled", True))
         config["natural_reminder_enabled"] = bool(config.get("natural_reminder_enabled", True))
+        growth = config.get("growth")
+        if not isinstance(growth, dict):
+            growth = {}
+            config["growth"] = growth
+        growth["enabled"] = bool(growth.get("enabled", False))
+        try:
+            daily_coin_reward = int(growth.get("daily_coin_reward", 25))
+        except (TypeError, ValueError):
+            daily_coin_reward = 25
+        growth["daily_coin_reward"] = max(1, min(500, daily_coin_reward))
         config["file_organizer_enabled"] = bool(config.get("file_organizer_enabled", False))
         config["system_status_enabled"] = bool(config.get("system_status_enabled", False))
         try:

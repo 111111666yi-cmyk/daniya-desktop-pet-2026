@@ -31,6 +31,7 @@ from .settings_window import SettingsWindow
 from .clipboard_interaction import ClipboardInteraction
 from .focus_mode import FocusModeManager
 from .feedback_coordinator import FeedbackCoordinator
+from .growth_manager import GrowthManager
 from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
 from .startup_timing import StartupTimer
@@ -166,6 +167,11 @@ class AppController(QObject):
         )
         self.startup_timer.mark("character pack loaded")
         resolved_char_id = self.daniya_adapter.character_pack.character_id
+        self.growth_manager = GrowthManager(
+            self.config_manager,
+            self.app_config,
+            character_id=resolved_char_id,
+        )
         self.reminder_manager.set_message_lookup(self.utility_text)
         self.system_status_manager.message_lookup = self.utility_text
         self.clipboard_interaction.message_lookup = self.utility_text
@@ -411,6 +417,9 @@ class AppController(QObject):
 
         # 2. Re-initialize AssetManager
         self.asset_manager = AssetManager(self.app_config, resolved_char_id)
+        growth_manager = getattr(self, "growth_manager", None)
+        if growth_manager is not None:
+            growth_manager.reload_character(resolved_char_id)
 
         # 3. Bind animation and state managers
         self.daniya_adapter.animation_manager = self.thread_safe_anim_manager
@@ -457,6 +466,13 @@ class AppController(QObject):
             message_lookup=self.utility_text,
         )
         dialog.exec()
+
+    def open_growth_center(self) -> None:
+        from .growth_dialog import GrowthDialog
+
+        dialog = GrowthDialog(self, self.window)
+        dialog.exec()
+        self.window.set_context_menu(self.menu_manager.create_menu())
 
     def apply_integrated_feature_config(self) -> None:
         config = self.config_manager._normalize_app_config(self.app_config)

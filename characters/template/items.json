@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "id": "starter_snack",
+      "name": "示例点心",
+      "description": "角色包作者可以替换此物品。",
+      "price": 10,
+      "growth": 10,
+      "affinity": 1
+    }
+  ]
+}

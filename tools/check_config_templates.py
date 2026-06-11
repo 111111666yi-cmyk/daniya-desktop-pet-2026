@@ -112,6 +112,7 @@ def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list
         return [f"{relative} must contain a JSON object"]
     pet = data.get("pet") if isinstance(data.get("pet"), dict) else {}
     window = data.get("window") if isinstance(data.get("window"), dict) else {}
+    growth = data.get("growth") if isinstance(data.get("growth"), dict) else {}
     failures: list[str] = []
     if data.get("version") != app_version:
         failures.append(f"{relative} expected version={app_version!r}, got {data.get('version')!r}")
@@ -135,6 +136,7 @@ def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list
         "focus_mode_enabled": data.get("focus_mode_enabled"),
         "focus_mode_manual": data.get("focus_mode_manual"),
         "focus_mode_auto_game_detect": data.get("focus_mode_auto_game_detect"),
+        "growth.enabled": growth.get("enabled"),
     }
     failures.extend(
         f"{relative} expected {key}=false, got {value!r}"

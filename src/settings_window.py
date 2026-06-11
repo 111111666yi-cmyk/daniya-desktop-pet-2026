@@ -43,6 +43,7 @@ SIMPLE_SETTINGS_TABS = {
     "桌宠",
     "角色与资源",
     "关系与事件",
+    "养成",
     "提醒",
     "隐私与安全",
 }
@@ -428,6 +429,7 @@ class SettingsWindow(QDialog):
         self._build_pet_tab()
         self._build_character_resources_tab()
         self._build_relationship_events_tab()
+        self._build_growth_tab()
         self._build_system_tab()
         self._build_reminder_tab()
         self._build_file_organizer_tab()
@@ -1790,6 +1792,44 @@ class SettingsWindow(QDialog):
         self._refresh_reminder_status()
         self.tabs.addTab(tab, get_icon("remind"), "提醒")
 
+    def _build_growth_tab(self) -> None:
+        config = self.settings_manager.load_app_config()
+        growth = config.get("growth", {})
+        if not isinstance(growth, dict):
+            growth = {}
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        description = QLabel(
+            "纯本地功能，默认关闭。硬币、背包、成长和衣柜保存在 data/growth_state.json，"
+            "不会发送给 Provider，也不会进入 Git 或发布包。"
+        )
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        self.growth_enabled = QCheckBox("启用本地养成")
+        self.growth_enabled.setChecked(bool(growth.get("enabled", False)))
+        self.growth_status = QLabel()
+        self.growth_status.setWordWrap(True)
+        buttons = QHBoxLayout()
+        save = QPushButton("保存养成设置")
+        save.setIcon(get_icon("save"))
+        open_center = QPushButton("打开养成中心")
+        open_center.setIcon(get_icon("protect"))
+        reset = QPushButton("恢复关闭")
+        reset.setIcon(get_icon("refresh"))
+        save.clicked.connect(self._save_growth_settings)
+        open_center.clicked.connect(self.controller.open_growth_center)
+        reset.clicked.connect(self._reset_growth_settings)
+        buttons.addWidget(save)
+        buttons.addWidget(open_center)
+        buttons.addWidget(reset)
+        buttons.addStretch(1)
+        layout.addWidget(self.growth_enabled)
+        layout.addLayout(buttons)
+        layout.addWidget(self.growth_status)
+        layout.addStretch(1)
+        self._refresh_growth_status()
+        self.tabs.addTab(tab, get_icon("protect"), "养成")
+
     def _build_file_organizer_tab(self) -> None:
         config = self.settings_manager.load_app_config()
         tab = QWidget()
@@ -2036,6 +2076,28 @@ class SettingsWindow(QDialog):
         self.settings_manager.save_app_config(config)
         self.controller.app_config.update(config)
         self._refresh_reminder_status()
+
+    def _save_growth_settings(self) -> None:
+        enabled = self.growth_enabled.isChecked()
+        self.controller.growth_manager.set_enabled(enabled)
+        self.controller.app_config.setdefault("growth", {})["enabled"] = enabled
+        self.controller.window.set_context_menu(self.controller.menu_manager.create_menu())
+        self._refresh_growth_status()
+
+    def _reset_growth_settings(self) -> None:
+        self.growth_enabled.setChecked(False)
+        self._save_growth_settings()
+
+    def _refresh_growth_status(self) -> None:
+        state = self.controller.growth_manager.snapshot(
+            self.controller.affinity_manager.value()
+        )
+        self.growth_status.setText(
+            f"当前状态：{'已启用' if self.growth_enabled.isChecked() else '已关闭'}；"
+            f"硬币 {state['coins']}；成长等级 {state['level']}；"
+            f"背包 {sum(state['inventory'].values())} 件；"
+            f"衣柜 {len(state['owned_outfits'])} 套。"
+        )
 
     def _reset_reminder_defaults(self) -> None:
         self.reminder_enabled.setChecked(True)

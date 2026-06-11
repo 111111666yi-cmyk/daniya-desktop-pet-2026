@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.81 (2026-06-12) - Local Growth
+
+- Added an opt-in, pure-local growth center with coins, daily supplies, inventory, feeding, levels, outfits, and affinity-gated unlocks.
+- Added public `items.json` and `outfits.json` character-pack catalogs for Daniya and the template pack.
+- Stored all user growth state under ignored `data/growth_state.json`; no growth data is sent to Providers or included in release archives.
+- Added settings and context-menu entry points while keeping the feature disabled by default.
+
 ## v0.80.1 (2026-06-12) - Cinematic Story Hotfix
 
 - Integrated the cinematic liquid-glass 24-chapter story site from `eee9816`.

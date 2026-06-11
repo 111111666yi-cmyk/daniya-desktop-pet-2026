@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "id": "berry_tea",
+      "name": "莓果冰茶",
+      "description": "清爽的日常补给，适合慢慢培养成长。",
+      "price": 15,
+      "growth": 12,
+      "affinity": 1
+    },
+    {
+      "id": "citrus_cake",
+      "name": "橘子小蛋糕",
+      "description": "更珍贵的甜点，能提供较多成长经验。",
+      "price": 40,
+      "growth": 30,
+      "affinity": 2
+    },
+    {
+      "id": "ice_soda",
+      "name": "夏日冰汽水",
+      "description": "普通但可靠的夏日饮料。",
+      "price": 25,
+      "growth": 18,
+      "affinity": 1
+    }
+  ]
+}
