@@ -13,6 +13,14 @@ from PySide6.QtWidgets import QHBoxLayout, QMenu, QSizePolicy, QSystemTrayIcon, 
 from .animation_manager import AnimationManager
 from .asset_manager import AssetManager
 from .typewriter import Typewriter
+from .window_geometry import (
+    available_screen_geometries,
+    ensure_fully_visible,
+    geometry_for_point,
+    geometry_for_window,
+    visibility_ratio,
+    virtual_bounds,
+)
 
 from .ui import ModernBubble, PetAvatar, StatusBadge, InputBar
 
@@ -48,6 +56,8 @@ class PetWindow(QWidget):
         self._tray_icon: QSystemTrayIcon | None = None
         self._minimized_to_tray = False
         self._scaled_pixmap_cache: dict[tuple[str, int, float], tuple[QPixmap, int, int]] = {}
+        self._screen_signals_connected = False
+        self._screen_repair_pending = False
 
         self._setup_tray()
         self._configure_window()
@@ -221,6 +231,7 @@ class PetWindow(QWidget):
         self._resize_to_content()
         final_pos = self._safe_start_position(requested)
         self.move(final_pos)
+        self._connect_screen_signals()
 
         # Save loaded/fallback position
         self.behavior_engine.snap_controller.save_window_state(
@@ -327,6 +338,7 @@ class PetWindow(QWidget):
 
     def set_input_visible(self, visible: bool, expand: bool = True) -> None:
         if visible:
+            self.release_edge_dock()
             self.input_box.always_expanded = True
             self.input_box.show()
             if expand:
@@ -341,14 +353,18 @@ class PetWindow(QWidget):
         self.move(self._clamped_position(self.pos()))
 
     def set_always_on_top(self, enabled: bool) -> None:
+        was_visible = self.isVisible()
+        was_active = self.isActiveWindow()
+        position = self.pos()
         self.always_on_top = enabled
-        flags = self.windowFlags()
-        if enabled:
-            flags |= Qt.WindowType.WindowStaysOnTopHint
-        else:
-            flags &= ~Qt.WindowType.WindowStaysOnTopHint
-        self.setWindowFlags(flags)
-        self.show()
+        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, enabled)
+        if was_visible:
+            if not was_active:
+                self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
+            self.show()
+            self.move(self._clamped_position(position))
+            if not was_active:
+                self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)
 
     def set_pet_height(self, height: int) -> int:
         self.clear_render_cache()
@@ -364,9 +380,16 @@ class PetWindow(QWidget):
     def can_show_idle_message(self) -> bool:
         if self.typewriter.is_typing:
             return False
-        if self.input_box.isVisible() and self.input_box.hasFocus() and self.input_box.text().strip():
+        if self.is_input_active():
             return False
         return True
+
+    def is_input_active(self) -> bool:
+        return bool(
+            self.input_box.isVisible()
+            and self.input_box.line_edit.isVisible()
+            and (self.input_box.line_edit.hasFocus() or self.input_box.text().strip())
+        )
 
     def _submit_message(self, text: str) -> None:
         self.activity_detected.emit()
@@ -429,10 +452,13 @@ class PetWindow(QWidget):
 
     def sync_feature_timers(self) -> None:
         pet_config = self.app_config.get("pet", {})
+        edge_enabled = bool(pet_config.get("edge_peek_enabled", False))
         self._set_timer_enabled(
             self.edge_timer,
-            bool(pet_config.get("edge_peek_enabled", False)),
+            edge_enabled,
         )
+        if not edge_enabled:
+            self.release_edge_dock()
         self._set_timer_enabled(
             self.global_click_timer,
             WINDOWS_NATIVE_AVAILABLE and bool(pet_config.get("click_to_call_enabled", False)),
@@ -457,10 +483,10 @@ class PetWindow(QWidget):
     def _tick_edge_peek(self) -> None:
         pet_config = self.app_config.get("pet", {})
         if not self.edge_peek_allowed_callback():
-            self.dock_side = None
+            self.release_edge_dock()
             return
         if not bool(pet_config.get("edge_peek_enabled", False)):
-            self.dock_side = None
+            self.release_edge_dock()
             return
 
         # Prevent snapping if dragging, mouse is pressed down on pet, context menu is open, or a snapping animation is running
@@ -615,7 +641,7 @@ class PetWindow(QWidget):
                 self.animation_manager.set_edge_peek(self.dock_side)
 
     def _nearest_edge_side(self, threshold: int) -> str | None:
-        bounds = self._desktop_bounds()
+        bounds = self._screen_bounds_for_position(self.pos())
         right_edge = bounds.right() + 1
         bottom_edge = bounds.bottom() + 1
         distances = {
@@ -638,17 +664,21 @@ class PetWindow(QWidget):
         except (TypeError, ValueError):
             hover_visible = 82
         cursor = QCursor.pos()
-        bounds = self._desktop_bounds()
+        bounds = self._screen_bounds_for_position(self.pos())
+        cursor_bounds = geometry_for_point(cursor, self._screen_geometries())
         near_edge = (
-            cursor.x() <= bounds.left() + 84
-            or cursor.x() >= bounds.right() - 84
-            or cursor.y() <= bounds.top() + 84
-            or cursor.y() >= bounds.bottom() - 84
+            cursor_bounds == bounds
+            and (
+                cursor.x() <= bounds.left() + 84
+                or cursor.x() >= bounds.right() - 84
+                or cursor.y() <= bounds.top() + 84
+                or cursor.y() >= bounds.bottom() - 84
+            )
         )
         return max(normal_visible, hover_visible) if near_edge else normal_visible
 
     def _docked_position(self, side: str, visible: int | None = None) -> QPoint:
-        bounds = self._desktop_bounds()
+        bounds = self._screen_bounds_for_position(self.pos())
         if visible is None:
             visible = self._dock_visible_px_for_cursor()
         current = self.pos()
@@ -674,51 +704,96 @@ class PetWindow(QWidget):
             self.context_menu.exec(global_pos)
 
     def _clamped_position(self, position: QPoint) -> QPoint:
-        bounds = self._desktop_bounds()
-        width = max(1, self.width())
-        height = max(1, self.height())
-        min_x = bounds.left()
-        max_x = max(min_x, bounds.right() - width + 1)
-        min_y = bounds.top()
-        max_y = max(min_y, bounds.bottom() - height + 1)
-        return QPoint(
-            max(min_x, min(max_x, position.x())),
-            max(min_y, min(max_y, position.y())),
-        )
+        return ensure_fully_visible(position, self.size(), self._screen_geometries())
 
     def _safe_start_position(self, requested: QPoint) -> QPoint:
-        clamped = self._clamped_position(requested)
-        if self._is_mostly_visible(clamped):
-            return clamped
+        if self._is_mostly_visible(requested):
+            return self._clamped_position(requested)
         return self._default_right_position()
 
     def _default_right_position(self) -> QPoint:
-        bounds = self._desktop_bounds()
+        primary = QGuiApplication.primaryScreen()
+        bounds = primary.availableGeometry() if primary is not None else self._screen_geometries()[0]
         margin = 48
         x = bounds.right() - self.width() - margin
         y = bounds.center().y() - self.height() // 2
-        return self._clamped_position(QPoint(x, y))
+        return ensure_fully_visible(QPoint(x, y), self.size(), [bounds])
 
     def _is_mostly_visible(self, position: QPoint) -> bool:
-        bounds = self._desktop_bounds()
-        width = max(1, self.width())
-        height = max(1, self.height())
-        rect = QRect(position, self.size())
-        visible = rect.intersected(bounds)
-        if visible.isNull():
-            return False
-        visible_area = visible.width() * visible.height()
-        total_area = width * height
-        return visible_area >= int(total_area * 0.85)
+        return visibility_ratio(QRect(position, self.size()), self._screen_geometries()) >= 0.85
+
+    def _screen_geometries(self) -> list[QRect]:
+        return available_screen_geometries()
+
+    def _screen_bounds_for_position(self, position: QPoint) -> QRect:
+        return geometry_for_window(position, self.size(), self._screen_geometries())
 
     def _desktop_bounds(self) -> QRect:
-        screens = QGuiApplication.screens()
-        if not screens:
-            return QRect(0, 0, 1920, 1080)
-        bounds = screens[0].availableGeometry()
-        for screen in screens[1:]:
-            bounds = bounds.united(screen.availableGeometry())
-        return bounds
+        return virtual_bounds(self._screen_geometries())
+
+    def release_edge_dock(self) -> None:
+        if self.dock_side is None:
+            return
+        self.dock_side = None
+        self.move(self._clamped_position(self.pos()))
+        if self.animation_manager.current_state in {"edge_peek_left", "edge_peek_right"}:
+            self.animation_manager.play_idle()
+        self.behavior_engine.snap_controller.save_window_state(
+            self.x(),
+            self.y(),
+            self.behavior_engine.snap_controller.get_current_snap_state(),
+        )
+
+    def _connect_screen_signals(self) -> None:
+        if self._screen_signals_connected:
+            return
+        app = QGuiApplication.instance()
+        if app is None:
+            return
+        app.screenAdded.connect(self._on_screen_added)
+        app.screenRemoved.connect(self._schedule_screen_repair)
+        for screen in app.screens():
+            self._connect_screen(screen)
+        handle = self.windowHandle()
+        if handle is not None:
+            handle.screenChanged.connect(self._on_window_screen_changed)
+        self._screen_signals_connected = True
+
+    def _connect_screen(self, screen: Any) -> None:
+        screen.availableGeometryChanged.connect(self._schedule_screen_repair)
+        screen.geometryChanged.connect(self._schedule_screen_repair)
+        screen.logicalDotsPerInchChanged.connect(self._schedule_screen_repair)
+
+    def _on_screen_added(self, screen: Any) -> None:
+        self._connect_screen(screen)
+        self._schedule_screen_repair()
+
+    def _on_window_screen_changed(self, _screen: Any) -> None:
+        self._schedule_screen_repair()
+
+    def _schedule_screen_repair(self, *_args: Any) -> None:
+        if self._screen_repair_pending:
+            return
+        self._screen_repair_pending = True
+        QTimer.singleShot(0, self._repair_after_screen_change)
+
+    def _repair_after_screen_change(self) -> None:
+        self._screen_repair_pending = False
+        detector = getattr(self.behavior_engine, "detector", None)
+        if detector is not None and detector.is_dragging:
+            QTimer.singleShot(150, self._schedule_screen_repair)
+            return
+        self.clear_render_cache()
+        self.animation_manager.refresh()
+        if self.dock_side in {"left", "right"}:
+            self.move(self._docked_position(self.dock_side))
+        else:
+            self.move(self._safe_start_position(self.pos()))
+        self.behavior_engine.snap_controller.save_window_state(
+            self.x(),
+            self.y(),
+            self.behavior_engine.snap_controller.get_current_snap_state(),
+        )
 
     def _resize_to_content(self) -> None:
         # FIX 错位：记录宠物立绘在屏幕上的绝对全局坐标

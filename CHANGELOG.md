@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.77 (2026-06-11) - Window Interaction Hardening
+
+- Replaced virtual-desktop bounding-box clamping with real per-screen geometry selection, including negative coordinates, gaps, and screens above or below the primary display.
+- Added screen and logical-DPI change repair so cached pixmaps refresh and saved positions return to a visible screen after monitor changes.
+- Made snap, rebound, and edge-peek calculations use the pet's active screen; fast drags use a shorter bounded rebound animation.
+- Fixed input focus detection and immediately released edge peek when input, Settings Center, focus mode, or the disabled feature requires a quiet state.
+- Kept reminder dialogs temporarily topmost without permanently changing the user's pet topmost setting.
+- Added multi-monitor geometry, snap, drag-state, DPI-layout, and interaction-guard tests plus a manual physical-mouse checklist.
+
 ## v0.76 (2026-06-11) - Runtime Reliability
 
 - Added diagnostic-only timing for all cold-start stages without recording keys or local paths.

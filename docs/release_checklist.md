@@ -4,7 +4,7 @@ Current release target: `v0.70`
 
 Expected Windows asset: `DaniyaSummerPet-v0.70-win-x64.zip`
 
-Current source milestone: `v0.76`; the next package target is `v0.80` after all v0.7x gates pass.
+Current source milestone: `v0.77`; the next package target is `v0.80` after all v0.7x gates pass.
 
 ## Source Freeze
 

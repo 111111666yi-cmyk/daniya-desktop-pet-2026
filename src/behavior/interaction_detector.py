@@ -44,7 +44,7 @@ class InteractionDetector(QObject):
 
     def handle_press(self, global_pos: QPoint) -> None:
         self.press_pos = global_pos
-        self.press_time = time.time()
+        self.press_time = time.monotonic()
         self.is_pressed = True
         self.is_dragging = False
         self.long_press_triggered = False

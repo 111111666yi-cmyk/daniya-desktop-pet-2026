@@ -526,13 +526,13 @@ class AppController(QObject):
         return ok, message
 
     def on_reminder_due(self, reminder_id: str, text: str) -> None:
-        self.window.set_always_on_top(True)
         self.window.animation_manager.trigger_remind()
         self.window.speak(self.utility_text("reminder_due", text=text))
         # [CHANGE-003+005] 提醒到期事件流入引擎（后台线程）
         self._fire_physical_event("reminder_due")
         box = QMessageBox(self.window)
         box.setWindowTitle("达妮娅的唠叨")
+        box.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
         box.setText(f"……喂，时间到了：\n【{text}】\n去处理一下。")
         box.setStandardButtons(QMessageBox.StandardButton.Ok)
         ok_button = box.button(QMessageBox.StandardButton.Ok)
@@ -595,6 +595,9 @@ class AppController(QObject):
 
     def open_settings_center(self) -> None:
         try:
+            release_edge_dock = getattr(self.window, "release_edge_dock", None)
+            if callable(release_edge_dock):
+                release_edge_dock()
             if self.settings_window is not None:
                 if self.settings_window.isMinimized():
                     self.settings_window.showNormal()
@@ -646,11 +649,7 @@ class AppController(QObject):
             return True
         if self.reminder_boxes:
             return True
-        return bool(
-            self.window.input_box.isVisible()
-            and self.window.input_box.hasFocus()
-            and self.window.input_box.text().strip()
-        )
+        return self.window.is_input_active()
 
     def _edge_peek_allowed(self) -> bool:
         if self._focus_suppresses("focus_mode_silence_edge_peek"):
@@ -676,6 +675,11 @@ class AppController(QObject):
         )
 
     def _on_focus_state_changed(self, active: bool) -> None:
+        if active:
+            window = getattr(self, "window", None)
+            release_edge_dock = getattr(window, "release_edge_dock", None)
+            if callable(release_edge_dock):
+                release_edge_dock()
         self.feedback_coordinator.present(
             source="focus_enter" if active else "focus_exit",
             text=self.utility_text("focus_enter" if active else "focus_exit"),

@@ -6,6 +6,7 @@ from typing import Any
 from PySide6.QtCore import QObject, QPoint, QRect, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QWidget
+from src.atomic_io import atomic_write_json
 
 class SnapController(QObject):
     def __init__(self, window: QWidget, config: Any) -> None:
@@ -18,12 +19,12 @@ class SnapController(QObject):
         from src.utils import runtime_root
         return runtime_root() / "data" / "window_state.json"
 
-    def snap_and_save(self, global_pos: QPoint) -> None:
+    def snap_and_save(self, global_pos: QPoint, velocity: float = 0.0) -> None:
         if self._anim and self._anim.state() == QPropertyAnimation.State.Running:
             self._anim.stop()
 
         pos = self.window.pos()
-        bounds = self.get_desktop_bounds()
+        bounds = self.get_screen_bounds(pos)
         margin = self.config.snap_margin_px
         snap_to_edge = self.config.snap_to_edge_enabled
         keep_on_screen = self.config.keep_on_screen_enabled
@@ -80,14 +81,15 @@ class SnapController(QObject):
 
         target_pos = QPoint(target_x, target_y)
         if target_pos != pos and self.config.drag_return_enabled:
-            self.animate_to(target_pos)
+            self.animate_to(target_pos, velocity=velocity)
         else:
             self.window.move(target_pos)
             self.save_window_state(target_pos.x(), target_pos.y(), snap_state)
 
-    def animate_to(self, target_pos: QPoint) -> None:
+    def animate_to(self, target_pos: QPoint, velocity: float = 0.0) -> None:
         self._anim = QPropertyAnimation(self.window, b"pos")
-        self._anim.setDuration(300)
+        speed = max(0.0, min(float(velocity), 3000.0))
+        self._anim.setDuration(max(140, min(300, int(300 - speed / 20))))
         self._anim.setStartValue(self.window.pos())
         self._anim.setEndValue(target_pos)
         self._anim.setEasingCurve(QEasingCurve.Type.OutQuad)
@@ -97,7 +99,10 @@ class SnapController(QObject):
 
     def get_current_snap_state(self) -> str:
         pos = self.window.pos()
-        bounds = self.get_desktop_bounds()
+        dock_side = getattr(self.window, "dock_side", None)
+        if dock_side in {"left", "right"}:
+            return dock_side
+        bounds = self.get_screen_bounds(pos)
         w = self.window.width()
         h = self.window.height()
 
@@ -121,6 +126,12 @@ class SnapController(QObject):
             bounds = bounds.united(screen.availableGeometry())
         return bounds
 
+    def get_screen_bounds(self, position: QPoint | None = None) -> QRect:
+        resolver = getattr(self.window, "_screen_bounds_for_position", None)
+        if callable(resolver):
+            return QRect(resolver(position or self.window.pos()))
+        return self.get_desktop_bounds()
+
     def save_window_state(self, x: int, y: int, snap: str) -> None:
         data = {
             "x": x,
@@ -129,13 +140,8 @@ class SnapController(QObject):
             "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         path = self.state_file_path()
-        try:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = path.with_suffix(".tmp")
-            tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-            tmp.replace(path)
-        except OSError as exc:
-            print(f"[SnapController] Failed to save window state: {exc}")
+        if not atomic_write_json(path, data):
+            print("[SnapController] Failed to save window state.")
 
     def load_window_state(self) -> tuple[int, int] | None:
         path = self.state_file_path()
@@ -144,15 +150,22 @@ class SnapController(QObject):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(data, dict) and "x" in data and "y" in data:
-                bounds = self.get_desktop_bounds()
                 x = int(data["x"])
                 y = int(data["y"])
-                w = self.window.width()
-                h = self.window.height()
-
+                repair = getattr(self.window, "_safe_start_position", None)
+                if callable(repair):
+                    safe = repair(QPoint(x, y))
+                    return safe.x(), safe.y()
+                bounds = self.get_desktop_bounds()
+                width = max(1, int(self.window.width()))
+                height = max(1, int(self.window.height()))
                 visible_min = 32
-                if (x + w < bounds.left() + visible_min or x > bounds.right() + 1 - visible_min or
-                    y + h < bounds.top() + visible_min or y > bounds.bottom() + 1 - visible_min):
+                if (
+                    x + width < bounds.left() + visible_min
+                    or x > bounds.right() + 1 - visible_min
+                    or y + height < bounds.top() + visible_min
+                    or y > bounds.bottom() + 1 - visible_min
+                ):
                     return None
                 return x, y
         except Exception as exc:

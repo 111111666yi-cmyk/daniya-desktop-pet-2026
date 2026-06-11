@@ -135,7 +135,7 @@ class PetBehaviorEngine(QObject):
             anim_mgr.set_dragging(False)
 
         final_pos, velocity = self.drag_controller.finish_drag(global_pos)
-        self.snap_controller.snap_and_save(global_pos)
+        self.snap_controller.snap_and_save(global_pos, velocity=velocity)
         self.action_requested.emit("idle")
 
         pos = self.window.pos()

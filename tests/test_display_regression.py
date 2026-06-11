@@ -198,7 +198,7 @@ def test_pet_window_supports_negative_origin_virtual_desktop(monkeypatch):
     }
     window = PetWindow(AssetManager(config), config)
     virtual_bounds = QRect(-1920, -180, 6400, 2340)
-    monkeypatch.setattr(window, "_desktop_bounds", lambda: virtual_bounds)
+    monkeypatch.setattr(window, "_screen_geometries", lambda: [virtual_bounds])
     try:
         window.resize(256, 304)
         for requested in (
@@ -240,6 +240,31 @@ def test_pet_window_keeps_logical_size_across_mixed_dpi(monkeypatch):
             assert pixmap is not None and not pixmap.isNull()
             logical_sizes.append((window.image_label.width(), window.image_label.height()))
         assert len(set(logical_sizes)) == 1
+    finally:
+        _close_window(app, window)
+
+
+def test_input_and_bubble_resize_remain_on_selected_screen(monkeypatch, tmp_path):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    monkeypatch.setattr("src.utils.runtime_root", lambda: tmp_path)
+    app = _app()
+    config = {
+        "window": {"start_x": -1100, "start_y": 200, "always_on_top": False, "show_input": False},
+        "pet": {"pet_height": 96, "target_height": 96},
+        "ui": {"bubble_max_width": 300, "input_min_width": 180},
+    }
+    window = PetWindow(AssetManager(config), config)
+    screens = [QRect(0, 0, 1920, 1040), QRect(-1280, 0, 1280, 1024)]
+    monkeypatch.setattr(window, "_screen_geometries", lambda: screens)
+    try:
+        window.show_at_config_position()
+        window.set_input_visible(True)
+        window.show_message("多屏布局检查。" * 20)
+        app.processEvents()
+
+        assert screens[1].contains(window.geometry())
+        assert window.input_box.line_edit.isVisible()
+        assert window.bubble.isVisible()
     finally:
         _close_window(app, window)
 

@@ -17,13 +17,13 @@ class DragController(QObject):
     def start_drag(self, global_pos: QPoint) -> None:
         self.drag_start_pos = global_pos
         self.drag_start_window_pos = self.window.pos()
-        self.last_move_time = time.time()
+        self.last_move_time = time.monotonic()
         self.velocity = 0.0
         if self.on_state_changed:
             self.on_state_changed("drag")
 
     def drag(self, global_pos: QPoint) -> None:
-        now = time.time()
+        now = time.monotonic()
         dt = now - self.last_move_time
 
         delta = global_pos - self.drag_start_pos
