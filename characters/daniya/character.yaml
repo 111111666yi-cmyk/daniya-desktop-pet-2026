@@ -3,6 +3,10 @@ display_name: 达妮娅
 role_type: default_desktop_pet_character
 project_position: 主角色 / 默认角色 / 关系引擎初始角色
 
+birthday: null
+birthday_display: ""
+birthday_lore_note: ""
+
 source_context:
   title: 鸣潮共鸣者 / 星炬学院虚质科学部三年级学生
   usage_note: 角色人格与关系记忆参考

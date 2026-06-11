@@ -9,7 +9,13 @@ DEFAULT_PROFILE = {
     "user_name": "你",
     "relationship": "陪伴角色与用户",
     "style": "温柔、可爱、简短、陪伴感",
+    "birthday": "",
+    "birthday_display": "",
+    "birthday_source": "unset",
+    "birthday_updated_at": "",
 }
+
+_NULLABLE_PROFILE_KEYS = {"birthday", "birthday_display", "birthday_source", "birthday_updated_at"}
 
 
 def _term(*parts: str) -> str:
@@ -58,8 +64,10 @@ class ProfileManager:
             data = {}
         profile = DEFAULT_PROFILE.copy()
         for key in profile:
-            value = data.get(key, profile[key])
-            profile[key] = str(value)
+            if key in data:
+                profile[key] = str(data[key]) if data[key] is not None else ""
+            else:
+                profile[key] = str(profile[key]) if profile[key] is not None else ""
         profile["user_name"] = sanitize_user_name(profile["user_name"])
         profile["relationship"] = sanitize_profile_text(profile["relationship"]) or DEFAULT_PROFILE["relationship"]
         profile["style"] = sanitize_profile_text(profile["style"]) or DEFAULT_PROFILE["style"]
@@ -68,7 +76,10 @@ class ProfileManager:
     def save(self, profile: dict[str, str]) -> None:
         clean = DEFAULT_PROFILE.copy()
         for key in clean:
-            clean[key] = str(profile.get(key, clean[key])).strip() or clean[key]
+            if key in _NULLABLE_PROFILE_KEYS:
+                clean[key] = str(profile.get(key, clean[key]) or "").strip()
+            else:
+                clean[key] = str(profile.get(key, clean[key])).strip() or clean[key]
         clean["user_name"] = sanitize_user_name(clean["user_name"])
         clean["relationship"] = sanitize_profile_text(clean["relationship"]) or DEFAULT_PROFILE["relationship"]
         clean["style"] = sanitize_profile_text(clean["style"]) or DEFAULT_PROFILE["style"]
