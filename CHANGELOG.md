@@ -6,6 +6,7 @@
 - Unified source version, public config seeds, package name, release scanner, README, known issues, release checklist, and v0.80 acceptance documents.
 - Kept true LLM streaming deferred and preserved TTS interfaces without adding TTS execution behavior.
 - Added v0.80 package requirements for versioned config, acceptance documents, story assets, private/runtime/model exclusions, secrets, and local-path scans.
+- Avoided native screen enumeration on Qt offscreen/minimal platforms, preventing a Windows CI heap crash while keeping real-screen enumeration unchanged in production.
 - Kept real Provider, second physical mixed-DPI monitor, physical mouse feel, SmartScreen, antivirus, and code-signing results explicitly manual or environment-specific.
 
 ## v0.7x Backfill (2026-06-11) - Settings And Profile Safety

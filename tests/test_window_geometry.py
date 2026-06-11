@@ -3,6 +3,8 @@ from __future__ import annotations
 from PySide6.QtCore import QPoint, QRect, QSize
 
 from src.window_geometry import (
+    FALLBACK_SCREEN,
+    available_screen_geometries,
     ensure_fully_visible,
     geometry_for_point,
     geometry_for_window,
@@ -18,6 +20,17 @@ SCREENS = [
     QRect(1920, -200, 2560, 1440),
     QRect(0, -1100, 1600, 900),
 ]
+
+
+def test_offscreen_platform_does_not_enumerate_native_screens(monkeypatch) -> None:
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    def fail_if_called():
+        raise AssertionError("offscreen geometry must not call QGuiApplication.screens()")
+
+    monkeypatch.setattr("src.window_geometry.QGuiApplication.screens", fail_if_called)
+
+    assert available_screen_geometries() == [FALLBACK_SCREEN]
 
 
 def test_virtual_bounds_include_negative_left_right_and_upper_screens() -> None:

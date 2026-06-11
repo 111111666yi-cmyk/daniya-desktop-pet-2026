@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 
 from PySide6.QtCore import QPoint, QRect, QSize
@@ -9,10 +10,22 @@ from PySide6.QtGui import QGuiApplication
 
 
 FALLBACK_SCREEN = QRect(0, 0, 1920, 1080)
+HEADLESS_QPA_PLATFORMS = {"offscreen", "minimal", "minimalegl"}
 
 
 def available_screen_geometries() -> list[QRect]:
-    screens = [QRect(screen.availableGeometry()) for screen in QGuiApplication.screens()]
+    configured_platform = os.environ.get("QT_QPA_PLATFORM", "").split(":", 1)[0].strip().lower()
+    if configured_platform in HEADLESS_QPA_PLATFORMS:
+        return [QRect(FALLBACK_SCREEN)]
+    app = QGuiApplication.instance()
+    if app is None:
+        return [QRect(FALLBACK_SCREEN)]
+    try:
+        if str(app.platformName()).lower() in HEADLESS_QPA_PLATFORMS:
+            return [QRect(FALLBACK_SCREEN)]
+        screens = [QRect(screen.availableGeometry()) for screen in app.screens()]
+    except RuntimeError:
+        return [QRect(FALLBACK_SCREEN)]
     return normalize_geometries(screens)
 
 
