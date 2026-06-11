@@ -167,5 +167,12 @@
     "scan_interval_sec": 30,
     "warn_cooldown_sec": 60,
     "reward_affinity": 3
+  },
+  "story_reader": {
+    "bg_kind": "preset",
+    "bg_color": "#0d0d1a",
+    "bg_image": "",
+    "bg_opacity": 100,
+    "glass_tint": 0.5
   }
 }

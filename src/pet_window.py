@@ -145,6 +145,8 @@ class PetWindow(QWidget):
 
     def set_context_menu(self, menu: QMenu) -> None:
         self.context_menu = menu
+        if self._tray_icon is not None:
+            self._tray_icon.setContextMenu(menu)
 
     def closeEvent(self, event) -> None:  # type: ignore[no-untyped-def]
         self._stop_pet_feature_timers()
