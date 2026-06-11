@@ -383,35 +383,34 @@ from PySide6.QtWidgets import QPushButton
 from src.config_manager import ConfigManager
 from src.asset_manager import AssetManager
 from src.app import AppController
+from src.settings_window import TAB_REGISTRY
 app = QApplication.instance() or QApplication(sys.argv)
 controller = AppController(app)
 controller.open_settings_center()
 app.processEvents()
-tabs = [controller.settings_window.tabs.tabText(i) for i in range(controller.settings_window.tabs.count())]
-assert tabs == [
-    '\u6a21\u578b\u4e0e\u5f15\u64ce',
-    '\u684c\u5ba0',
-    '\u89d2\u8272\u4e0e\u8d44\u6e90',
-    '\u5173\u7cfb\u4e0e\u4e8b\u4ef6',
-    '\u7cfb\u7edf',
-    '\u63d0\u9192',
-    '\u6587\u4ef6\u6574\u7406',
-    '\u7cfb\u7edf\u72b6\u6001',
-    '\u526a\u8d34\u677f',
-    '\u4e13\u6ce8\u6a21\u5f0f',
-    '\u9690\u79c1\u4e0e\u5b89\u5168',
-    '\u8bca\u65ad',
-]
-assert controller.settings_window.pack_editor_text.isReadOnly() is False
-buttons = [button.text() for button in controller.settings_window.findChildren(QPushButton)]
+w = controller.settings_window
+tabs = [w.tabs.tabText(i) for i in range(w.tabs.count())]
+simple_expected = [e['title'] for e in TAB_REGISTRY if e['mode'] in ('both',)]
+assert tabs == simple_expected, f'simple tabs mismatch: {tabs} != {simple_expected}'
+w._switch_settings_mode('advanced')
+app.processEvents()
+adv_tabs = [w.tabs.tabText(i) for i in range(w.tabs.count())]
+all_expected = [e['title'] for e in TAB_REGISTRY]
+assert adv_tabs == all_expected, f'advanced tabs mismatch: {adv_tabs} != {all_expected}'
+assert len(w._tab_widgets) == len(TAB_REGISTRY)
+w._switch_settings_mode('simple')
+app.processEvents()
+tabs2 = [w.tabs.tabText(i) for i in range(w.tabs.count())]
+assert tabs2 == simple_expected
+assert w.pack_editor_text.isReadOnly() is False
+buttons = [button.text() for button in w.findChildren(QPushButton)]
 assert '\u6e05\u7a7a\u8bb0\u5fc6' in buttons
 assert '\u6062\u590d\u5b89\u5168\u9ed8\u8ba4' in buttons
 assert '\u6062\u590d\u9690\u79c1\u9ed8\u8ba4' in buttons
-assert '\u9000\u51fa\u4e13\u6ce8\u6a21\u5f0f' in buttons
-assert controller.settings_window.file_organizer_enabled.isChecked() is False
-assert controller.settings_window.system_status_enabled.isChecked() is False
-assert controller.settings_window.clipboard_enabled.isChecked() is False
-assert controller.settings_window.focus_enabled.isChecked() is False
+assert w.file_organizer_enabled.isChecked() is False
+assert w.system_status_enabled.isChecked() is False
+assert w.clipboard_enabled.isChecked() is False
+assert w.focus_enabled.isChecked() is False
 print('SETTINGS_WINDOW_OK', flush=True)
 os._exit(0)
 """
@@ -482,4 +481,85 @@ os._exit(0)
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
     assert "SETTINGS_LOCAL_SAVE_OK" in completed.stdout
+
+
+# ── B0-1: settings_ui mode tests ──────────────────────────
+
+
+def test_default_config_has_settings_ui_simple_mode():
+    from src.config_manager import DEFAULT_APP_CONFIG
+    sui = DEFAULT_APP_CONFIG["settings_ui"]
+    assert sui["mode"] == "simple"
+    assert sui["show_advanced"] is False
+    assert sui["remember_last_page"] is True
+
+
+def test_old_config_missing_settings_ui_gets_backfilled():
+    from src.config_manager import ConfigManager, DEFAULT_APP_CONFIG, deep_merge
+    old_config = {"version": "v0.60", "pet": {"pet_height": 96}}
+    merged = deep_merge(DEFAULT_APP_CONFIG, old_config)
+    cm = ConfigManager.__new__(ConfigManager)
+    cm.root = Path(".")
+    cm.bundle = Path(".")
+    cm.config_dir = Path(".")
+    cm.data_dir = Path(".")
+    cm.assets_dir = Path(".")
+    result = cm._normalize_app_config(merged)
+    assert result["settings_ui"]["mode"] == "simple"
+    assert result["settings_ui"]["show_advanced"] is False
+
+
+def test_settings_ui_invalid_mode_defaults_to_simple():
+    from src.config_manager import ConfigManager, DEFAULT_APP_CONFIG, deep_merge
+    config = deep_merge(DEFAULT_APP_CONFIG, {"settings_ui": {"mode": "bogus"}})
+    cm = ConfigManager.__new__(ConfigManager)
+    cm.root = Path(".")
+    cm.bundle = Path(".")
+    cm.config_dir = Path(".")
+    cm.data_dir = Path(".")
+    cm.assets_dir = Path(".")
+    result = cm._normalize_app_config(config)
+    assert result["settings_ui"]["mode"] == "simple"
+
+
+def test_settings_ui_advanced_mode_preserved():
+    from src.config_manager import ConfigManager, DEFAULT_APP_CONFIG, deep_merge
+    config = deep_merge(DEFAULT_APP_CONFIG, {"settings_ui": {"mode": "advanced", "show_advanced": True}})
+    cm = ConfigManager.__new__(ConfigManager)
+    cm.root = Path(".")
+    cm.bundle = Path(".")
+    cm.config_dir = Path(".")
+    cm.data_dir = Path(".")
+    cm.assets_dir = Path(".")
+    result = cm._normalize_app_config(config)
+    assert result["settings_ui"]["mode"] == "advanced"
+    assert result["settings_ui"]["show_advanced"] is True
+
+
+def test_tab_registry_has_expected_structure():
+    from src.settings_window import TAB_REGISTRY
+    required_keys = {"id", "title", "icon", "mode", "category", "risk_level", "builder"}
+    for entry in TAB_REGISTRY:
+        assert required_keys.issubset(entry.keys()), f"missing keys in {entry['id']}"
+        assert entry["mode"] in ("both", "simple", "advanced")
+        assert entry["risk_level"] in ("normal", "advanced", "dangerous")
+
+
+def test_tab_registry_simple_mode_tabs():
+    from src.settings_window import TAB_REGISTRY
+    simple_ids = {e["id"] for e in TAB_REGISTRY if e["mode"] == "both"}
+    assert "model" in simple_ids
+    assert "pet" in simple_ids
+    assert "privacy" in simple_ids
+    assert "diagnostics" in simple_ids
+    assert "file_organizer" not in simple_ids
+    assert "clipboard" not in simple_ids
+
+
+def test_dangerous_features_default_off():
+    from src.config_manager import DEFAULT_APP_CONFIG
+    assert DEFAULT_APP_CONFIG.get("file_organizer_enabled") is False
+    assert DEFAULT_APP_CONFIG.get("system_status_enabled") is False
+    assert DEFAULT_APP_CONFIG.get("clipboard_interaction_enabled") is False
+    assert DEFAULT_APP_CONFIG.get("focus_mode_enabled") is False
 

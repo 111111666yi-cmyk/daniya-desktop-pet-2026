@@ -38,18 +38,20 @@ if TYPE_CHECKING:
     from .app import AppController
 
 
-SIMPLE_SETTINGS_TABS = {
-    "模型与引擎",
-    "桌宠",
-    "角色与资源",
-    "关系与事件",
-    "提醒",
-    "隐私与安全",
-}
-
-
-def normalize_settings_mode(value: Any) -> str:
-    return "advanced" if str(value or "").strip().lower() == "advanced" else "simple"
+TAB_REGISTRY: list[dict[str, str]] = [
+    {"id": "model", "title": "模型与引擎", "icon": "chip", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_model_tab"},
+    {"id": "pet", "title": "桌宠", "icon": "internet", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_pet_tab"},
+    {"id": "character_resources", "title": "角色与资源", "icon": "document", "mode": "both", "category": "character", "risk_level": "normal", "builder": "_build_character_resources_tab"},
+    {"id": "relationship_events", "title": "关系与事件", "icon": "download", "mode": "advanced", "category": "character", "risk_level": "advanced", "builder": "_build_relationship_events_tab"},
+    {"id": "system", "title": "系统", "icon": "settings", "mode": "advanced", "category": "tools", "risk_level": "advanced", "builder": "_build_system_tab"},
+    {"id": "reminder", "title": "提醒", "icon": "remind", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_reminder_tab"},
+    {"id": "file_organizer", "title": "文件整理", "icon": "document", "mode": "advanced", "category": "tools", "risk_level": "dangerous", "builder": "_build_file_organizer_tab"},
+    {"id": "system_status", "title": "系统状态", "icon": "laptop", "mode": "advanced", "category": "tools", "risk_level": "advanced", "builder": "_build_system_status_tab"},
+    {"id": "clipboard", "title": "剪贴板", "icon": "document", "mode": "advanced", "category": "tools", "risk_level": "dangerous", "builder": "_build_clipboard_tab"},
+    {"id": "focus", "title": "专注模式", "icon": "chip", "mode": "advanced", "category": "tools", "risk_level": "advanced", "builder": "_build_focus_tab"},
+    {"id": "privacy", "title": "隐私与安全", "icon": "info", "mode": "both", "category": "privacy", "risk_level": "normal", "builder": "_build_privacy_tab"},
+    {"id": "diagnostics", "title": "诊断", "icon": "settings", "mode": "both", "category": "diagnostics", "risk_level": "normal", "builder": "_build_diagnostics_tab"},
+]
 
 
 class _ApiTestWorker(QThread):
@@ -419,108 +421,77 @@ class SettingsWindow(QDialog):
         )
 
         layout = QVBoxLayout(self)
-        self._build_settings_mode_switch(layout)
+
+        mode_row = QHBoxLayout()
+        self._mode_simple_btn = QPushButton("简单")
+        self._mode_advanced_btn = QPushButton("进阶")
+        for btn in (self._mode_simple_btn, self._mode_advanced_btn):
+            btn.setCheckable(True)
+            btn.setFixedHeight(28)
+            btn.setStyleSheet("QPushButton { padding: 2px 16px; } QPushButton:checked { font-weight: bold; background: #0366d6; color: white; border-radius: 4px; }")
+        self._mode_hint = QLabel()
+        self._mode_hint.setWordWrap(True)
+        self._mode_hint.setStyleSheet("color: gray; font-size: 11px; margin-left: 8px;")
+        mode_row.addWidget(self._mode_simple_btn)
+        mode_row.addWidget(self._mode_advanced_btn)
+        mode_row.addWidget(self._mode_hint, 1)
+        layout.addLayout(mode_row)
+
         self.tabs = QTabWidget()
         self.tabs.setTabPosition(QTabWidget.TabPosition.South)
         layout.addWidget(self.tabs)
 
-        self._build_model_tab()
-        self._build_pet_tab()
-        self._build_character_resources_tab()
-        self._build_relationship_events_tab()
-        self._build_system_tab()
-        self._build_reminder_tab()
-        self._build_file_organizer_tab()
-        self._build_system_status_tab()
-        self._build_clipboard_tab()
-        self._build_focus_tab()
-        self._build_privacy_tab()
-        self._build_diagnostics_tab()
-        self.tabs.currentChanged.connect(self._load_lazy_tab)
-        self._apply_settings_mode(self._settings_mode, persist=False)
+        self._tab_widgets: dict[str, QWidget] = {}
+        self._tab_entries: list[dict[str, str]] = list(TAB_REGISTRY)
+        for entry in self._tab_entries:
+            builder = getattr(self, entry["builder"], None)
+            if builder:
+                builder()
+
+        app_config = self.settings_manager.load_app_config()
+        sui = app_config.get("settings_ui", {})
+        initial_mode = sui.get("mode", "simple") if sui.get("mode") in ("simple", "advanced") else "simple"
+        self._apply_settings_mode(initial_mode)
+
+        self._mode_simple_btn.clicked.connect(lambda: self._switch_settings_mode("simple"))
+        self._mode_advanced_btn.clicked.connect(lambda: self._switch_settings_mode("advanced"))
 
         close = QPushButton("关闭")
         close.clicked.connect(self.accept)
         layout.addWidget(close, alignment=Qt.AlignmentFlag.AlignRight)
 
-    def _build_settings_mode_switch(self, layout: QVBoxLayout) -> None:
-        config = self.settings_manager.load_app_config()
-        self._settings_mode = normalize_settings_mode(config.get("settings_mode", "simple"))
-        bar = QWidget()
-        bar_layout = QHBoxLayout(bar)
-        bar_layout.setContentsMargins(0, 0, 0, 0)
-        bar_layout.addWidget(QLabel("设置显示"))
-        self.simple_mode_button = QPushButton("简单")
-        self.advanced_mode_button = QPushButton("进阶")
-        for button in (self.simple_mode_button, self.advanced_mode_button):
-            button.setCheckable(True)
-            button.setMinimumWidth(72)
-        self.settings_mode_group = QButtonGroup(self)
-        self.settings_mode_group.setExclusive(True)
-        self.settings_mode_group.addButton(self.simple_mode_button)
-        self.settings_mode_group.addButton(self.advanced_mode_button)
-        self.simple_mode_button.clicked.connect(lambda: self._apply_settings_mode("simple"))
-        self.advanced_mode_button.clicked.connect(lambda: self._apply_settings_mode("advanced"))
-        bar_layout.addWidget(self.simple_mode_button)
-        bar_layout.addWidget(self.advanced_mode_button)
-        bar_layout.addStretch(1)
-        layout.addWidget(bar)
-        self.settings_mode_hint = QLabel()
-        self.settings_mode_hint.setWordWrap(True)
-        layout.addWidget(self.settings_mode_hint)
+    def _register_tab(self, tab_id: str, widget: QWidget, icon_name: str, title: str) -> None:
+        self._tab_widgets[tab_id] = widget
+        widget.setProperty("_tab_id", tab_id)
+        widget.setProperty("_tab_icon", icon_name)
+        widget.setProperty("_tab_title", title)
 
-    def _apply_settings_mode(self, mode: str, persist: bool = True) -> None:
-        mode = normalize_settings_mode(mode)
-        self._settings_mode = mode
-        advanced = mode == "advanced"
-        self.simple_mode_button.setChecked(not advanced)
-        self.advanced_mode_button.setChecked(advanced)
+    def _apply_settings_mode(self, mode: str) -> None:
+        self._mode_simple_btn.setChecked(mode == "simple")
+        self._mode_advanced_btn.setChecked(mode == "advanced")
+        if mode == "simple":
+            self._mode_hint.setText("只显示常用设置。高级功能可在「进阶」中切换。")
+        else:
+            self._mode_hint.setText("包含 Provider 详细配置、数据管理、诊断和实验功能，请谨慎修改。")
+        self.tabs.blockSignals(True)
+        while self.tabs.count():
+            self.tabs.removeTab(0)
+        for entry in self._tab_entries:
+            tab_id = entry["id"]
+            widget = self._tab_widgets.get(tab_id)
+            if widget is None:
+                continue
+            entry_mode = entry.get("mode", "both")
+            if entry_mode == "both" or entry_mode == mode:
+                self.tabs.addTab(widget, get_icon(entry["icon"]), entry["title"])
+        self.tabs.blockSignals(False)
 
-        for index in range(self.tabs.count()):
-            visible = advanced or self.tabs.tabText(index) in SIMPLE_SETTINGS_TABS
-            self.tabs.setTabVisible(index, visible)
-
-        for name in (
-            "profile_switch_group",
-            "local_model_group",
-            "tts_group",
-            "image_group",
-            "video_group",
-            "multimodal_hint",
-            "actions_group",
-            "pack_group",
-            "relationship_group",
-            "events_group",
-        ):
-            widget = getattr(self, name, None)
-            if widget is not None:
-                widget.setVisible(advanced)
-
-        current = self.tabs.currentIndex()
-        if current < 0 or not self.tabs.isTabVisible(current):
-            for index in range(self.tabs.count()):
-                if self.tabs.isTabVisible(index):
-                    self.tabs.setCurrentIndex(index)
-                    break
-
-        self.settings_mode_hint.setText(
-            "简单模式只显示常用入口；进阶模式显示本地模型、诊断、日志和高风险功能。切换不会删除或重置已有设置。"
-            if not advanced
-            else "进阶模式显示全部配置。文件整理、系统状态和剪贴板等高风险功能仍保持各自的关闭默认值。"
-        )
-        if persist:
-            config = self.settings_manager.load_app_config()
-            config["settings_mode"] = mode
-            self.settings_manager.save_app_config(config)
-            self.controller.app_config.update(config)
-
-    def _register_lazy_tab(self, index: int, loader: Callable[[], None]) -> None:
-        self._lazy_tab_loaders[index] = loader
-
-    def _load_lazy_tab(self, index: int) -> None:
-        loader = self._lazy_tab_loaders.pop(index, None)
-        if loader is not None:
-            QTimer.singleShot(0, loader)
+    def _switch_settings_mode(self, mode: str) -> None:
+        self._apply_settings_mode(mode)
+        app_config = self.settings_manager.load_app_config()
+        app_config["settings_ui"]["mode"] = mode
+        app_config["settings_ui"]["show_advanced"] = mode == "advanced"
+        self.settings_manager.save_app_config(app_config)
 
     def _build_model_tab(self) -> None:
         tab = QWidget()
@@ -564,7 +535,7 @@ class SettingsWindow(QDialog):
 
         scroll.setWidget(scroll_content)
         main_layout.addWidget(scroll)
-        self.tabs.addTab(tab, get_icon("chip"), "模型与引擎")
+        self._register_tab("model", tab, "chip", "模型与引擎")
 
     def _build_api_section(self, parent_layout: Any) -> None:
         form = QFormLayout()
@@ -1392,7 +1363,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.pet_timer_hint)
         layout.addWidget(self.pet_result)
         layout.addStretch(1)
-        self.tabs.addTab(tab, get_icon("internet"), "桌宠")
+        self._register_tab("pet", tab, "internet", "桌宠")
 
     def _build_actions_tab(self) -> None:
         """已合并到 _build_character_resources_tab"""
@@ -1499,7 +1470,7 @@ class SettingsWindow(QDialog):
         pack_layout.addWidget(self.pack_editor_text)
         layout.addWidget(self.pack_group)
 
-        self.tabs.addTab(tab, get_icon("document"), "角色与资源")
+        self._register_tab("character_resources", tab, "document", "角色与资源")
         self._refresh_action_status()
         self._refresh_character_status()
         self._load_pack_file(self.pack_file_combo.currentText())
@@ -1667,11 +1638,10 @@ class SettingsWindow(QDialog):
         evt_layout.addWidget(self.events_raw_text)
         layout.addWidget(self.events_group)
 
-        self.relationship_text.setPlainText("打开本页后加载关系状态。")
-        self.memory_text.setPlainText("打开本页后加载记忆备忘录。")
-        self.events_text.setPlainText("打开本页后加载最近事件。")
-        index = self.tabs.addTab(tab, get_icon("download"), "关系与事件")
-        self._register_lazy_tab(index, self._refresh_relationship_bundle)
+        self._register_tab("relationship_events", tab, "download", "关系与事件")
+        self._refresh_relationship()
+        self._refresh_memory()
+        self._refresh_events()
 
     def _build_system_tab(self) -> None:
         tab = QWidget()
@@ -1755,9 +1725,8 @@ class SettingsWindow(QDialog):
         help_layout.addWidget(self.help_content)
         layout.addWidget(help_group)
 
-        self.data_text.setPlainText("打开本页后加载运行态数据摘要。")
-        index = self.tabs.addTab(tab, get_icon("settings"), "系统")
-        self._register_lazy_tab(index, self._refresh_data)
+        self._register_tab("system", tab, "settings", "系统")
+        self._refresh_data()
 
     def _build_reminder_tab(self) -> None:
         config = self.settings_manager.load_app_config()
@@ -1788,7 +1757,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.reminder_status)
         layout.addStretch(1)
         self._refresh_reminder_status()
-        self.tabs.addTab(tab, get_icon("remind"), "提醒")
+        self._register_tab("reminder", tab, "remind", "提醒")
 
     def _build_file_organizer_tab(self) -> None:
         config = self.settings_manager.load_app_config()
@@ -1824,7 +1793,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.file_organizer_status)
         layout.addStretch(1)
         self._refresh_integrated_feature_status()
-        self.tabs.addTab(tab, get_icon("document"), "文件整理")
+        self._register_tab("file_organizer", tab, "document", "文件整理")
 
     def _build_system_status_tab(self) -> None:
         config = self.settings_manager.load_app_config()
@@ -1877,7 +1846,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.system_status_result)
         layout.addStretch(1)
         self._refresh_integrated_feature_status()
-        self.tabs.addTab(tab, get_icon("laptop"), "系统状态")
+        self._register_tab("system_status", tab, "laptop", "系统状态")
 
     def _build_clipboard_tab(self) -> None:
         config = self.settings_manager.load_app_config()
@@ -1924,7 +1893,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.clipboard_result)
         layout.addStretch(1)
         self._refresh_integrated_feature_status()
-        self.tabs.addTab(tab, get_icon("document"), "剪贴板")
+        self._register_tab("clipboard", tab, "document", "剪贴板")
 
     def _build_focus_tab(self) -> None:
         config = self.settings_manager.load_app_config()
@@ -1984,7 +1953,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.focus_result)
         layout.addStretch(1)
         self._refresh_integrated_feature_status()
-        self.tabs.addTab(tab, get_icon("chip"), "专注模式")
+        self._register_tab("focus", tab, "chip", "专注模式")
 
     def _build_privacy_tab(self) -> None:
         tab = QWidget()
@@ -2013,7 +1982,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(group)
         layout.addStretch(1)
         self._refresh_privacy_status()
-        self.tabs.addTab(tab, get_icon("info"), "隐私与安全")
+        self._register_tab("privacy", tab, "info", "隐私与安全")
 
     def _build_diagnostics_tab(self) -> None:
         tab = QWidget()
@@ -2027,7 +1996,7 @@ class SettingsWindow(QDialog):
         run.clicked.connect(self._run_diagnostics)
         layout.addWidget(run, alignment=Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(self.diagnostics_text)
-        self.tabs.addTab(tab, get_icon("settings"), "诊断")
+        self._register_tab("diagnostics", tab, "settings", "诊断")
 
     def _save_reminder_settings(self) -> None:
         config = self.settings_manager.load_app_config()
