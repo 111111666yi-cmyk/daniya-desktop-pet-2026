@@ -35,6 +35,7 @@ def route_action(
     physical_event: str | None = None,
     character_pack: Any | None = None,
     available_actions: list[str] | set[str] | tuple[str, ...] | None = None,
+    allow_semantic_actions: bool = True,
 ) -> dict[str, Any]:
     action_mapping = _action_mapping(character_pack)
 
@@ -46,6 +47,7 @@ def route_action(
         special_response=special_response,
         physical_event=physical_event,
         action_mapping=action_mapping,
+        allow_semantic_actions=allow_semantic_actions,
     )
 
     fallback_chain = build_fallback_chain(preferred, action_mapping)
@@ -81,6 +83,7 @@ def _select_preferred_action(
     special_response: dict[str, Any] | None,
     physical_event: str | None,
     action_mapping: dict[str, Any],
+    allow_semantic_actions: bool,
 ) -> tuple[str, str, str]:
     if physical_event:
         action = PHYSICAL_EVENT_ACTIONS.get(physical_event, "idle")
@@ -95,9 +98,10 @@ def _select_preferred_action(
         event_id = matched_event.get("id", "matched") if matched_event else "matched"
         return event_action, f"event:{event_id}", "event"
 
-    semantic = _semantic_action(user_text or "", response or "", action_mapping)
-    if semantic:
-        return semantic, f"semantic:{semantic}", "semantic"
+    if allow_semantic_actions:
+        semantic = _semantic_action(user_text or "", response or "", action_mapping)
+        if semantic:
+            return semantic, f"semantic:{semantic}", "semantic"
 
     state_action = _state_action(state or {}, action_mapping)
     if state_action:

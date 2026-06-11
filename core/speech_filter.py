@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from typing import Any
+import logging
 import re
 
 
 DEFAULT_MAX_CHARS = 90
+TRUNCATION_TAIL = "……先说到这里。"
+logger = logging.getLogger(__name__)
 
 
 def _term(*parts: str) -> str:
@@ -32,6 +35,7 @@ def apply_daniya_speech_filter(
     raw_text: str,
     speech_config: dict[str, Any] | None,
     relationship_state: dict[str, Any] | None = None,
+    response_mode: str = "companion",
 ) -> str:
     text = str(raw_text or "").strip()
     if not text:
@@ -40,13 +44,29 @@ def apply_daniya_speech_filter(
     if "```" in text:
         return text
 
-
     config = speech_config if isinstance(speech_config, dict) else {}
+    if str(response_mode).lower() == "technical":
+        return _filter_technical_response(text)
+
     text = remove_customer_service_tone(text, config)
     text = remove_overly_warm_phrases(text, config)
     text = replace_direct_affection_with_reverse_style(text, config)
+    before_expansion_filter = text
     text = remove_unrelated_topic_expansion(text)
+    if text != before_expansion_filter:
+        logger.info(
+            "speech_filter_removed_expansion original_chars=%d filtered_chars=%d",
+            len(before_expansion_filter),
+            len(text),
+        )
+    before_shortening = text
     text = shorten_response(text, config, relationship_state)
+    if text != before_shortening:
+        logger.info(
+            "speech_filter_truncated original_chars=%d filtered_chars=%d",
+            len(before_shortening),
+            len(text),
+        )
     text = add_ellipsis_if_needed(text)
     return text.strip() or "......"
 
@@ -132,22 +152,14 @@ def shorten_response(
     lines = [line.strip() for line in re.split(r"[\r\n]+", text) if line.strip()]
     if not lines:
         lines = [text]
-    text = "\n".join(lines[:max_lines])
+    selected = "\n".join(lines[:max_lines])
+    needs_truncation = len(lines) > max_lines or len(selected) > max_chars
+    if not needs_truncation:
+        return selected
 
-    if len(text) <= max_chars:
-        return text
-
-    parts = [part.strip() for part in re.split(r"(?<=[。.!！？?])", text) if part.strip()]
-    shortened = ""
-    for part in parts:
-        if len(shortened + part) > max_chars:
-            break
-        shortened += part
-        if shortened.count("\n") + 1 >= max_lines:
-            break
-    if not shortened:
-        shortened = text[:max_chars].rstrip("，,。.!！?？、 ")
-    return shortened
+    content_limit = max(1, max_chars - len(TRUNCATION_TAIL))
+    shortened = _truncate_at_boundary(selected, content_limit)
+    return shortened.rstrip(" \t\r\n，,") + TRUNCATION_TAIL
 
 
 def add_ellipsis_if_needed(text: str) -> str:
@@ -169,6 +181,42 @@ def remove_unrelated_topic_expansion(text: str) -> str:
         if index > 10:
             text = text[:index]
     return _clean_spacing(text)
+
+
+def _filter_technical_response(text: str) -> str:
+    if _is_structured_content(text):
+        return text
+    return text.strip() or "......"
+
+
+def _is_structured_content(text: str) -> bool:
+    if "```" in text:
+        return True
+    if "Traceback (most recent call last):" in text:
+        return True
+    if re.search(r"(?m)^\s*\|.+\|\s*$", text) and re.search(r"(?m)^\s*\|[\s:|-]+\|\s*$", text):
+        return True
+    return bool(re.search(r"(?m)^\s*(?:[-*+]|\d+[.)])\s+\S", text))
+
+
+def _truncate_at_boundary(text: str, limit: int) -> str:
+    if len(text) <= limit:
+        return text
+
+    parts = [part for part in re.split(r"(?<=[。.!！？?])", text) if part]
+    shortened = ""
+    for part in parts:
+        if len(shortened + part) > limit:
+            break
+        shortened += part
+    if shortened.strip():
+        return shortened.strip()
+
+    prefix = text[:limit]
+    boundary = max(prefix.rfind(mark) for mark in ("，", ",", "；", ";", "：", ":"))
+    if boundary > 0:
+        return prefix[: boundary + 1].strip()
+    return prefix.rstrip(" \t\r\n，,。.!！?？、")
 
 
 def _replacement_rules(speech_config: dict[str, Any] | None) -> dict[str, str]:

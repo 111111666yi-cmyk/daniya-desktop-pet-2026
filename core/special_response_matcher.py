@@ -6,6 +6,8 @@ from typing import Any
 import re
 import unicodedata
 
+from core.message_intent import should_suppress_embedded_character_triggers
+
 
 FUZZY_THRESHOLD = 0.86
 
@@ -53,7 +55,10 @@ def match_special_response(
     if follow_up.matched:
         return follow_up.as_dict()
 
+    suppress_loose_matches = should_suppress_embedded_character_triggers(text)
     for match_type in ("exact", "normalized", "contains", "fuzzy"):
+        if suppress_loose_matches and match_type in ("contains", "fuzzy"):
+            continue
         for item in responses:
             if not isinstance(item, dict):
                 continue

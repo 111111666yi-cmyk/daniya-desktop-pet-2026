@@ -5,6 +5,7 @@ from typing import Any, Callable, Protocol
 from core.action_router import route_action
 from core.event_engine import match_event
 from core.lore_retriever import retrieve as retrieve_lore
+from core.message_intent import is_technical_request, should_suppress_embedded_character_triggers
 from core.memory_engine import append_event_log, ensure_relation_files, load_user_memory, unlock_lore_fragments, update_memory_from_interaction
 from core.prompt_builder import build_prompt
 from core.relationship_engine import apply_effect, calculate_stage, init_state_if_missing, save_state, update_from_event
@@ -30,7 +31,13 @@ class DialogueEngine:
         physical_event = context.get("physical_event")
         ensure_relation_files()
         state = init_state_if_missing(self.character_pack)
-        event = _physical_event_record(physical_event) or match_event(user_text, self.character_pack.events)
+        technical_response = physical_event is None and is_technical_request(user_text)
+        suppress_embedded_triggers = should_suppress_embedded_character_triggers(user_text)
+        event = _physical_event_record(physical_event) or match_event(
+            user_text,
+            self.character_pack.events,
+            allow_embedded_matches=not suppress_embedded_triggers,
+        )
         memory = load_user_memory()
 
         matched_special = match_special_response(user_text, self.character_pack.speech, context)
@@ -50,13 +57,15 @@ class DialogueEngine:
             context = dict(context)
             context["skip_model"] = True
 
-        lore_fragments = retrieve_lore(
-            user_text,
-            self.character_pack,
-            state=state,
-            matched_event=event,
-            memory=memory,
-        )
+        lore_fragments = []
+        if not technical_response:
+            lore_fragments = retrieve_lore(
+                user_text,
+                self.character_pack,
+                state=state,
+                matched_event=event,
+                memory=memory,
+            )
         lore_fragment_ids = _lore_fragment_ids(lore_fragments)
 
         # [CHANGE-005-FIX] skip_model=True 时跳过 prompt 构建和 API 调用
@@ -74,7 +83,8 @@ class DialogueEngine:
                 recent_messages=context.get("recent_messages"),
             )
             raw_model_response, source, errors = self._call_model(prompt, user_text)
-        filtered_response = self._filter_response(raw_model_response, state)
+        response_mode = "technical" if technical_response else "companion"
+        filtered_response = self._filter_response(raw_model_response, state, response_mode=response_mode)
 
         stage_before = state.get("relationship_stage")
         updated_state = update_from_event(state, event)
@@ -92,6 +102,7 @@ class DialogueEngine:
             physical_event=physical_event,
             character_pack=self.character_pack,
             available_actions=context.get("available_actions"),
+            allow_semantic_actions=not technical_response,
         )
         append_event_log(
             {
@@ -358,8 +369,18 @@ class DialogueEngine:
             return "......烦死了。过来。"
         return "......哦。"
 
-    def _filter_response(self, response: str, state: dict[str, Any] | None = None) -> str:
-        return apply_daniya_speech_filter(response, self.character_pack.speech, state)
+    def _filter_response(
+        self,
+        response: str,
+        state: dict[str, Any] | None = None,
+        response_mode: str = "companion",
+    ) -> str:
+        return apply_daniya_speech_filter(
+            response,
+            self.character_pack.speech,
+            state,
+            response_mode=response_mode,
+        )
 
 
 def _coerce_model_text(reply: Any) -> str:

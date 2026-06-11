@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.75 (2026-06-11) - Character Experience Polish
+
+- Kept the five required Daniya trigger phrases stable for exact and normalized input.
+- Prevented trigger words embedded in technical questions or reminder requests from writing relationship events, injecting lore, or selecting emotion actions.
+- Added a technical response mode that preserves long explanations, transition words, Markdown tables, code blocks, and stack traces.
+- Replaced silent companion-response hard cuts with boundary-aware shortening, a short closing line, and an audit log entry.
+- Added dedicated trigger, speech-filter, and routing-precedence regression suites.
+
 ## v0.70 (2026-06-05) - Integration Acceptance
 
 - Froze feature development after v0.69 and moved the project into full v0.61-v0.70 acceptance.
