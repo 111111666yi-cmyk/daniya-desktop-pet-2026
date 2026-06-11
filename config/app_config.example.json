@@ -1,5 +1,5 @@
 {
-  "version": "v0.81",
+  "version": "v0.82",
   "quiet_defaults_migration": "v0.61-quiet-defaults",
   "current_character": "daniya",
   "settings_mode": "simple",
@@ -65,6 +65,19 @@
     "enabled": false,
     "daily_coin_reward": 25
   },
+  "environment": {
+    "weather_enabled": false,
+    "weather_location_configured": false,
+    "weather_location_name": "",
+    "weather_latitude": 0.0,
+    "weather_longitude": 0.0,
+    "weather_interval_seconds": 1800,
+    "weather_notify_rain": true,
+    "media_presence_enabled": false,
+    "media_interval_seconds": 60,
+    "ambient_events_enabled": false,
+    "ambient_event_interval_seconds": 1800
+  },
   "hourly_chime_enabled": false,
   "idle_chat_enabled": false,
   "idle_chat_minutes": 10,
@@ -104,5 +117,6 @@
   "focus_mode_silence_edge_peek": true,
   "focus_mode_silence_system_status": true,
   "focus_mode_silence_clipboard": true,
+  "focus_mode_silence_environment": true,
   "focus_mode_allow_important_reminders": true
 }

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "events": [
+    {
+      "id": "window_light",
+      "text": "……窗外的光变了。休息半分钟也不会耽误什么。",
+      "action": "keep"
+    },
+    {
+      "id": "desk_water",
+      "text": "……水杯还在吗？别等口渴了才想起来。",
+      "action": "remind"
+    },
+    {
+      "id": "quiet_company",
+      "text": "……我没走。你继续做自己的事就好。",
+      "action": "happy"
+    },
+    {
+      "id": "screen_distance",
+      "text": "……眼睛离屏幕远一点。不是命令，只是提醒。",
+      "action": "remind"
+    }
+  ]
+}

@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 from core.utility_copy import utility_text
 
 from .affinity_manager import AffinityManager
+from .ambient_event_theater import AmbientEventTheater
 from .asset_manager import AssetManager
 from .bookmark_manager import BookmarkManager
 from .chat_client import ChatClient
@@ -32,9 +33,11 @@ from .clipboard_interaction import ClipboardInteraction
 from .focus_mode import FocusModeManager
 from .feedback_coordinator import FeedbackCoordinator
 from .growth_manager import GrowthManager
+from .media_presence import MediaPresenceManager
 from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
 from .startup_timing import StartupTimer
+from .weather_manager import WeatherManager
 
 
 class ThreadSafeAnimationManager(QObject):
@@ -172,6 +175,26 @@ class AppController(QObject):
             self.app_config,
             character_id=resolved_char_id,
         )
+        environment = self.app_config.get("environment", {})
+        if not isinstance(environment, dict):
+            environment = {}
+        self.weather_manager = WeatherManager(
+            enabled=bool(environment.get("weather_enabled", False)),
+            location_configured=bool(environment.get("weather_location_configured", False)),
+            latitude=float(environment.get("weather_latitude", 0.0)),
+            longitude=float(environment.get("weather_longitude", 0.0)),
+            interval_seconds=int(environment.get("weather_interval_seconds", 1800)),
+        )
+        self.media_presence_manager = MediaPresenceManager(
+            enabled=bool(environment.get("media_presence_enabled", False)),
+            interval_seconds=int(environment.get("media_interval_seconds", 60)),
+        )
+        self.ambient_event_theater = AmbientEventTheater(
+            resolved_char_id,
+            enabled=bool(environment.get("ambient_events_enabled", False)),
+            interval_seconds=int(environment.get("ambient_event_interval_seconds", 1800)),
+        )
+        self._last_weather_raining: bool | None = None
         self.reminder_manager.set_message_lookup(self.utility_text)
         self.system_status_manager.message_lookup = self.utility_text
         self.clipboard_interaction.message_lookup = self.utility_text
@@ -231,6 +254,9 @@ class AppController(QObject):
         )
         self.window.behavior_engine.speak_callback = self._speak_idle_behavior
         self.window.typewriter.sequence_finished.connect(self.feedback_coordinator.complete)
+        self.weather_manager.snapshot_ready.connect(self._on_weather_snapshot)
+        self.media_presence_manager.presence_changed.connect(self._on_media_presence)
+        self.ambient_event_theater.event_ready.connect(self._on_ambient_event)
         self._optional_services_initialized = False
 
     def show(self) -> None:
@@ -420,6 +446,9 @@ class AppController(QObject):
         growth_manager = getattr(self, "growth_manager", None)
         if growth_manager is not None:
             growth_manager.reload_character(resolved_char_id)
+        ambient_theater = getattr(self, "ambient_event_theater", None)
+        if ambient_theater is not None:
+            ambient_theater.reload_character(resolved_char_id)
 
         # 3. Bind animation and state managers
         self.daniya_adapter.animation_manager = self.thread_safe_anim_manager
@@ -495,6 +524,29 @@ class AppController(QObject):
         self.clipboard_interaction.show_preview = bool(config.get("clipboard_show_preview", False))
         self.clipboard_interaction.sensitive_block_enabled = bool(config.get("clipboard_sensitive_block_enabled", True))
         self.clipboard_interaction.set_enabled(bool(config.get("clipboard_interaction_enabled", False)))
+
+        environment = config.get("environment", {})
+        if not isinstance(environment, dict):
+            environment = {}
+        self.weather_manager.configure(
+            location_configured=bool(environment.get("weather_location_configured", False)),
+            latitude=float(environment.get("weather_latitude", 0.0)),
+            longitude=float(environment.get("weather_longitude", 0.0)),
+            interval_seconds=int(environment.get("weather_interval_seconds", 1800)),
+        )
+        self.weather_manager.set_enabled(bool(environment.get("weather_enabled", False)))
+        self.media_presence_manager.configure(
+            int(environment.get("media_interval_seconds", 60))
+        )
+        self.media_presence_manager.set_enabled(
+            bool(environment.get("media_presence_enabled", False))
+        )
+        self.ambient_event_theater.configure(
+            int(environment.get("ambient_event_interval_seconds", 1800))
+        )
+        self.ambient_event_theater.set_enabled(
+            bool(environment.get("ambient_events_enabled", False))
+        )
 
         whitelist = config.get("focus_mode_process_whitelist", [])
         if isinstance(whitelist, list):
@@ -728,6 +780,71 @@ class AppController(QObject):
                 focus_config_key="focus_mode_silence_clipboard",
             )
 
+    def _on_weather_snapshot(self, payload: object) -> None:
+        if not isinstance(payload, dict):
+            return
+        raining = bool(payload.get("is_raining", False))
+        environment = self.app_config.get("environment", {})
+        enabled = isinstance(environment, dict) and bool(
+            environment.get("weather_enabled", False)
+        )
+        notify_rain = isinstance(environment, dict) and bool(
+            environment.get("weather_notify_rain", True)
+        )
+        should_notify = (
+            enabled
+            and notify_rain
+            and raining
+            and self._last_weather_raining is not True
+        )
+        self._last_weather_raining = raining
+        if not should_notify:
+            return
+        description = str(payload.get("description", "有降水"))
+        temperature = payload.get("temperature_c")
+        temperature_text = (
+            f"，约 {float(temperature):.0f}°C"
+            if isinstance(temperature, (int, float))
+            else ""
+        )
+        self.feedback_coordinator.present(
+            source="weather:rain",
+            text=f"……外面{description}{temperature_text}。出门记得带伞。",
+            action="remind",
+            focus_config_key="focus_mode_silence_environment",
+            cooldown_seconds=3600,
+        )
+
+    def _on_media_presence(self, player_name: str) -> None:
+        environment = self.app_config.get("environment", {})
+        if not isinstance(environment, dict) or not bool(
+            environment.get("media_presence_enabled", False)
+        ):
+            return
+        self.feedback_coordinator.present(
+            source=f"media:{player_name}",
+            text=f"……检测到 {player_name} 正在运行。我不会读取歌名或播放内容。",
+            action="keep",
+            focus_config_key="focus_mode_silence_environment",
+            cooldown_seconds=300,
+        )
+
+    def _on_ambient_event(self, payload: object) -> None:
+        if not isinstance(payload, dict):
+            return
+        environment = self.app_config.get("environment", {})
+        if not isinstance(environment, dict) or not bool(
+            environment.get("ambient_events_enabled", False)
+        ):
+            return
+        self.feedback_coordinator.present(
+            source=f"ambient:{payload.get('id', 'event')}",
+            text=str(payload.get("text", "")),
+            action=str(payload.get("action", "keep")),
+            focus_config_key="focus_mode_silence_environment",
+            cooldown_seconds=60,
+        )
+
     def quit(self) -> None:
         # Wait for any running chat worker or physical event workers to finish safely
         if hasattr(self, "worker") and self.worker is not None and self.worker.isRunning():
@@ -736,6 +853,9 @@ class AppController(QObject):
             for w in list(self._phys_workers):
                 if w.isRunning():
                     w.wait(1500)
+        weather_manager = getattr(self, "weather_manager", None)
+        if weather_manager is not None:
+            weather_manager.shutdown()
         self.qapp.quit()
 
 

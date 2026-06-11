@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.82 (2026-06-12) - Environment Awareness
+
+- Added opt-in Open-Meteo weather reads on a background thread, with user-confirmed coordinates and rain reminders.
+- Added privacy-limited media presence detection that checks only an allow-list of player process names and never reads titles, lyrics, or file paths.
+- Added low-frequency, character-pack-driven ambient event theater with focus-mode suppression and manual preview.
+- Added a generated transparent umbrella asset and synchronized packaging/release checks.
+
 ## v0.81 (2026-06-12) - Local Growth
 
 - Added an opt-in, pure-local growth center with coins, daily supplies, inventory, feeding, levels, outfits, and affinity-gated unlocks.
