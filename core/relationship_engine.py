@@ -161,6 +161,10 @@ def _initial_state(character_id: str, relationship_config: dict[str, Any]) -> di
     state.setdefault("defense_level", 70)
     state.setdefault("stay_tendency", 90)
     state.setdefault("last_update_reason", "initial_default_desktop_pet")
+    state.setdefault("last_interaction_at", None)
+    state.setdefault("interaction_count", 0)
+    state.setdefault("last_event_id", None)
+    state.setdefault("schema_version", 2)
     return clamp_metrics(state)
 
 
