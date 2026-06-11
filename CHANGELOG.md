@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7x Backfill (2026-06-11) - Settings And Profile Safety
+
+- Added a persistent simple/advanced Settings Center display mode that hides advanced pages and groups without resetting existing values.
+- Kept common Provider, character, pet, reminder, privacy, profile, memory, and voice-status entry points in the default simple mode.
+- Added an optional month-day birthday profile field, preserved unknown legacy profile fields, and exposed the profile in Settings Center.
+- Added profile and relationship-state migration regression tests.
+- Deferred true LLM streaming after documenting that the current Provider, speech-filter, bubble, history, fallback, and voice contracts are final-response only.
+
 ## v0.77 (2026-06-11) - Window Interaction Hardening
 
 - Replaced virtual-desktop bounding-box clamping with real per-screen geometry selection, including negative coordinates, gaps, and screens above or below the primary display.

@@ -247,11 +247,17 @@ class MenuManager:
         form = QFormLayout(dialog)
         profile = self.controller.profile_manager.load()
         user_name = QLineEdit(profile["user_name"])
+        birthday = QLineEdit(profile.get("birthday", ""))
+        birthday.setPlaceholderText("月-日，例如 03-14")
         relationship = QLineEdit(profile["relationship"])
         style = QLineEdit(profile["style"])
         form.addRow("用户称呼", user_name)
+        form.addRow("生日（月-日，可留空）", birthday)
         form.addRow("关系设定", relationship)
         form.addRow("期望风格", style)
+        privacy_hint = QLabel("生日只保存月和日，不读取系统账户资料，也不要求填写年份。")
+        privacy_hint.setWordWrap(True)
+        form.addRow("", privacy_hint)
 
         buttons = QHBoxLayout()
         save = QPushButton("保存")
@@ -265,6 +271,7 @@ class MenuManager:
             self.controller.save_profile(
                 {
                     "user_name": user_name.text(),
+                    "birthday": birthday.text(),
                     "relationship": relationship.text(),
                     "style": style.text(),
                 }

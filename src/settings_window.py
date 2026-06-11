@@ -7,6 +7,7 @@ from PySide6.QtCore import QThread, QTimer, Qt, Signal, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QApplication,
+    QButtonGroup,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -35,6 +36,20 @@ from .llm.provider_registry import Provider, ProviderMeta
 
 if TYPE_CHECKING:
     from .app import AppController
+
+
+SIMPLE_SETTINGS_TABS = {
+    "模型与引擎",
+    "桌宠",
+    "角色与资源",
+    "关系与事件",
+    "提醒",
+    "隐私与安全",
+}
+
+
+def normalize_settings_mode(value: Any) -> str:
+    return "advanced" if str(value or "").strip().lower() == "advanced" else "simple"
 
 
 class _ApiTestWorker(QThread):
@@ -295,6 +310,7 @@ def _format_user_memory_summary(profile: dict[str, str], memory: dict[str, Any],
     lines = [
         "用户档案",
         f"- 称呼：{profile.get('user_name', '你')}",
+        f"- 生日（月日）：{profile.get('birthday') or '未填写'}",
         f"- 关系：{profile.get('relationship', '陪伴角色与用户')}",
         f"- 偏好风格：{profile.get('style', '')}",
         "",
@@ -403,6 +419,7 @@ class SettingsWindow(QDialog):
         )
 
         layout = QVBoxLayout(self)
+        self._build_settings_mode_switch(layout)
         self.tabs = QTabWidget()
         self.tabs.setTabPosition(QTabWidget.TabPosition.South)
         layout.addWidget(self.tabs)
@@ -420,10 +437,82 @@ class SettingsWindow(QDialog):
         self._build_privacy_tab()
         self._build_diagnostics_tab()
         self.tabs.currentChanged.connect(self._load_lazy_tab)
+        self._apply_settings_mode(self._settings_mode, persist=False)
 
         close = QPushButton("关闭")
         close.clicked.connect(self.accept)
         layout.addWidget(close, alignment=Qt.AlignmentFlag.AlignRight)
+
+    def _build_settings_mode_switch(self, layout: QVBoxLayout) -> None:
+        config = self.settings_manager.load_app_config()
+        self._settings_mode = normalize_settings_mode(config.get("settings_mode", "simple"))
+        bar = QWidget()
+        bar_layout = QHBoxLayout(bar)
+        bar_layout.setContentsMargins(0, 0, 0, 0)
+        bar_layout.addWidget(QLabel("设置显示"))
+        self.simple_mode_button = QPushButton("简单")
+        self.advanced_mode_button = QPushButton("进阶")
+        for button in (self.simple_mode_button, self.advanced_mode_button):
+            button.setCheckable(True)
+            button.setMinimumWidth(72)
+        self.settings_mode_group = QButtonGroup(self)
+        self.settings_mode_group.setExclusive(True)
+        self.settings_mode_group.addButton(self.simple_mode_button)
+        self.settings_mode_group.addButton(self.advanced_mode_button)
+        self.simple_mode_button.clicked.connect(lambda: self._apply_settings_mode("simple"))
+        self.advanced_mode_button.clicked.connect(lambda: self._apply_settings_mode("advanced"))
+        bar_layout.addWidget(self.simple_mode_button)
+        bar_layout.addWidget(self.advanced_mode_button)
+        bar_layout.addStretch(1)
+        layout.addWidget(bar)
+        self.settings_mode_hint = QLabel()
+        self.settings_mode_hint.setWordWrap(True)
+        layout.addWidget(self.settings_mode_hint)
+
+    def _apply_settings_mode(self, mode: str, persist: bool = True) -> None:
+        mode = normalize_settings_mode(mode)
+        self._settings_mode = mode
+        advanced = mode == "advanced"
+        self.simple_mode_button.setChecked(not advanced)
+        self.advanced_mode_button.setChecked(advanced)
+
+        for index in range(self.tabs.count()):
+            visible = advanced or self.tabs.tabText(index) in SIMPLE_SETTINGS_TABS
+            self.tabs.setTabVisible(index, visible)
+
+        for name in (
+            "profile_switch_group",
+            "local_model_group",
+            "tts_group",
+            "image_group",
+            "video_group",
+            "multimodal_hint",
+            "actions_group",
+            "pack_group",
+            "relationship_group",
+            "events_group",
+        ):
+            widget = getattr(self, name, None)
+            if widget is not None:
+                widget.setVisible(advanced)
+
+        current = self.tabs.currentIndex()
+        if current < 0 or not self.tabs.isTabVisible(current):
+            for index in range(self.tabs.count()):
+                if self.tabs.isTabVisible(index):
+                    self.tabs.setCurrentIndex(index)
+                    break
+
+        self.settings_mode_hint.setText(
+            "简单模式只显示常用入口；进阶模式显示本地模型、诊断、日志和高风险功能。切换不会删除或重置已有设置。"
+            if not advanced
+            else "进阶模式显示全部配置。文件整理、系统状态和剪贴板等高风险功能仍保持各自的关闭默认值。"
+        )
+        if persist:
+            config = self.settings_manager.load_app_config()
+            config["settings_mode"] = mode
+            self.settings_manager.save_app_config(config)
+            self.controller.app_config.update(config)
 
     def _register_lazy_tab(self, index: int, loader: Callable[[], None]) -> None:
         self._lazy_tab_loaders[index] = loader
@@ -447,6 +536,15 @@ class SettingsWindow(QDialog):
         self.active_profile_status.setWordWrap(True)
         self._refresh_active_status()
         scroll_layout.addWidget(self.active_profile_status)
+        mm_config = self.settings_manager.load_multimodal_config()
+        tts_value = str(mm_config.get("tts", "none"))
+        self.voice_status_label = QLabel(
+            "语音状态：未启用；主线仅保留配置接口。"
+            if tts_value == "none"
+            else f"语音状态：已保存 {tts_value} 配置；本阶段不新增语音执行能力。"
+        )
+        self.voice_status_label.setWordWrap(True)
+        scroll_layout.addWidget(self.voice_status_label)
         self._build_profile_switcher(scroll_layout)
 
         # 云端 API 配置
@@ -456,10 +554,10 @@ class SettingsWindow(QDialog):
         scroll_layout.addWidget(api_group)
 
         # 本地部署与引擎配置
-        local_group = QGroupBox("本地部署与引擎配置 (Local Service)")
-        local_group_layout = QVBoxLayout(local_group)
+        self.local_model_group = QGroupBox("本地部署与引擎配置 (Local Service)")
+        local_group_layout = QVBoxLayout(self.local_model_group)
         self._build_local_model_section(local_group_layout)
-        scroll_layout.addWidget(local_group)
+        scroll_layout.addWidget(self.local_model_group)
 
         # 多模态配置
         self._build_multimodal_section(scroll_layout)
@@ -566,8 +664,8 @@ class SettingsWindow(QDialog):
         mm_config = self.settings_manager.load_multimodal_config()
 
         # ── TTS 语音 ──
-        tts_group = QGroupBox("TTS 语音播报")
-        tts_layout = QFormLayout(tts_group)
+        self.tts_group = QGroupBox("TTS 语音播报")
+        tts_layout = QFormLayout(self.tts_group)
         self.tts_combo = QComboBox()
         self.tts_combo.addItems(["none", "cloud_tts (OpenAI TTS)", "edge_tts (本地)", "system_tts (系统内置)"])
         self.tts_combo.setCurrentText(mm_config.get("tts", "none"))
@@ -584,11 +682,11 @@ class SettingsWindow(QDialog):
         tts_btn_row = QHBoxLayout(tts_btns); tts_btn_row.setContentsMargins(0,0,0,0)
         tts_btn_row.addWidget(tts_save); tts_btn_row.addWidget(tts_reset); tts_btn_row.addStretch(1)
         tts_layout.addRow(tts_btns)
-        parent_layout.addWidget(tts_group)
+        parent_layout.addWidget(self.tts_group)
 
         # ── 图像生成 ──
-        img_group = QGroupBox("文生图 / 图生图")
-        img_layout = QFormLayout(img_group)
+        self.image_group = QGroupBox("文生图 / 图生图")
+        img_layout = QFormLayout(self.image_group)
         self.t2i_combo = QComboBox()
         self.t2i_combo.addItems(["none", "openai_dalle", "stable_diffusion_local", "comfyui_local", "custom_api"])
         self.t2i_combo.setCurrentText(mm_config.get("image", "none"))
@@ -605,11 +703,11 @@ class SettingsWindow(QDialog):
         img_btn_row = QHBoxLayout(img_btns); img_btn_row.setContentsMargins(0,0,0,0)
         img_btn_row.addWidget(img_save); img_btn_row.addWidget(img_reset); img_btn_row.addStretch(1)
         img_layout.addRow(img_btns)
-        parent_layout.addWidget(img_group)
+        parent_layout.addWidget(self.image_group)
 
         # ── 视频生成 ──
-        vid_group = QGroupBox("视频生成")
-        vid_layout = QFormLayout(vid_group)
+        self.video_group = QGroupBox("视频生成")
+        vid_layout = QFormLayout(self.video_group)
         self.video_combo = QComboBox()
         self.video_combo.addItems(["none", "stable_video_diffusion_local", "runway_api", "custom_api"])
         self.video_combo.setCurrentText(mm_config.get("video", "none"))
@@ -622,16 +720,17 @@ class SettingsWindow(QDialog):
         vid_btn_row = QHBoxLayout(vid_btns); vid_btn_row.setContentsMargins(0,0,0,0)
         vid_btn_row.addWidget(vid_save); vid_btn_row.addWidget(vid_reset); vid_btn_row.addStretch(1)
         vid_layout.addRow(vid_btns)
-        parent_layout.addWidget(vid_group)
+        parent_layout.addWidget(self.video_group)
 
-        hint = QLabel("多模态功能需要对应服务运行中。留空或选 none 则不启用。")
-        hint.setWordWrap(True); hint.setStyleSheet("color: gray; margin-top: 8px;")
-        parent_layout.addWidget(hint)
+        self.multimodal_hint = QLabel("多模态功能需要对应服务运行中。留空或选 none 则不启用。")
+        self.multimodal_hint.setWordWrap(True)
+        self.multimodal_hint.setStyleSheet("color: gray; margin-top: 8px;")
+        parent_layout.addWidget(self.multimodal_hint)
         parent_layout.addStretch(1)
 
     def _build_profile_switcher(self, parent_layout: Any) -> None:
-        group = QGroupBox("文本模型切换")
-        layout = QVBoxLayout(group)
+        self.profile_switch_group = QGroupBox("文本模型切换")
+        layout = QVBoxLayout(self.profile_switch_group)
         row = QHBoxLayout()
         self.profile_switch_combo = QComboBox()
         self.profile_switch_combo.setMinimumWidth(360)
@@ -651,7 +750,7 @@ class SettingsWindow(QDialog):
         self.profile_switch_btn.clicked.connect(self._switch_selected_text_profile)
         self.profile_enable_btn.clicked.connect(lambda: self._set_selected_text_profile_enabled(True))
         self.profile_disable_btn.clicked.connect(lambda: self._set_selected_text_profile_enabled(False))
-        parent_layout.addWidget(group)
+        parent_layout.addWidget(self.profile_switch_group)
         self._refresh_profile_switcher()
 
     def _refresh_profile_switcher(self) -> None:
@@ -1337,8 +1436,8 @@ class SettingsWindow(QDialog):
         layout.addWidget(char_group)
 
         # 上半部分：动作资源
-        actions_group = QGroupBox("动作资源")
-        actions_layout = QVBoxLayout(actions_group)
+        self.actions_group = QGroupBox("动作资源")
+        actions_layout = QVBoxLayout(self.actions_group)
         self.action_status = QTextEdit()
         self.action_status.setReadOnly(True)
         self.action_combo = QComboBox()
@@ -1363,11 +1462,11 @@ class SettingsWindow(QDialog):
         actions_layout.addLayout(btn_row)
         actions_layout.addWidget(self.action_status)
         actions_layout.addWidget(self.action_raw_details)
-        layout.addWidget(actions_group)
+        layout.addWidget(self.actions_group)
 
         # 下半部分：角色包编辑器
-        pack_group = QGroupBox("角色包编辑器")
-        pack_layout = QVBoxLayout(pack_group)
+        self.pack_group = QGroupBox("角色包编辑器")
+        pack_layout = QVBoxLayout(self.pack_group)
         self.character_status = QLabel("")
         self.character_status.setWordWrap(True)
         self.pack_file_combo = QComboBox()
@@ -1398,7 +1497,7 @@ class SettingsWindow(QDialog):
         pack_layout.addLayout(pack_btn_row)
         pack_layout.addWidget(self.pack_summary_text)
         pack_layout.addWidget(self.pack_editor_text)
-        layout.addWidget(pack_group)
+        layout.addWidget(self.pack_group)
 
         self.tabs.addTab(tab, get_icon("document"), "角色与资源")
         self._refresh_action_status()
@@ -1472,8 +1571,33 @@ class SettingsWindow(QDialog):
         tab = QWidget()
         layout = QVBoxLayout(tab)
 
-        rel_group = QGroupBox("关系状态")
-        rel_layout = QVBoxLayout(rel_group)
+        profile = self.controller.profile_manager.load()
+        profile_group = QGroupBox("用户档案")
+        profile_layout = QFormLayout(profile_group)
+        self.profile_user_name = QLineEdit(profile.get("user_name", "你"))
+        self.profile_birthday = QLineEdit(profile.get("birthday", ""))
+        self.profile_birthday.setPlaceholderText("月-日，例如 03-14")
+        self.profile_birthday.setMaxLength(5)
+        self.profile_relationship = QLineEdit(profile.get("relationship", "陪伴角色与用户"))
+        self.profile_style = QLineEdit(profile.get("style", ""))
+        profile_layout.addRow("用户称呼", self.profile_user_name)
+        profile_layout.addRow("生日（月-日，可留空）", self.profile_birthday)
+        profile_layout.addRow("关系设定", self.profile_relationship)
+        profile_layout.addRow("期望风格", self.profile_style)
+        profile_hint = QLabel("生日只保存月和日，不读取系统账户资料；档案和记忆保存在本地运行态目录。")
+        profile_hint.setWordWrap(True)
+        profile_layout.addRow("", profile_hint)
+        profile_save = QPushButton("保存用户档案")
+        profile_save.setIcon(get_icon("save"))
+        profile_save.clicked.connect(self._save_profile_settings)
+        self.profile_status = QLabel()
+        self.profile_status.setWordWrap(True)
+        profile_layout.addRow("", profile_save)
+        profile_layout.addRow("", self.profile_status)
+        layout.addWidget(profile_group)
+
+        self.relationship_group = QGroupBox("关系状态")
+        rel_layout = QVBoxLayout(self.relationship_group)
         self.relationship_text = QTextEdit()
         self.relationship_text.setReadOnly(True)
         rel_buttons = QHBoxLayout()
@@ -1498,7 +1622,7 @@ class SettingsWindow(QDialog):
         rel_layout.addLayout(rel_buttons)
         rel_layout.addWidget(self.relationship_text)
         rel_layout.addWidget(self.relationship_raw_text)
-        layout.addWidget(rel_group)
+        layout.addWidget(self.relationship_group)
 
         memory_group = QGroupBox("记忆备忘录")
         memory_layout = QVBoxLayout(memory_group)
@@ -1521,8 +1645,8 @@ class SettingsWindow(QDialog):
         memory_layout.addWidget(self.memory_text)
         layout.addWidget(memory_group)
 
-        evt_group = QGroupBox("事件日志")
-        evt_layout = QVBoxLayout(evt_group)
+        self.events_group = QGroupBox("事件日志")
+        evt_layout = QVBoxLayout(self.events_group)
         self.events_text = QTextEdit()
         self.events_text.setReadOnly(True)
         evt_buttons = QHBoxLayout()
@@ -1541,7 +1665,7 @@ class SettingsWindow(QDialog):
         evt_layout.addLayout(evt_buttons)
         evt_layout.addWidget(self.events_text)
         evt_layout.addWidget(self.events_raw_text)
-        layout.addWidget(evt_group)
+        layout.addWidget(self.events_group)
 
         self.relationship_text.setPlainText("打开本页后加载关系状态。")
         self.memory_text.setPlainText("打开本页后加载记忆备忘录。")
@@ -2318,6 +2442,23 @@ class SettingsWindow(QDialog):
         notes = _read_recent_text_lines(self.controller.notes_manager.path, limit=12)
         if hasattr(self, "memory_text"):
             self.memory_text.setPlainText(_format_user_memory_summary(profile, memory, notes))
+
+    def _save_profile_settings(self) -> None:
+        self.controller.save_profile(
+            {
+                "user_name": self.profile_user_name.text(),
+                "birthday": self.profile_birthday.text(),
+                "relationship": self.profile_relationship.text(),
+                "style": self.profile_style.text(),
+            }
+        )
+        profile = self.controller.profile_manager.load()
+        self.profile_user_name.setText(profile["user_name"])
+        self.profile_birthday.setText(profile.get("birthday", ""))
+        self.profile_relationship.setText(profile["relationship"])
+        self.profile_style.setText(profile["style"])
+        self.profile_status.setText("用户档案已保存；生日仅保留月和日。")
+        self._refresh_memory()
 
     def _add_memory_note(self) -> None:
         text = self.memory_note_input.text().strip()

@@ -17,6 +17,7 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "version": APP_VERSION,
     "quiet_defaults_migration": QUIET_DEFAULTS_MIGRATION,
     "current_character": "daniya",
+    "settings_mode": "simple",
     "window": {
         "start_x": 0,
         "start_y": 0,
@@ -227,6 +228,9 @@ class ConfigManager:
     def _normalize_app_config(self, config: dict[str, Any]) -> dict[str, Any]:
         config["quiet_defaults_migration"] = str(
             config.get("quiet_defaults_migration", QUIET_DEFAULTS_MIGRATION)
+        )
+        config["settings_mode"] = (
+            "advanced" if str(config.get("settings_mode", "simple")).strip().lower() == "advanced" else "simple"
         )
         if "current_character" not in config or not config["current_character"]:
             config["current_character"] = "daniya"

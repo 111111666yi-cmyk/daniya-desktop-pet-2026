@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+from datetime import date
 from typing import Any
 
 from .config_manager import ConfigManager
@@ -7,6 +9,7 @@ from .config_manager import ConfigManager
 
 DEFAULT_PROFILE = {
     "user_name": "你",
+    "birthday": "",
     "relationship": "陪伴角色与用户",
     "style": "温柔、可爱、简短、陪伴感",
 }
@@ -45,6 +48,23 @@ def sanitize_profile_text(value: Any) -> str:
     return text
 
 
+def sanitize_birthday(value: Any) -> str:
+    """Keep only an optional month-day value; never store a full birth date."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    match = re.fullmatch(r"(\d{1,2})\s*(?:[-/.]|月)\s*(\d{1,2})\s*(?:日)?", text)
+    if match is None:
+        return ""
+    month = int(match.group(1))
+    day = int(match.group(2))
+    try:
+        date(2000, month, day)
+    except ValueError:
+        return ""
+    return f"{month:02d}-{day:02d}"
+
+
 class ProfileManager:
     def __init__(self, config_manager: ConfigManager) -> None:
         self.config_manager = config_manager
@@ -61,27 +81,43 @@ class ProfileManager:
             value = data.get(key, profile[key])
             profile[key] = str(value)
         profile["user_name"] = sanitize_user_name(profile["user_name"])
+        profile["birthday"] = sanitize_birthday(profile["birthday"])
         profile["relationship"] = sanitize_profile_text(profile["relationship"]) or DEFAULT_PROFILE["relationship"]
         profile["style"] = sanitize_profile_text(profile["style"]) or DEFAULT_PROFILE["style"]
         return profile
 
     def save(self, profile: dict[str, str]) -> None:
+        existing = self.config_manager.load_json(self.path, {})
+        merged = dict(existing) if isinstance(existing, dict) else {}
         clean = DEFAULT_PROFILE.copy()
         for key in clean:
-            clean[key] = str(profile.get(key, clean[key])).strip() or clean[key]
+            if key == "birthday":
+                clean[key] = sanitize_birthday(profile.get(key, clean[key]))
+            else:
+                clean[key] = str(profile.get(key, clean[key])).strip() or clean[key]
         clean["user_name"] = sanitize_user_name(clean["user_name"])
         clean["relationship"] = sanitize_profile_text(clean["relationship"]) or DEFAULT_PROFILE["relationship"]
         clean["style"] = sanitize_profile_text(clean["style"]) or DEFAULT_PROFILE["style"]
-        self.config_manager.save_json(self.path, clean)
+        merged.update(clean)
+        self.config_manager.save_json(self.path, merged)
 
     def prompt_prefix(self) -> str:
         profile = self.load()
+        profile_lines = [
+            "用户档案：",
+            f"称呼：{profile['user_name']}",
+        ]
+        if profile["birthday"]:
+            profile_lines.append(f"生日（月日）：{profile['birthday']}")
+        profile_lines.extend(
+            [
+                f"关系：{profile['relationship']}",
+                f"偏好风格：{profile['style']}",
+                "请你在对话中记住这些设定。",
+            ]
+        )
         blocks = [
-            "用户档案：\n"
-            f"称呼：{profile['user_name']}\n"
-            f"关系：{profile['relationship']}\n"
-            f"偏好风格：{profile['style']}\n"
-            "请你在对话中记住这些设定。"
+            "\n".join(profile_lines)
         ]
         memory_block = self._memory_prompt_block()
         if memory_block:

@@ -2,6 +2,7 @@
   "version": "v0.77",
   "quiet_defaults_migration": "v0.61-quiet-defaults",
   "current_character": "daniya",
+  "settings_mode": "simple",
   "window": {
     "start_x": 0,
     "start_y": 0,
