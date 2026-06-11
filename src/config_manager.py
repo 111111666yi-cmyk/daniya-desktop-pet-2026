@@ -70,6 +70,10 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
             "……连接暂时不稳定。稍后再试。",
             "……那边没有回音。这次先停在这里。",
         ],
+        "streaming_enabled": False,
+        "streaming_mode": "safe_final_filter",
+        "streaming_preview_chars": 20,
+        "streaming_update_interval_ms": 60,
     },
     "api": {
         "base_url": "https://api.deepseek.com",
@@ -150,6 +154,11 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "focus_mode_silence_clipboard": True,
     "focus_mode_silence_environment": True,
     "focus_mode_allow_important_reminders": True,
+    "settings_ui": {
+        "mode": "simple",
+        "show_advanced": False,
+        "remember_last_page": True,
+    },
 }
 
 DEFAULT_SYSTEM_PROMPT = """你是达妮娅的 Q 版夏日桌宠形态。
@@ -476,6 +485,15 @@ class ConfigManager:
             "focus_mode_allow_important_reminders",
         ):
             config[key] = bool(config.get(key, DEFAULT_APP_CONFIG[key]))
+
+        sui = config.get("settings_ui")
+        if not isinstance(sui, dict):
+            sui = {}
+        config["settings_ui"] = {
+            "mode": sui.get("mode") if sui.get("mode") in ("simple", "advanced") else "simple",
+            "show_advanced": bool(sui.get("show_advanced", False)),
+            "remember_last_page": bool(sui.get("remember_last_page", True)),
+        }
         return config
 
     def _apply_quiet_defaults_migration(self, loaded: dict[str, Any]) -> dict[str, Any]:
