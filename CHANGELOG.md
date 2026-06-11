@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.80.1 (2026-06-12) - Cinematic Story Hotfix
+
+- Integrated the cinematic liquid-glass 24-chapter story site from `eee9816`.
+- Routed the desktop pet's existing Story command to a loopback-only local web server and the user's default browser.
+- Kept the legacy Qt chapter dialog as a fallback when the packaged web files or browser launch are unavailable.
+- Added the story HTML and background video to Windows packaging and release ZIP validation.
+- Did not import the unrelated TTS, voice-pack, streaming, or legacy settings changes from the source feature branches.
+
 ## v0.80 (2026-06-11) - Stable Integration Candidate
 
 - Integrated the independently verified v0.75 character-routing, v0.76 runtime-reliability, v0.77 window-interaction, and v0.7x settings/profile backfill stages.
