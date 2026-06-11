@@ -1,6 +1,6 @@
 # Daniya Summer Desktop Pet
 
-**Stable release: v0.70 · Current source milestone: v0.77**
+**Published stable release: v0.70 · Current source milestone: v0.80 RC**
 
 [Source](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026) · [Download v0.70](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/tag/v0.70) · [Documentation](docs/index.md) · [Release Checklist](docs/release_checklist.md)
 
@@ -8,7 +8,7 @@
 
 本项目是非官方同人作品。仓库不分发官方游戏资源、私有角色素材、用户聊天记录、关系数据或 API Key。
 
-当前源码分支正在完成 v0.75-v0.80 主线。v0.77 已加入角色语句路由回归、启动与运行态保护，以及多屏 DPI、拖拽、吸附和置顶策略收尾；v0.7x backfill 进一步加入默认简单设置模式和无损档案字段迁移。可下载的稳定 Windows 包仍为 v0.70。
+v0.80 源码候选已经整合 v0.75-v0.77 的角色语句、运行可靠性和多屏交互收尾，并完成默认简单设置模式、无损档案字段迁移和全链路发布检查。可下载的公开稳定包仍为 v0.70；v0.80 在 tag 和 GitHub Release 获得单独确认前只作为源码与本地候选包。
 
 ## Quick Start
 
@@ -57,7 +57,7 @@ python main.py
 
 ## Defaults And Privacy
 
-当前稳定版与 v0.77 源码均采用安静启动策略：
+当前稳定版与 v0.80 源码均采用安静启动策略：
 
 - 默认不展开输入框。
 - 默认关闭空闲小动作。
@@ -123,19 +123,20 @@ ZAI_API_KEY=your_key_here
 
 | 项目 | 当前状态 |
 |---|---|
-| 当前版本 | `v0.70` |
-| Windows Release | `DaniyaSummerPet-v0.70-win-x64.zip` |
+| 当前源码 | `v0.80 stable integration candidate` |
+| 已发布 Windows Release | `DaniyaSummerPet-v0.70-win-x64.zip` |
+| 本地候选包 | `DaniyaSummerPet-v0.80-win-x64.zip` |
 | 自动检查 | pytest、敏感文件、角色包、配置模板、文档链接、公开面审查 |
 | 发布包检查 | `pack.bat`、zip 内容扫描、隔离运行态 exe 启动烟测 |
 | 仍需外部证据 | 真实 Provider Key、第二块实体混合 DPI 显示器、不同 Windows/杀软策略 |
 
-v0.70 本地验收结果记录在 [V0.70 Integration Acceptance](docs/V0.70_INTEGRATION_ACCEPTANCE.md)，人工项目见 [V0.70 Manual QA Checklist](docs/V0.70_MANUAL_QA_CHECKLIST.md)。
+v0.80 自动验收记录在 [V0.80 Integration Acceptance](docs/V0.80_INTEGRATION_ACCEPTANCE.md)，人工项目见 [V0.80 Manual QA Checklist](docs/V0.80_MANUAL_QA_CHECKLIST.md)。
 
-Release asset:
+Local candidate:
 
 ```text
-DaniyaSummerPet-v0.70-win-x64.zip
-SHA256: publish with the final uploaded artifact; verify locally with `Get-FileHash`.
+DaniyaSummerPet-v0.80-win-x64.zip
+SHA256: verify locally with `Get-FileHash`; publish only after separate release approval.
 ```
 
 ## Useful Docs
@@ -166,11 +167,11 @@ python tools\check_public_surface.py
 pytest -q
 ```
 
-Before validating the v0.70 Windows package:
+Before validating the v0.80 Windows candidate:
 
 ```bat
 pack.bat
-python tools\check_release_zip.py release\DaniyaSummerPet-v0.70-win-x64.zip
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.80-win-x64.zip
 ```
 
 Keep changes stage-scoped. Do not commit `.env`, runtime `data/`, private assets, model files, packaged `release/` output, `dist/`, or `build/`.

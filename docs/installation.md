@@ -2,7 +2,7 @@
 
 ## Downloaded Windows Package
 
-1. Download the latest published Windows asset. The current public release is `DaniyaSummerPet-v0.65.2-win-x64.zip`; v0.70 remains a source/build milestone until its release asset is published.
+1. Download the latest published Windows asset. The current public release is `DaniyaSummerPet-v0.70-win-x64.zip`; v0.80 remains a source/local candidate until a separate tag and GitHub Release are approved.
 2. Extract it to a normal folder such as Desktop, Downloads, or another drive.
 3. Run `DaniyaSummerPet.exe`.
 4. Runtime data is stored in `%APPDATA%\DaniyaSummerPet\`, not beside the exe.

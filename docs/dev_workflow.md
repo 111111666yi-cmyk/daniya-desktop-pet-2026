@@ -65,7 +65,7 @@ python tools\check_public_surface.py
 Release zip scan:
 
 ```bat
-python tools\check_release_zip.py release\DaniyaSummerPet-v0.70-win-x64.zip
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.80-win-x64.zip
 ```
 
 Startup:

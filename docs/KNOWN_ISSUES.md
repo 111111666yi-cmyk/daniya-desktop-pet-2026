@@ -1,5 +1,17 @@
 # KNOWN_ISSUES
 
+## v0.80 RC Boundaries (2026-06-11)
+
+| ID | Level | Status | Required evidence |
+|---|---|---|---|
+| QA80-PROVIDER-001 | P1 | MANUAL REQUIRED | One real cloud reply using a user-owned API Key and available quota. Never record the key. |
+| QA80-MONITOR-001 | P2 | MANUAL REQUIRED / NOT AVAILABLE | A second physical mixed-DPI monitor and real cross-screen movement. Automated logical-coordinate and DPR tests are not a substitute. |
+| QA80-MOUSE-001 | P2 | MANUAL REQUIRED | Physical click, double-click, long-press, slow drag, fast drag, snap, and focus-steal feel. |
+| QA80-STREAM-001 | P3 | DEFERRED BY DESIGN | True streaming requires provisional bubble, cancellation, fallback, final speech-filter, history, and voice contracts. No unsafe half-implementation is enabled. |
+| QA80-SMARTSCREEN-001 | P3 | EXPECTED WARNING | The candidate is unsigned. SmartScreen behavior depends on download origin and Windows policy. |
+| QA80-ANTIVIRUS-001 | P3 | OBSERVED RESULT ONLY | Record the local scanner result without claiming universal compatibility. |
+| QA80-SIGNING-001 | P3 | NOT SIGNED | No code-signing certificate or signing operation is part of this candidate. |
+
 ## v0.70 Acceptance Boundaries (2026-06-05)
 
 | ID | Level | Status | Required evidence |

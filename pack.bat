@@ -125,8 +125,11 @@ for %%F in (
     roadmap.md
     KNOWN_ISSUES.md
     known_issues.md
-    V0.70_INTEGRATION_ACCEPTANCE.md
-    V0.70_MANUAL_QA_CHECKLIST.md
+    V0.76_RUNTIME_RELIABILITY.md
+    V0.77_MANUAL_QA_CHECKLIST.md
+    V0.7X_BACKFILL_AND_STREAMING_PLAN.md
+    V0.80_INTEGRATION_ACCEPTANCE.md
+    V0.80_MANUAL_QA_CHECKLIST.md
 ) do (
     if exist "docs\%%F" copy /Y "docs\%%F" "%SAFE_DOCS%\%%F" >nul
 )
