@@ -8,6 +8,6 @@ DeepSeek 使用与 OpenAI 完全兼容的 /chat/completions 端点。
 
 from __future__ import annotations
 
-from .openai_api import chat, test_connection
+from .openai_api import chat, stream_chat, supports_streaming, test_connection
 
-__all__ = ["chat", "test_connection"]
+__all__ = ["chat", "stream_chat", "supports_streaming", "test_connection"]
