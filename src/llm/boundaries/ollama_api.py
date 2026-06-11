@@ -64,6 +64,10 @@ def chat(
     return str(content).strip()
 
 
+def supports_streaming() -> bool:
+    return False
+
+
 def test_connection(base_url: str = "http://localhost:11434", timeout: int = 5) -> bool:
     """检查 Ollama 服务是否可达。"""
     try:

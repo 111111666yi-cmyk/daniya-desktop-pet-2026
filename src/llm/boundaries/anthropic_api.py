@@ -72,3 +72,7 @@ def chat(
         return text.strip()
     except (KeyError, IndexError, TypeError, ValueError) as exc:
         raise MalformedResponse(f"Failed to parse Claude response: {exc}") from exc
+
+
+def supports_streaming() -> bool:
+    return False
