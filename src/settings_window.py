@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
-from PySide6.QtCore import QThread, Qt, Signal, QUrl
+from PySide6.QtCore import QThread, QTimer, Qt, Signal, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QApplication,
@@ -84,7 +84,11 @@ class _DiagnosticsWorker(QThread):
     def run(self) -> None:
         chat_client = getattr(self.controller, "chat_client", None)
         results = run_diagnostics(self.settings_manager, getattr(self.controller, "asset_manager", None), chat_client=chat_client)
-        self.finished_with_text.emit(format_diagnostics(results))
+        text = format_diagnostics(results)
+        startup_timer = getattr(self.controller, "startup_timer", None)
+        if startup_timer is not None:
+            text += "\n\n" + startup_timer.format_summary()
+        self.finished_with_text.emit(text)
 
 
 class _OllamaHealthWorker(QThread):
@@ -388,6 +392,7 @@ class SettingsWindow(QDialog):
         self.diagnostics_worker: _DiagnosticsWorker | None = None
         self.ollama_worker: _OllamaPullWorker | None = None
         self.ollama_health_worker: _OllamaHealthWorker | None = None
+        self._lazy_tab_loaders: dict[int, Callable[[], None]] = {}
         self.setWindowTitle("设置中心")
         self.resize(860, 640)
         self.setWindowFlags(
@@ -414,10 +419,19 @@ class SettingsWindow(QDialog):
         self._build_focus_tab()
         self._build_privacy_tab()
         self._build_diagnostics_tab()
+        self.tabs.currentChanged.connect(self._load_lazy_tab)
 
         close = QPushButton("关闭")
         close.clicked.connect(self.accept)
         layout.addWidget(close, alignment=Qt.AlignmentFlag.AlignRight)
+
+    def _register_lazy_tab(self, index: int, loader: Callable[[], None]) -> None:
+        self._lazy_tab_loaders[index] = loader
+
+    def _load_lazy_tab(self, index: int) -> None:
+        loader = self._lazy_tab_loaders.pop(index, None)
+        if loader is not None:
+            QTimer.singleShot(0, loader)
 
     def _build_model_tab(self) -> None:
         tab = QWidget()
@@ -1529,10 +1543,11 @@ class SettingsWindow(QDialog):
         evt_layout.addWidget(self.events_raw_text)
         layout.addWidget(evt_group)
 
-        self.tabs.addTab(tab, get_icon("download"), "关系与事件")
-        self._refresh_relationship()
-        self._refresh_memory()
-        self._refresh_events()
+        self.relationship_text.setPlainText("打开本页后加载关系状态。")
+        self.memory_text.setPlainText("打开本页后加载记忆备忘录。")
+        self.events_text.setPlainText("打开本页后加载最近事件。")
+        index = self.tabs.addTab(tab, get_icon("download"), "关系与事件")
+        self._register_lazy_tab(index, self._refresh_relationship_bundle)
 
     def _build_system_tab(self) -> None:
         tab = QWidget()
@@ -1616,8 +1631,9 @@ class SettingsWindow(QDialog):
         help_layout.addWidget(self.help_content)
         layout.addWidget(help_group)
 
-        self.tabs.addTab(tab, get_icon("settings"), "系统")
-        self._refresh_data()
+        self.data_text.setPlainText("打开本页后加载运行态数据摘要。")
+        index = self.tabs.addTab(tab, get_icon("settings"), "系统")
+        self._register_lazy_tab(index, self._refresh_data)
 
     def _build_reminder_tab(self) -> None:
         config = self.settings_manager.load_app_config()
@@ -2274,6 +2290,11 @@ class SettingsWindow(QDialog):
         if hasattr(self, "relationship_raw_text"):
             raw_lines = [f"{key}: {value}" for key, value in state.items()]
             self.relationship_raw_text.setPlainText("\n".join(raw_lines) or "relationship_state.json 不可读或为空。")
+
+    def _refresh_relationship_bundle(self) -> None:
+        self._refresh_relationship()
+        self._refresh_memory()
+        self._refresh_events()
 
     def _refresh_events(self) -> None:
         status = self.relationship_viewer.status()

@@ -32,7 +32,8 @@ class IdleBehavior(QObject):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._check_idle)
-        self.timer.start(2000)
+        self.timer.setInterval(2000)
+        self.set_enabled(bool(self.config.idle_behavior_enabled))
 
     def mark_activity(self) -> None:
         self.last_activity_time = time.time()
@@ -64,3 +65,11 @@ class IdleBehavior(QObject):
 
     def set_config(self, config: Any) -> None:
         self.config = config
+        self.set_enabled(bool(self.config.idle_behavior_enabled))
+
+    def set_enabled(self, enabled: bool) -> None:
+        if enabled:
+            if not self.timer.isActive():
+                self.timer.start()
+        else:
+            self.timer.stop()

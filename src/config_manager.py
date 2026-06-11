@@ -8,6 +8,7 @@ from typing import Any
 
 from .utils import bundled_root, ensure_dir, runtime_root
 from .version import APP_VERSION
+from .atomic_io import atomic_write_json, atomic_write_text
 
 
 QUIET_DEFAULTS_MIGRATION = "v0.61-quiet-defaults"
@@ -98,6 +99,7 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "idle_behavior_seconds": 600,
     "double_click_enabled": True,
     "long_press_ms": 600,
+    "reminder_enabled": True,
     "natural_reminder_enabled": True,
     "file_organizer_enabled": False,
     "system_status_enabled": False,
@@ -162,7 +164,7 @@ class ConfigManager:
             return
         bundled = self.bundle / "config" / name
         if bundled.exists():
-            path.write_text(bundled.read_text(encoding="utf-8"), encoding="utf-8")
+            atomic_write_text(path, bundled.read_text(encoding="utf-8"))
             return
         self.save_json(path, default)
 
@@ -172,9 +174,9 @@ class ConfigManager:
             return
         bundled = self.bundle / "config" / name
         if bundled.exists():
-            path.write_text(bundled.read_text(encoding="utf-8"), encoding="utf-8")
+            atomic_write_text(path, bundled.read_text(encoding="utf-8"))
             return
-        path.write_text(default, encoding="utf-8")
+        atomic_write_text(path, default)
 
     def load_app_config(self) -> dict[str, Any]:
         loaded = self.load_json(self.config_dir / "app_config.json", DEFAULT_APP_CONFIG)
@@ -210,24 +212,8 @@ class ConfigManager:
             return deepcopy(default)
 
     def save_json(self, path: Path, value: Any) -> None:
-        try:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = path.with_suffix(path.suffix + ".tmp")
-            tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-            try:
-                tmp.replace(path)
-            except OSError:
-                path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-                if tmp.exists():
-                    try:
-                        tmp.unlink()
-                    except OSError:
-                        pass
-        except Exception:
-            try:
-                path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-            except Exception as inner_exc:
-                print(f"[Daniya] CRITICAL: failed to save config {path}: {inner_exc}")
+        if not atomic_write_json(path, value):
+            print(f"[Daniya] failed to save config file: {path.name}")
 
     def _backup_broken_json(self, path: Path) -> None:
         if not path.exists():
@@ -336,6 +322,7 @@ class ConfigManager:
         except (TypeError, ValueError):
             config["long_press_ms"] = 600
 
+        config["reminder_enabled"] = bool(config.get("reminder_enabled", True))
         config["natural_reminder_enabled"] = bool(config.get("natural_reminder_enabled", True))
         config["file_organizer_enabled"] = bool(config.get("file_organizer_enabled", False))
         config["system_status_enabled"] = bool(config.get("system_status_enabled", False))

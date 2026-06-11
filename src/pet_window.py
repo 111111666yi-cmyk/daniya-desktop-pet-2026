@@ -416,15 +416,37 @@ class PetWindow(QWidget):
     def _start_pet_feature_timers(self) -> None:
         self.edge_timer = QTimer(self)
         self.edge_timer.timeout.connect(self._tick_edge_peek)
-        self.edge_timer.start(500)
+        self.edge_timer.setInterval(500)
 
         self.global_click_timer = QTimer(self)
         self.global_click_timer.timeout.connect(self._tick_global_click)
-        self.global_click_timer.start(80)
+        self.global_click_timer.setInterval(80)
 
         self.walk_move_timer = QTimer(self)
         self.walk_move_timer.timeout.connect(self._tick_walk_move)
-        self.walk_move_timer.start(80)
+        self.walk_move_timer.setInterval(80)
+        self.sync_feature_timers()
+
+    def sync_feature_timers(self) -> None:
+        pet_config = self.app_config.get("pet", {})
+        self._set_timer_enabled(
+            self.edge_timer,
+            bool(pet_config.get("edge_peek_enabled", False)),
+        )
+        self._set_timer_enabled(
+            self.global_click_timer,
+            WINDOWS_NATIVE_AVAILABLE and bool(pet_config.get("click_to_call_enabled", False)),
+        )
+        if self._walk_target is None:
+            self.walk_move_timer.stop()
+
+    @staticmethod
+    def _set_timer_enabled(timer: QTimer, enabled: bool) -> None:
+        if enabled:
+            if not timer.isActive():
+                timer.start()
+        else:
+            timer.stop()
 
     def _stop_pet_feature_timers(self) -> None:
         for name in ("edge_timer", "global_click_timer", "walk_move_timer"):
@@ -535,6 +557,8 @@ class PetWindow(QWidget):
         self.animation_manager.set_walking(True)
         target = QPoint(global_pos.x() - self.width() // 2, global_pos.y() - self.height() + 12)
         self._walk_target = self._clamped_position(target)
+        if not self.walk_move_timer.isActive():
+            self.walk_move_timer.start()
         if not was_walking:
             self._walk_step = 0
 
@@ -543,10 +567,12 @@ class PetWindow(QWidget):
             self._walk_target = None
             self._walk_step = 0
             self.animation_manager.set_walking(False)
+        self.walk_move_timer.stop()
 
     def _finish_walk_move(self) -> None:
         self._walk_target = None
         self._walk_step = 0
+        self.walk_move_timer.stop()
         self.animation_manager.set_walking(False)
         self.position_changed.emit(self.x(), self.y())
 

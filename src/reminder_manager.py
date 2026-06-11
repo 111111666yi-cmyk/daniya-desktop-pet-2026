@@ -15,7 +15,7 @@ TIME_FORMAT = "%Y-%m-%d %H:%M"
 class ReminderManager(QObject):
     reminder_due = Signal(str, str)
 
-    def __init__(self, config_manager: ConfigManager) -> None:
+    def __init__(self, config_manager: ConfigManager, enabled: bool = True) -> None:
         super().__init__()
         self.config_manager = config_manager
         self.message_lookup: Callable[..., str] | None = None
@@ -25,7 +25,15 @@ class ReminderManager(QObject):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.check_due)
-        self.timer.start(30_000)
+        self.timer.setInterval(30_000)
+        self.set_enabled(enabled)
+
+    def set_enabled(self, enabled: bool) -> None:
+        if enabled:
+            if not self.timer.isActive():
+                self.timer.start()
+        else:
+            self.timer.stop()
 
     def records(self) -> list[dict[str, Any]]:
         data = self.config_manager.load_json(self.path, [])

@@ -1,12 +1,14 @@
 # Daniya Summer Desktop Pet
 
-**Current release: v0.70**
+**Stable release: v0.70 · Current source milestone: v0.76**
 
 [Source](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026) · [Download v0.70](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/tag/v0.70) · [Documentation](docs/index.md) · [Release Checklist](docs/release_checklist.md)
 
 达妮娅夏日桌宠是一个 Windows 桌面陪伴应用，基于 Python + PySide6 构建。它提供透明置顶桌宠、拖拽移动、气泡对话、设置中心、角色关系、记忆备忘录、提醒、文件整理预览、系统状态感知、隐私剪贴板交互和专注/游戏模式。
 
 本项目是非官方同人作品。仓库不分发官方游戏资源、私有角色素材、用户聊天记录、关系数据或 API Key。
+
+当前源码分支正在完成 v0.75-v0.80 主线。v0.76 已加入角色语句路由回归、冷启动计时、首屏后惰性初始化、有限日志和原子运行态写入；可下载的稳定 Windows 包仍为 v0.70。
 
 ## Quick Start
 
@@ -55,7 +57,7 @@ python main.py
 
 ## Defaults And Privacy
 
-v0.70 采用安静启动策略：
+当前稳定版与 v0.76 源码均采用安静启动策略：
 
 - 默认不展开输入框。
 - 默认关闭空闲小动作。

@@ -4,12 +4,15 @@ Current release target: `v0.70`
 
 Expected Windows asset: `DaniyaSummerPet-v0.70-win-x64.zip`
 
+Current source milestone: `v0.76`; the next package target is `v0.80` after all v0.7x gates pass.
+
 ## Source Freeze
 
-- Do not add v0.71 features during v0.70 acceptance.
+- Do not add v0.81+ features during v0.75-v0.80 integration.
 - Confirm `master` is the intended source branch.
-- Confirm the worktree contains only reviewed v0.70 version, documentation, test, and packaging changes.
-- Confirm `src/version.py`, `config/app_config.json`, and `config/app_config.example.json` all report `v0.70`.
+- Confirm the integration worktree contains only reviewed changes for the active milestone.
+- During source milestones, confirm `src/version.py`, `config/app_config.json`, and `config/app_config.example.json` report the same version.
+- Do not rename the expected Windows asset until the v0.80 release-candidate phase.
 
 ## Repository Gates
 

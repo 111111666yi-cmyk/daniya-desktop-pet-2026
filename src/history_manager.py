@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from .config_manager import ConfigManager
+from .atomic_io import atomic_write_text
+from .jsonl_utils import append_json_line, read_json_lines, rotate_json_lines
+
+
+MAX_HISTORY_BYTES = 2 * 1024 * 1024
+KEEP_HISTORY_BYTES = 1024 * 1024
+logger = logging.getLogger(__name__)
 
 
 class HistoryManager:
@@ -23,27 +31,12 @@ class HistoryManager:
             "assistant": assistant_text,
             "source": source,
         }
-        with self.path.open("a", encoding="utf-8") as file:
-            file.write(json.dumps(record, ensure_ascii=False) + "\n")
+        if append_json_line(self.path, record):
+            rotate_json_lines(self.path, MAX_HISTORY_BYTES, KEEP_HISTORY_BYTES)
         return record
 
-    def records(self) -> list[dict[str, Any]]:
-        output: list[dict[str, Any]] = []
-        try:
-            lines = self.path.read_text(encoding="utf-8").splitlines()
-        except OSError:
-            return output
-
-        for line in lines:
-            if not line.strip():
-                continue
-            try:
-                record = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if isinstance(record, dict):
-                output.append(record)
-        return output
+    def records(self, limit: int | None = None) -> list[dict[str, Any]]:
+        return read_json_lines(self.path, limit=limit)
 
     def delete(self, record_id: str) -> None:
         remaining = [record for record in self.records() if record.get("id") != record_id]
@@ -51,7 +44,7 @@ class HistoryManager:
 
     def recent_messages(self, limit: int) -> list[dict[str, str]]:
         messages: list[dict[str, str]] = []
-        for record in self.records()[-limit:]:
+        for record in self.records(limit=limit):
             user_text = str(record.get("user", "")).strip()
             assistant_text = str(record.get("assistant", "")).strip()
             if user_text:
@@ -66,7 +59,7 @@ class HistoryManager:
         return
 
     def _rewrite(self, records: list[dict[str, Any]]) -> None:
-        with self.path.open("w", encoding="utf-8") as file:
-            for record in records:
-                file.write(json.dumps(record, ensure_ascii=False) + "\n")
+        content = "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in records)
+        if not atomic_write_text(self.path, content):
+            logger.warning("history_rewrite_failed")
 

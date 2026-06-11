@@ -33,6 +33,7 @@ from .focus_mode import FocusModeManager
 from .feedback_coordinator import FeedbackCoordinator
 from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
+from .startup_timing import StartupTimer
 
 
 class ThreadSafeAnimationManager(QObject):
@@ -120,11 +121,15 @@ class PhysicalEventWorker(QThread):
 
 
 class AppController(QObject):
-    def __init__(self, qapp: QApplication) -> None:
+    def __init__(self, qapp: QApplication, startup_timer: StartupTimer | None = None) -> None:
         super().__init__()
         self.qapp = qapp
+        self.startup_timer = startup_timer or StartupTimer()
+        self.startup_timer.mark("QApplication created")
         self.config_manager = ConfigManager()
+        self.startup_timer.mark("runtime root resolved")
         self.app_config = self.config_manager.load_app_config()
+        self.startup_timer.mark("config loaded")
         self.config_manager.save_app_config(self.app_config)
 
         self.history_manager = HistoryManager(self.config_manager)
@@ -135,7 +140,10 @@ class AppController(QObject):
         )
         self.chat_client = ChatClient(self.config_manager, self.history_manager, self.profile_manager)
         self.notes_manager = NotesManager(self.config_manager)
-        self.reminder_manager = ReminderManager(self.config_manager)
+        self.reminder_manager = ReminderManager(
+            self.config_manager,
+            enabled=bool(self.app_config.get("reminder_enabled", True)),
+        )
         self.natural_reminder_service = NaturalReminderService(self.reminder_manager)
         self.pending_reminder_result = None
         self.time_event_manager = TimeEventManager(self.app_config)
@@ -145,6 +153,7 @@ class AppController(QObject):
         self.system_status_manager = SystemStatusManager()
         self.clipboard_interaction = ClipboardInteraction(self.qapp.clipboard())
         self.focus_mode_manager = FocusModeManager()
+        self.startup_timer.mark("managers initialized")
 
         # [CHANGE-001] v0.415 引擎适配器初始化
         # 将 chat_client 作为 model_client 传入，适配器内部通过 _wrap_model_client
@@ -155,6 +164,7 @@ class AppController(QObject):
             model_client=self.chat_client,
             config=DaniyaEngineAdapterConfig(character_id=char_id)
         )
+        self.startup_timer.mark("character pack loaded")
         resolved_char_id = self.daniya_adapter.character_pack.character_id
         self.reminder_manager.set_message_lookup(self.utility_text)
         self.system_status_manager.message_lookup = self.utility_text
@@ -162,6 +172,7 @@ class AppController(QObject):
         self.asset_manager = AssetManager(self.app_config, resolved_char_id)
 
         self.window = PetWindow(self.asset_manager, self.app_config)
+        self.startup_timer.mark("main window created")
         # Inject behavior engine checkers
         self.window.behavior_engine.idle_behavior.is_allowed = self.is_idle_behavior_allowed
         self.window.behavior_engine.idle_behavior.is_night = self.is_night_behavior
@@ -214,11 +225,20 @@ class AppController(QObject):
         )
         self.window.behavior_engine.speak_callback = self._speak_idle_behavior
         self.window.typewriter.sequence_finished.connect(self.feedback_coordinator.complete)
-        self.apply_integrated_feature_config()
+        self._optional_services_initialized = False
 
     def show(self) -> None:
         self.window.show_at_config_position()
         self.config_manager.save_app_config(self.app_config)
+        self.startup_timer.mark("first show")
+        QTimer.singleShot(0, self._initialize_optional_services)
+
+    def _initialize_optional_services(self) -> None:
+        if self._optional_services_initialized:
+            return
+        self.apply_integrated_feature_config()
+        self._optional_services_initialized = True
+        self.startup_timer.mark("optional services initialized")
 
     def send_message(self, user_text: str, base_time: datetime | None = None) -> None:
         self.idle_manager.mark_activity()
@@ -425,6 +445,7 @@ class AppController(QObject):
             return
         self.app_config.setdefault("pet", {})[key] = bool(enabled)
         self.config_manager.save_app_config(self.app_config)
+        self.window.sync_feature_timers()
         self.window.set_context_menu(self.menu_manager.create_menu())
 
     def open_file_organizer(self) -> None:
@@ -440,6 +461,11 @@ class AppController(QObject):
     def apply_integrated_feature_config(self) -> None:
         config = self.config_manager._normalize_app_config(self.app_config)
         self.app_config.update(config)
+        self.reminder_manager.set_enabled(bool(config.get("reminder_enabled", True)))
+        self.idle_manager.set_enabled(bool(config.get("idle_chat_enabled", False)))
+        self.time_event_manager.set_enabled(bool(config.get("hourly_chime_enabled", False)))
+        self.window.behavior_engine.reload_config(config)
+        self.window.sync_feature_timers()
 
         self.system_status_manager.sample_interval_ms = int(config.get("system_status_interval_seconds", 300)) * 1000
         self.system_status_manager.cooldown_seconds = int(config.get("system_status_cooldown_seconds", 300))
@@ -743,12 +769,14 @@ def _configure_application_lifecycle(app: QApplication) -> None:
     app.setQuitOnLastWindowClosed(False)
 
 
-def run() -> None:
+def run(process_started_at: float | None = None) -> None:
     from .logging_setup import configure_logging, install_excepthook
+    startup_timer = StartupTimer(started_at=process_started_at)
     configure_logging()
     install_excepthook()
 
     app = QApplication(sys.argv)
+    startup_timer.mark("QApplication created")
     _configure_application_lifecycle(app)
 
     app.setStyleSheet("""
@@ -860,6 +888,6 @@ def run() -> None:
             # 用户关闭了向导而没有完成设置
             sys.exit(0)
 
-    controller = AppController(app)
+    controller = AppController(app, startup_timer=startup_timer)
     controller.show()
     sys.exit(app.exec())

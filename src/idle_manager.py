@@ -25,7 +25,15 @@ class IdleManager(QObject):
         self.last_emit = datetime.min
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.check_idle)
-        self.timer.start(30_000)
+        self.timer.setInterval(30_000)
+        self.set_enabled(bool(self.app_config.get("idle_chat_enabled", False)))
+
+    def set_enabled(self, enabled: bool) -> None:
+        if enabled:
+            if not self.timer.isActive():
+                self.timer.start()
+        else:
+            self.timer.stop()
 
     def mark_activity(self) -> None:
         self.last_activity = datetime.now()

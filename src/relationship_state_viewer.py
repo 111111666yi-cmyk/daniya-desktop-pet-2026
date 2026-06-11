@@ -19,12 +19,12 @@ class RelationshipStateViewer:
         self.data_dir = relation_data_root()
         self.character_id = character_id
 
-    def status(self) -> dict[str, Any]:
+    def status(self, event_limit: int | None = 20) -> dict[str, Any]:
         paths = self.paths()
         state, state_error = _read_json_safe(paths["relationship_state"], {})
         from core.memory_engine import load_event_log
         try:
-            events = load_event_log()
+            events = load_event_log(limit=event_limit)
             event_error = None
         except Exception as exc:
             events = []
@@ -45,14 +45,15 @@ class RelationshipStateViewer:
         }
 
     def paths(self) -> dict[str, Path]:
+        event_log_jsonl = self.data_dir / "event_log.jsonl"
         return {
             "relationship_state": state_path(self.character_id),
-            "event_log": self.data_dir / "event_log.json",
+            "event_log": event_log_jsonl if event_log_jsonl.exists() else self.data_dir / "event_log.json",
             "user_memory": self.data_dir / "user_memory.json",
         }
 
     def export_state(self) -> Path:
-        status = self.status()
+        status = self.status(event_limit=None)
         return self.backup_manager.backup_json_value("relationship_state_export", status, "relationship_state_exports")
 
     def reset_state_with_backup(self) -> tuple[bool, str, Path | None]:

@@ -22,7 +22,7 @@ def build_daniya_status(character_id: str = "daniya", available_actions: set[str
 
     state = _read_relationship_state(character_id, pack.relationship)
     memory = load_user_memory()
-    events = load_event_log()
+    events = load_event_log(limit=8)
     action_mapping = pack.actions.get("action_mapping") if isinstance(pack.actions, dict) else {}
     fragments = pack.lore_index.get("fragments") if isinstance(pack.lore_index, dict) else []
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import threading
@@ -10,10 +11,12 @@ from typing import Any
 
 from core.schema import CharacterPack
 from src.utils import runtime_root
+from src.atomic_io import atomic_write_text
 
 # Relationship state reads and writes share one lock so a reader never
 # interprets an in-progress write as corrupt user data.
 _state_lock = threading.Lock()
+logger = logging.getLogger(__name__)
 
 METRIC_FIELDS = {
     "affection",
@@ -206,13 +209,5 @@ def _preserve_foreign_state(state: dict[str, Any]) -> None:
 
 def _write_state_unlocked(path: Path, state: dict[str, Any]) -> None:
     content = json.dumps(clamp_metrics(state), ensure_ascii=False, indent=2)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    try:
-        tmp.write_text(content, encoding="utf-8")
-        tmp.replace(path)
-    except OSError:
-        path.write_text(content, encoding="utf-8")
-        try:
-            tmp.unlink(missing_ok=True)
-        except OSError:
-            pass
+    if not atomic_write_text(path, content):
+        logger.warning("relationship_write_failed file=%s", path.name)

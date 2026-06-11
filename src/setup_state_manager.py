@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from .utils import ensure_dir, runtime_root
+from .atomic_io import atomic_write_json
 
 
 class SetupStateManager:
@@ -31,10 +32,7 @@ class SetupStateManager:
 
     def save_setup_config(self, config: dict[str, Any]) -> None:
         """保存配置到 setup_config.json。"""
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-        tmp = self.setup_config_path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
-        tmp.replace(self.setup_config_path)
+        atomic_write_json(self.setup_config_path, config)
 
     def load_first_run_done(self) -> dict[str, Any]:
         """读取 canonical 首次启动完成状态，坏文件视为未完成。"""
@@ -47,10 +45,7 @@ class SetupStateManager:
             return {}
 
     def save_first_run_done(self, config: dict[str, Any]) -> None:
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-        tmp = self.first_run_done_path.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
-        tmp.replace(self.first_run_done_path)
+        atomic_write_json(self.first_run_done_path, config)
 
     def is_first_run_complete(self) -> bool:
         """判断用户是否已经完成了首次启动向导。"""

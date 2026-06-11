@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import threading
 from datetime import datetime
@@ -8,10 +9,13 @@ from pathlib import Path
 from typing import Any
 
 from src.utils import runtime_root
+from src.atomic_io import atomic_write_text
+from src.jsonl_utils import append_json_line, read_json_lines, rotate_json_lines
 
 # Memory reads, appends, and replacements share one lock so partial content
 # cannot be mistaken for corrupt user data.
 _file_lock = threading.RLock()
+logger = logging.getLogger(__name__)
 
 KEY_PHRASES = ["抱抱", "我不会先走", "我收着了", "我都懂", "归期到了", "那根弦松了一点"]
 LORE_KEYWORDS = {
@@ -100,6 +104,7 @@ def lore_ids_from_text(user_text: str) -> list[str]:
 
 
 _MAX_EVENT_LOG_BYTES = 512 * 1024  # 512 KB
+_KEEP_EVENT_LOG_BYTES = 256 * 1024
 
 
 def append_event_log(record: dict[str, Any]) -> None:
@@ -107,24 +112,16 @@ def append_event_log(record: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     record = dict(record)
     record.setdefault("timestamp", datetime.now().isoformat(timespec="seconds"))
-    line = json.dumps(record, ensure_ascii=False) + "\n"
     with _file_lock:
-        with open(path, "a", encoding="utf-8") as f:
-            f.write(line)
-        try:
-            if path.stat().st_size > _MAX_EVENT_LOG_BYTES:
-                _rotate_event_log(path)
-        except OSError:
-            pass
+        if append_json_line(path, record):
+            rotate_json_lines(path, _MAX_EVENT_LOG_BYTES, _KEEP_EVENT_LOG_BYTES)
 
 
 def _rotate_event_log(path: Path) -> None:
-    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-    keep = lines[len(lines) // 2:]
-    path.write_text("".join(keep), encoding="utf-8")
+    rotate_json_lines(path, _MAX_EVENT_LOG_BYTES, _KEEP_EVENT_LOG_BYTES)
 
 
-def load_event_log() -> list[dict[str, Any]]:
+def load_event_log(limit: int | None = None) -> list[dict[str, Any]]:
     # [CHANGE-005-FIX] 优先读 JSONL，兼容旧 JSON 格式
     jsonl_path = data_root() / "event_log.jsonl"
     json_path = data_root() / "event_log.json"
@@ -137,17 +134,8 @@ def load_event_log() -> list[dict[str, Any]]:
     # 再读新格式
     if jsonl_path.exists():
         with _file_lock:
-            try:
-                for line in jsonl_path.read_text(encoding="utf-8").splitlines():
-                    line = line.strip()
-                    if line:
-                        try:
-                            events.append(json.loads(line))
-                        except json.JSONDecodeError:
-                            continue
-            except OSError:
-                pass
-    return events
+            events.extend(read_json_lines(jsonl_path, limit=limit))
+    return events[-limit:] if limit is not None and limit > 0 else events
 
 
 def ensure_relation_files() -> None:
@@ -193,16 +181,8 @@ def _write_json(path: Path, value: Any) -> None:
 
 def _write_json_unlocked(path: Path, value: Any) -> None:
     content = json.dumps(value, ensure_ascii=False, indent=2)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    try:
-        tmp.write_text(content, encoding="utf-8")
-        tmp.replace(path)
-    except OSError:
-        path.write_text(content, encoding="utf-8")
-        try:
-            tmp.unlink(missing_ok=True)
-        except OSError:
-            pass
+    if not atomic_write_text(path, content):
+        logger.warning("memory_write_failed file=%s", path.name)
 
 
 def _append_unique(items: list[Any], value: str) -> None:

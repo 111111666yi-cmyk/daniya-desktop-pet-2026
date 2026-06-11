@@ -5,7 +5,11 @@ import json
 
 from src.config_manager import DEFAULT_APP_CONFIG, ConfigManager, QUIET_DEFAULTS_MIGRATION, deep_merge
 from src.version import APP_VERSION
-from tools.check_config_templates import _check_quiet_defaults, _check_setup_defaults
+from tools.check_config_templates import (
+    _check_quiet_defaults,
+    _check_setup_defaults,
+    _load_json_with_duplicate_keys,
+)
 
 
 def test_default_app_config_is_quiet_by_default() -> None:
@@ -64,6 +68,15 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     assert any("idle_behavior_seconds >= 600" in failure for failure in failures)
     assert any("system_status_interval_seconds >= 300" in failure for failure in failures)
     assert any("system_status_cooldown_seconds >= 300" in failure for failure in failures)
+
+
+def test_config_template_check_reports_duplicate_json_keys() -> None:
+    value, duplicates = _load_json_with_duplicate_keys(
+        '{"version":"v0.76","nested":{"enabled":false,"enabled":true}}'
+    )
+
+    assert value["nested"]["enabled"] is True
+    assert duplicates == ["enabled"]
 
 
 def test_setup_template_check_rejects_skipped_first_run_or_future_toggles() -> None:

@@ -42,10 +42,14 @@ def main() -> int:
             failures.append(f"Possible secret in public config/template: {relative}")
         if path.suffix == ".json":
             try:
-                data = json.loads(text)
+                data, duplicate_keys = _load_json_with_duplicate_keys(text)
             except json.JSONDecodeError as exc:
                 failures.append(f"Invalid JSON in {relative}: {exc}")
                 continue
+            if duplicate_keys:
+                failures.append(
+                    f"Duplicate JSON keys in {relative}: {', '.join(sorted(set(duplicate_keys)))}"
+                )
             if relative in QUIET_DEFAULT_CONFIGS:
                 failures.extend(_check_quiet_defaults(relative, data, app_version))
             if relative == "config/setup_config.json":
@@ -87,6 +91,20 @@ def _load_app_version(root: Path) -> str:
     if not match:
         raise RuntimeError("src/version.py missing APP_VERSION")
     return match.group(1)
+
+
+def _load_json_with_duplicate_keys(text: str) -> tuple[Any, list[str]]:
+    duplicates: list[str] = []
+
+    def build_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        value: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in value:
+                duplicates.append(key)
+            value[key] = item
+        return value
+
+    return json.loads(text, object_pairs_hook=build_object), duplicates
 
 
 def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list[str]:

@@ -15,8 +15,16 @@ class TimeEventManager(QObject):
         self.last_chime_key = ""
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.check_time)
-        self.timer.start(60_000)
-        QTimer.singleShot(2_000, self.check_time)
+        self.timer.setInterval(60_000)
+        self.set_enabled(bool(self.app_config.get("hourly_chime_enabled", False)))
+
+    def set_enabled(self, enabled: bool) -> None:
+        if enabled:
+            if not self.timer.isActive():
+                self.timer.start()
+                QTimer.singleShot(2_000, self.check_time)
+        else:
+            self.timer.stop()
 
     def check_time(self) -> None:
         if not bool(self.app_config.get("hourly_chime_enabled", False)):

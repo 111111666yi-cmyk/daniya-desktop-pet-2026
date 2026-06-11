@@ -1,5 +1,5 @@
 {
-  "version": "v0.75",
+  "version": "v0.76",
   "quiet_defaults_migration": "v0.61-quiet-defaults",
   "current_character": "daniya",
   "window": {
@@ -92,6 +92,7 @@
   "idle_behavior_seconds": 600,
   "double_click_enabled": true,
   "long_press_ms": 600,
+  "reminder_enabled": true,
   "natural_reminder_enabled": true,
   "file_organizer_enabled": false,
   "system_status_enabled": false,

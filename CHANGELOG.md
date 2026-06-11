@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.76 (2026-06-11) - Runtime Reliability
+
+- Added diagnostic-only timing for all cold-start stages without recording keys or local paths.
+- Deferred optional services and Settings Center runtime data until after first show or the relevant tab opens.
+- Prevented disabled idle, time-event, edge, click, walk, and behavior timers from polling in the background.
+- Bounded history and relationship event logs, added recent-record tail reads, and skipped incomplete JSONL records safely.
+- Unified config, setup, relationship, memory, reminder, and history replacements on atomic temporary-file writes.
+- Added isolated startup, runtime recovery, and finite long-run tools; the stress check performs no network requests and keeps 30-minute/GDI checks explicitly manual.
+
 ## v0.75 (2026-06-11) - Character Experience Polish
 
 - Kept the five required Daniya trigger phrases stable for exact and normalized input.
