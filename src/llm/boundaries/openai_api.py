@@ -8,7 +8,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+import json
+from typing import Any, Generator
 
 import requests
 
@@ -58,6 +59,63 @@ def chat(
         return str(content).strip()
     except (KeyError, IndexError, TypeError, ValueError) as exc:
         raise MalformedResponse(f"Failed to parse API response: {exc}") from exc
+
+
+def supports_streaming() -> bool:
+    return True
+
+
+def stream_chat(
+    messages: list[dict[str, str]],
+    api_key: str,
+    *,
+    base_url: str,
+    model: str,
+    auth_header: str = "bearer",
+    temperature: float = 0.8,
+    max_tokens: int = 360,
+    timeout: int = 20,
+) -> Generator[str, None, str]:
+    """SSE streaming chat. Yields accumulated text chunks, returns final text."""
+    headers: dict[str, str] = {"Content-Type": "application/json"}
+    headers.update(_auth_headers(api_key, auth_header))
+
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": True,
+    }
+
+    resp = requests.post(
+        f"{base_url.rstrip('/')}/chat/completions",
+        headers=headers,
+        json=payload,
+        timeout=timeout,
+        stream=True,
+    )
+    resp.raise_for_status()
+
+    accumulated = ""
+    for line in resp.iter_lines(decode_unicode=True):
+        if not line or not line.startswith("data: "):
+            continue
+        data_str = line[6:]
+        if data_str.strip() == "[DONE]":
+            break
+        try:
+            chunk = json.loads(data_str)
+            delta = chunk.get("choices", [{}])[0].get("delta", {})
+            content = delta.get("content", "")
+            if content:
+                accumulated += content
+                yield accumulated
+        except (json.JSONDecodeError, IndexError, KeyError):
+            continue
+    if not accumulated.strip():
+        raise MalformedResponse("Streaming returned empty content")
+    return accumulated.strip()
 
 
 def test_connection(

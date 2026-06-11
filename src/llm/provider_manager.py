@@ -196,6 +196,53 @@ class ProviderManager:
         self.last_source = "local_fallback"
         return self.local_fallback(api_error=True), "local"
 
+    def supports_streaming(self) -> bool:
+        profile = self.get_active_profile()
+        provider = profile.get("provider", "deepseek")
+        boundary = self._boundary_for_provider(provider)
+        return getattr(boundary, "supports_streaming", lambda: False)()
+
+    def stream_chat(self, messages: list[dict[str, str]]):
+        """Generator that yields accumulated text. Falls back to chat() if unsupported."""
+        profile = self.get_active_profile()
+        provider = profile.get("provider", "deepseek")
+        boundary = self._boundary_for_provider(provider)
+
+        if not getattr(boundary, "supports_streaming", lambda: False)():
+            text, source = self.chat(messages)
+            yield text
+            return
+
+        model = profile.get("model", "")
+        base_url = str(profile.get("base_url", ""))
+        api_key = self._get_api_key(profile.get("api_key_env", ""))
+        auth_header = self._auth_header_for_profile(profile)
+
+        try:
+            gen = boundary.stream_chat(
+                messages,
+                api_key=api_key,
+                base_url=base_url,
+                model=model,
+                auth_header=auth_header,
+                max_tokens=int(profile.get("max_tokens", 360)),
+                timeout=int(profile.get("timeout", 20)),
+            )
+            for chunk in gen:
+                yield chunk
+        except Exception:
+            text, source = self.chat(messages)
+            yield text
+
+    def _boundary_for_provider(self, provider: str):
+        if provider == Provider.OLLAMA:
+            return ollama_api
+        if provider in (Provider.CLAUDE, "anthropic"):
+            return anthropic_api
+        if provider == Provider.DEEPSEEK:
+            return deepseek_api
+        return openai_api
+
     def local_fallback(self, api_error: bool = False) -> str:
         chat_config = self.api_config.get("chat", {})
         list_key = "api_error_fallback_replies" if api_error else "fallback_replies"
