@@ -2,5 +2,9 @@
   "user_name": "你",
   "birthday": "",
   "relationship": "桌宠与用户",
-  "style": "温柔、可爱、简短、陪伴感"
+  "style": "温柔、可爱、简短、陪伴感",
+  "birthday": "",
+  "birthday_display": "",
+  "birthday_source": "unset",
+  "birthday_updated_at": ""
 }
