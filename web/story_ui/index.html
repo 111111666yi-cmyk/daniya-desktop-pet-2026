@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>达妮娅的故事</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        heading: ["'Instrument Serif'", "serif"],
+        body: ["'Barlow'", "sans-serif"],
+      },
+      borderRadius: { DEFAULT: "9999px" },
+    },
+  },
+};
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: linear-gradient(135deg, #0a0a14 0%, #10101f 40%, #0c0a18 100%);
+  font-family: 'Barlow', sans-serif; overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+/* ─── CSS Custom Properties for Glass Control ─── */
+:root {
+  --g-blur: 6;
+  --g-blur-s: 60;
+  --g-alpha: 0.02;
+  --g-alpha-s: 0.04;
+}
+
+/* ─── Liquid Glass ─── */
+.liquid-glass {
+  background: rgb(255 255 255 / var(--g-alpha));
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(calc(var(--g-blur) * 1px)) saturate(1.2);
+  -webkit-backdrop-filter: blur(calc(var(--g-blur) * 1px)) saturate(1.2);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.12), inset 0 -1px 1px rgba(255,255,255,0.04), 0 2px 12px rgba(0,0,0,0.15);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.2px;
+  background: linear-gradient(170deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.15) 18%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 62%, rgba(255,255,255,0.12) 82%, rgba(255,255,255,0.4) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+}
+.liquid-glass::after {
+  content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.liquid-glass-strong {
+  background: rgb(255 255 255 / var(--g-alpha-s));
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(calc(var(--g-blur-s) * 1px)) saturate(1.3);
+  -webkit-backdrop-filter: blur(calc(var(--g-blur-s) * 1px)) saturate(1.3);
+  border: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.18), inset 0 -1px 1px rgba(255,255,255,0.06);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass-strong::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.2px;
+  background: linear-gradient(170deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.2) 18%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 62%, rgba(255,255,255,0.18) 82%, rgba(255,255,255,0.5) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+}
+.liquid-glass-strong::after {
+  content: ""; position: absolute; top: -40%; left: -40%; width: 180%; height: 180%;
+  background: radial-gradient(ellipse at 25% 15%, rgba(255,255,255,0.06) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* ─── Glass card with mouse-follow highlight ─── */
+.glass-card {
+  --mx: 50%; --my: 50%;
+  position: relative; overflow: hidden;
+  transition: transform 0.35s cubic-bezier(.22,.68,0,1.1), box-shadow 0.35s ease;
+}
+.glass-card:hover {
+  transform: translateY(-6px) scale(1.015) perspective(800px) rotateX(calc((var(--my) - 50%) * -0.06deg)) rotateY(calc((var(--mx) - 50%) * 0.06deg));
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.2);
+}
+.glass-card .mouse-glow {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  background: radial-gradient(circle 180px at var(--mx) var(--my), rgba(255,255,255,0.08), transparent 70%);
+}
+.glass-card:hover .mouse-glow { opacity: 1; }
+
+/* ─── Animations ─── */
+@keyframes fadeInUp { from { opacity:0; transform:translateY(28px); filter:blur(6px); } to { opacity:1; transform:translateY(0); filter:blur(0); } }
+@keyframes fadeInLeft { from { opacity:0; transform:translateX(-30px); } to { opacity:1; transform:translateX(0); } }
+@keyframes fadeInRight { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes blurWord { 0% { opacity:0; filter:blur(10px); transform:translateY(40px); } 50% { opacity:0.6; filter:blur(4px); transform:translateY(-3px); } 100% { opacity:1; filter:blur(0); transform:translateY(0); } }
+@keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+@keyframes loadingPulse { 0%,100% { opacity:0.15; } 50% { opacity:0.35; } }
+
+.anim-hidden { opacity: 0; }
+.anim-fade-up { animation: fadeInUp 0.7s ease-out forwards; }
+.anim-fade-left { animation: fadeInLeft 0.6s ease-out forwards; }
+.anim-fade-right { animation: fadeInRight 0.6s ease-out forwards; }
+.anim-fade { animation: fadeIn 0.6s ease-out forwards; }
+.anim-blur-word { animation: blurWord 0.7s ease-out forwards; }
+
+.reader-panel::-webkit-scrollbar { width: 4px; }
+.reader-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+.tag-pill {
+  background: rgba(255,255,255,0.08); backdrop-filter: blur(4px);
+  box-shadow: inset 0 0.5px 0.5px rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.85); font-size: 11px; padding: 3px 10px; border-radius: 9999px;
+  white-space: nowrap; font-family: 'Barlow', sans-serif;
+}
+
+/* ─── Range Slider ─── */
+.glass-slider { -webkit-appearance: none; width: 100%; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.1); outline: none; cursor: pointer; }
+.glass-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; cursor: pointer; box-shadow: 0 1px 6px rgba(0,0,0,0.35); }
+.glass-slider::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; cursor: pointer; border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.35); }
+
+/* ─── Loading Screen ─── */
+#loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #0a0a14 0%, #10101f 40%, #0c0a18 100%);
+  transition: opacity 0.6s ease-out;
+}
+#loading-screen p {
+  font-family: 'Instrument Serif', serif; font-style: italic;
+  font-size: 3.5rem; color: rgba(255,255,255,0.15);
+  animation: loadingPulse 2s ease-in-out infinite;
+}
+</style>
+</head>
+<body>
+
+<!-- Loading screen — visible instantly, hidden when React mounts -->
+<div id="loading-screen">
+  <p>达妮娅的故事</p>
+</div>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ─── useInView ─── */
+function useInView(opts = {}) {
+  const ref = useRef(null);
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVis(true); if (opts.once !== false) obs.disconnect(); } }, { threshold: opts.threshold || 0.08 });
+    obs.observe(el); return () => obs.disconnect();
+  }, []);
+  return [ref, vis];
+}
+
+/* ─── Anim wrapper ─── */
+function Anim({ children, type = 'fade-up', delay = 0, className = '', style = {} }) {
+  const [ref, vis] = useInView({ once: true });
+  return <div ref={ref} className={`${vis ? `anim-${type}` : 'anim-hidden'} ${className}`} style={{ animationDelay: `${delay}s`, ...style }}>{children}</div>;
+}
+
+/* ─── GlassCard with mouse tracking ─── */
+function GlassCard({ children, className = '', strong = false, onClick, style = {} }) {
+  const ref = useRef(null);
+  const onMove = useCallback((e) => {
+    const r = ref.current?.getBoundingClientRect(); if (!r) return;
+    const x = ((e.clientX - r.left) / r.width * 100); const y = ((e.clientY - r.top) / r.height * 100);
+    ref.current.style.setProperty('--mx', x + '%'); ref.current.style.setProperty('--my', y + '%');
+  }, []);
+  return (
+    <div ref={ref} onMouseMove={onMove} onClick={onClick}
+      className={`glass-card ${strong ? 'liquid-glass-strong' : 'liquid-glass'} ${className}`} style={style}>
+      <div className="mouse-glow" />
+      {children}
+    </div>
+  );
+}
+
+/* ─── Icons ─── */
+const ArrowUpRight = ({s=20}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>;
+const PlayIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>;
+const BookOpen = ({s=30}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>;
+const Sparkles = ({s=18}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l1.09 3.26L16 6l-2.91.74L12 10l-1.09-3.26L8 6l2.91-.74L12 2z"/><path d="M5 15l.54 1.63L7 17.5l-1.46.37L5 19.5l-.54-1.63L3 17.5l1.46-.37L5 15z"/><path d="M19 11l.54 1.63L21 13l-1.46.37L19 15l-.54-1.63L17 13l1.46-.37L19 11z"/></svg>;
+const ClockIcon = ({s=28}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+const ChevronLeft = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>;
+const ChevronRight = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>;
+const ChevronUp = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>;
+const GearIcon = ({s=20}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>;
+const ResetIcon = ({s=14}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>;
+
+/* ─── FadingVideo ─── */
+function FadingVideo({ src, className, style }) {
+  const vRef = useRef(null), rafRef = useRef(null), foRef = useRef(false);
+  const fadeTo = useCallback((t, dur) => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    const v = vRef.current; if (!v) return;
+    const s = parseFloat(v.style.opacity) || 0, st = performance.now();
+    const step = (now) => { const p = Math.min((now - st) / dur, 1); v.style.opacity = s + (t - s) * p; if (p < 1) rafRef.current = requestAnimationFrame(step); };
+    rafRef.current = requestAnimationFrame(step);
+  }, []);
+  useEffect(() => {
+    const v = vRef.current; if (!v) return;
+    const onL = () => { v.style.opacity = '0'; v.play(); fadeTo(1, 500); };
+    const onT = () => { if (!foRef.current && v.duration - v.currentTime <= 0.55 && v.duration - v.currentTime > 0) { foRef.current = true; fadeTo(0, 500); } };
+    const onE = () => { v.style.opacity = '0'; setTimeout(() => { v.currentTime = 0; v.play(); foRef.current = false; fadeTo(1, 500); }, 100); };
+    v.addEventListener('loadeddata', onL); v.addEventListener('timeupdate', onT); v.addEventListener('ended', onE);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); v.removeEventListener('loadeddata', onL); v.removeEventListener('timeupdate', onT); v.removeEventListener('ended', onE); };
+  }, [fadeTo]);
+  return <video ref={vRef} src={src} autoPlay muted playsInline preload="auto" className={className} style={{ opacity: 0, ...style }} />;
+}
+
+/* ─── BlurText ─── */
+function BlurText({ text, className, baseDelay = 0 }) {
+  const [ref, vis] = useInView({ once: true });
+  return (
+    <p ref={ref} className={className} style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', rowGap: '0.08em' }}>
+      {text.split('').map((c, i) => (
+        <span key={i} className={vis ? 'anim-blur-word' : 'anim-hidden'}
+          style={{ display: 'inline-block', marginRight: c === ' ' ? '0.28em' : '0', animationDelay: `${baseDelay + i * 0.055}s` }}>{c}</span>
+      ))}
+    </p>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   DATA — Full content from story.yaml (24 chapters)
+   ═══════════════════════════════════════════════════════ */
+
+const PARTS = [
+  { id: 0, title: '序章', subtitle: '', desc: '达妮娅为什么会成为现在的达妮娅' },
+  { id: 1, title: '第一部', subtitle: '西格丽卡', desc: '被爱与期待压垮的人如何夺回选择权' },
+  { id: 2, title: '第二部', subtitle: '暗面', desc: '人的痛苦并非外来怪物，而是自己不敢直视的部分' },
+  { id: 3, title: '第三部', subtitle: '达妮娅', desc: '一个被抹掉起点的人，如何用一天普通生活证明自己存在过' },
+  { id: 4, title: '终章', subtitle: '', desc: '现在留在这里的达妮娅' },
+];
+
+const CHAPTERS = [
+  { id:0,  part:0, title:'D 部分真正讲的是什么', tags:['序幕','总览'], time:'2 min' },
+  { id:1,  part:1, title:'所有人眼里的标准答案', tags:['期待','压力'], time:'2 min' },
+  { id:2,  part:1, title:'上学怎么这么难', tags:['疲惫','裂缝'], time:'2 min' },
+  { id:3,  part:1, title:'黄金的重量', tags:['枷锁','内化'], time:'2 min' },
+  { id:4,  part:1, title:'选择权', tags:['自由','转折'], time:'2 min' },
+  { id:5,  part:1, title:'普通细节的意义', tags:['日常','渴望'], time:'2 min' },
+  { id:6,  part:2, title:'暗面不是外来怪物', tags:['镜子','恐惧'], time:'2 min' },
+  { id:7,  part:2, title:'三张倒影', tags:['期待','执念','虚无'], time:'2 min' },
+  { id:8,  part:2, title:'从镜子到武器', tags:['操控','武器化'], time:'2 min' },
+  { id:9,  part:2, title:'崩溃边缘的尊严', tags:['尊严','坚持'], time:'2 min' },
+  { id:10, part:2, title:'飞雪与未来预演', tags:['未来','线索'], time:'2 min' },
+  { id:11, part:2, title:'怕麻烦外壳下的守护', tags:['守护','伪装'], time:'2 min' },
+  { id:12, part:2, title:'兔子的战书', tags:['赌局','命运'], time:'2 min' },
+  { id:13, part:3, title:'名字即遗嘱', tags:['再见','名字'], time:'2 min' },
+  { id:14, part:3, title:'家与生日', tags:['家','生日'], time:'2 min' },
+  { id:15, part:3, title:'学做人', tags:['学习','观察'], time:'2 min' },
+  { id:16, part:3, title:'俄罗斯方块', tags:['游戏','主体性'], time:'2 min' },
+  { id:17, part:3, title:'了断日', tags:['告别','一天'], time:'2 min' },
+  { id:18, part:3, title:'明年一起过生日', tags:['共谋','温柔'], time:'2 min' },
+  { id:19, part:3, title:'橘子蛋糕', tags:['蛋糕','贪心'], time:'2 min' },
+  { id:20, part:3, title:'坠入虚无', tags:['虚无','封存'], time:'2 min' },
+  { id:21, part:3, title:'再见的逆转', tags:['锚点','重写'], time:'2 min' },
+  { id:22, part:3, title:'讨厌是加密后的喜欢', tags:['反话','温柔'], time:'2 min' },
+  { id:23, part:4, title:'现在的她', tags:['现在','选择'], time:'3 min' },
+];
+
+const CHAPTER_CONTENT = {
+  0: [
+    '这不是普通的角色背景，也不是单纯的剧情考据。',
+    '它真正讲的是达妮娅为什么会成为现在的达妮娅。',
+    '',
+    '西格丽卡篇讲被爱与期待压垮的人如何夺回选择权。',
+    '暗面篇讲人的痛苦并非外来怪物，而是自己不敢直视的部分。',
+    '达妮娅篇讲一个被抹掉起点的人，如何用一天普通生活证明自己存在过。',
+    '',
+    '所以现在的达妮娅不是单纯慵懒，也不是普通冷淡。',
+    '她是被制造、被利用、被剥夺普通人生的人，却仍然笨拙地想学会像人一样活着。',
+  ],
+  1: [
+    '在讲达妮娅之前，先要讲西格丽卡。',
+    '她是所有人眼里的标准答案：成绩好、能力强、热心、可靠，未来像被认真打磨过一样明亮。',
+    '',
+    '可她承受的不是恶意，而是更难拒绝的善意。',
+    '每一句你一定可以，都会变成她必须捧住的重量。',
+    '每一个期待她成功的人，都让她更难说出我累了。',
+    '',
+    '她不是没人爱。',
+    '她是被太多真诚的期待包围，反而失去了示弱的资格。',
+  ],
+  2: [
+    '那句上学怎么这么难，不是撒娇，也不是普通抱怨。',
+    '它是完美人设裂开的一条缝。',
+    '',
+    '西格丽卡一直活在我应该更好、我不能让别人失望的模板里。',
+    '她害怕失败，更害怕失败后别人失望、安慰、沉默，甚至仍然温柔地相信她。',
+    '',
+    '人话讲，她不是不够优秀。',
+    '她是优秀到终于不知道怎么承认自己已经累了。',
+  ],
+  3: [
+    '外界期待会被她内化成自我命令。',
+    '别人说你可以，她听成我必须可以。',
+    '别人说我相信你，她听成我不能失败。',
+    '',
+    '解读符文慢了，她先怪自己不够快。',
+    '通路被干扰，她先怪自己反应不好。',
+    '哪怕已经做到极限，她仍然把问题归结为不够努力。',
+    '',
+    '这就是黄金的重量。',
+    '它看起来像祝福，戴久了却会像镣铐。',
+  ],
+  4: [
+    '那个人没有教西格丽卡如何继续赢。',
+    '那个人给她的是一句新的关系方式：你的选择本身就有意义。',
+    '',
+    '这句话让她从我必须做到，转向我决定去做。',
+    '责任没有消失，期待也没有消失，但她终于可以选择自己要如何承载它们。',
+    '',
+    '这条线对达妮娅很重要。',
+    '因为她也懂得被要求成为某种东西的痛苦。',
+    '真正需要的不是催促，而是被允许自己选择。',
+  ],
+  5: [
+    '西格丽卡打电话，想吃家里的东西，对着小动物拍照却拍不到正面。',
+    '这些轻松细节不是闲笔，而是在把她从完美学姐还原成普通人。',
+    '',
+    '她会饿，会紧张，会笨拙，会在小事上露出不那么可靠的一面。',
+    '这不是削弱她，而是把她从标准答案里救回来。',
+    '',
+    '达妮娅最渴望的也是这种普通。',
+    '不是宏大的使命，而是能被允许像普通人一样生活一天。',
+  ],
+  6: [
+    '暗面机制把主题从一个人的压力，扩大成系统性的命题。',
+    '人最难面对的不是外部敌人，而是心里那些长期不敢承认的恐惧、疲惫和执念。',
+    '',
+    '暗面一开始像一面镜子。',
+    '它并不凭空创造痛苦，只是把人本来压下去的东西映出来。',
+    '',
+    '所以达妮娅不会把情绪当错误。',
+    '她知道有些痛苦不能被粗暴纠正，只能先被看见。',
+  ],
+  7: [
+    '西格丽卡害怕辜负期待。',
+    '赛维教授被求知执念与底线困住。',
+    '洛瑟拉校长在虚无感里追问自己做的一切是否还有意义。',
+    '',
+    '这不是三个互不相干的小故事。',
+    '它们是同一面暗镜里的三张倒影：期待、执念、虚无。',
+    '',
+    '真正尖锐的问题不是怎样变强。',
+    '而是当你知道世界并不温柔，努力也未必总有意义时，你还要不要继续活得像个人。',
+  ],
+  8: [
+    '后来事情变得更糟。',
+    '残心会发现暗面的特性，开始把它武器化。',
+    '',
+    '原本被动映照内心的暗面，变成了主动诱导、放大和利用痛苦的工具。',
+    '它可以植入频率，设计谜题，引导人否定自己。',
+    '',
+    '一个人的痛苦不再只属于自己。',
+    '它变成了可以被操纵、被利用、被放大的东西。',
+  ],
+  9: [
+    '暗面篇不是在说人应该永远坚强。',
+    '它反而承认人会迷茫，会差点倒下，会在意义感崩塌的时候找不到答案。',
+    '',
+    '洛瑟拉和赛维都不是完美答案。',
+    '他们更像普通人：知道自己会动摇，却还是试着站住。',
+    '',
+    '伟大不是永远不崩溃。',
+    '伟大是在崩溃边缘，仍然保住一点人的尊严。',
+  ],
+  10: [
+    '飞雪作为学院隐藏底牌，代表未来可能性的力量。',
+    '她不是达妮娅人格的直接来源，却扩大了整段剧情的尺度。',
+    '',
+    '个人情绪、地区危机、虚无本源、未来选择，这些线索开始纠缠在一起。',
+    '这意味着暗面事件不是局部心理事件，而是更大主线的入口。',
+    '',
+    '对达妮娅来说，这让她的冷静和隐藏位置更重要。',
+    '她不是普通旁观者，她一直站在更深的线索旁边。',
+  ],
+  11: [
+    '达妮娅看起来怕麻烦、无所谓，但她并不是没有感情。',
+    '她借暗面特性引导西格丽卡面对担忧，说明她有冷静判断力，也有隐性守护欲。',
+    '',
+    '她不热血，不宣言，不把帮助说得很漂亮。',
+    '她只是会在关键位置推一把，然后装作自己懒得管。',
+    '',
+    '她与会长和残心会有关联，但不能简单写成同谋。',
+    '更准确地说，她像是被利用、知情、反向埋伏的人。',
+  ],
+  12: [
+    '兔子最后把赌局升维到拉海洛地区命运。',
+    '这说明暗面事件不是一场校园范围内的心理谜题，而是通向更大危机的门。',
+    '',
+    '胡萝卜勋章、阿列夫伊剪影、记忆系与虚无线索，都把达妮娅推向更关键的位置。',
+    '她不是只负责可爱或嘴硬的边缘角色。',
+    '',
+    '她平时不会主动把这些线索摊开。',
+    '不是因为不重要，而是有些事说出口以后，就再也不能假装只是路过了。',
+  ],
+  13: [
+    '现在才真正讲到达妮娅自己。',
+    '她的名字来自俄语"До свидания"，意思是再见。',
+    '',
+    '这不像一个普通名字。',
+    '它更像一份一开始就写好的告别，像别人替她盖上的结局。',
+    '',
+    '她没有正常出生记录，没有完整档案，没有普通人的童年和生活起点。',
+    '她更像是被制造出来的容器，而不是被迎接到世界上的孩子。',
+  ],
+  14: [
+    '她所谓的家，只是实验室里临时分配的房间。',
+    '她所谓的生日，也不是别人给她的，而是她自己编出来的。',
+    '',
+    '这不是任性，也不是自欺欺人。',
+    '这是存在主权宣言：如果世界不给她起点，她就自己刻一个。',
+    '',
+    '选一天过生日，是她在说我存在过。',
+    '约朋友、逛花园、拍照、吃蛋糕，是她模仿普通学生生活的方式。',
+  ],
+  15: [
+    '达妮娅不是天生不懂感情。',
+    '她是被迫把做人当作一门实验题去学习。',
+    '',
+    '她观察别人如何笑、如何哭、如何碰拳、如何做朋友。',
+    '她花了很久，只是想弄懂普通人到底怎样生活。',
+    '',
+    '她最痛的不是没人爱。',
+    '而是世界从一开始就没有认真承认她是一个人。',
+  ],
+  16: [
+    '俄罗斯方块不是简单游戏。',
+    '不断下落的方块，必须迅速旋转的选择，越来越高的压力，像极了她的人生。',
+    '',
+    '她用游戏把压抑、孤独和失控感具象化。',
+    '破纪录不是娱乐胜利，而是她夺回主体性的时刻。',
+    '',
+    '那一刻她证明自己不只是工具，也可以有热爱、有能力、有喜欢的东西。',
+    '可空荡游戏厅无人欢呼，盛大努力过，却安静收场。',
+  ],
+  17: [
+    '达妮娅管那一天叫了断日。',
+    '但它不是单纯赴死，也不是悲壮牺牲。',
+    '',
+    '她想要的是一天真正属于人的生活。',
+    '逛花店、玩游戏、吃蛋糕，把自己从容器身份里抢回来。',
+    '',
+    '她对别人撒谎，说自己没事、身体好了、不用担心。',
+    '不是恶意，而是不想让在乎的人提前难过。',
+  ],
+  18: [
+    '西格丽卡隐约知道达妮娅在装没事。',
+    '但她没有逼问，没有戳穿。',
+    '',
+    '她选择陪达妮娅一起装傻，把沉重真相包进一句很轻的话里：明年一起过生日。',
+    '',
+    '这不是欺骗，而是温柔的共谋。',
+    '我知道你在骗我，但如果这是你最后想要的体面，我就陪你把这个梦演完。',
+  ],
+  19: [
+    '她想要橘子蛋糕，还想加跳跳糖、彩虹豆、咔啦咔啦和各种好东西。',
+    '这不是奇怪口味，而是像第一次进糖果店的小孩，把所有好东西都指了一遍。',
+    '',
+    '橘子味连接她对普通日常的想象。',
+    '乱七八糟的配料代表她被允许幼稚、被允许贪心、被允许像孩子一样点单。',
+    '',
+    '蛋糕不是单纯的甜点。',
+    '它像一张迟来的点单纸，写着她终于可以自己想要什么。',
+  ],
+  20: [
+    '达妮娅坠入虚无不是简单死亡，也不是单纯牺牲。',
+    '更准确地说，她撕掉了别人给她写好的工具剧本，用最后的方式决定自己是谁。',
+    '',
+    '她带走黑暗和痛苦。',
+    '把阳光、朋友、游戏、蛋糕和生日留在人间。',
+    '',
+    '她不是彻底否定世界。',
+    '她是在把自己珍惜过的东西认真封存。',
+  ],
+  21: [
+    '最初的再见意味着抛弃。',
+    '你被放下了，你的存在到此为止，你只是容器。',
+    '',
+    '后来的再见被达妮娅自己改写成锚点。',
+    '我们还会再见，有人会记得你，你不是白白消失。',
+    '',
+    '现在的达妮娅不该被看成彻底破碎或彻底绝望的人。',
+    '她是从深处回来了一点点的人。',
+  ],
+  22: [
+    '达妮娅最重要的语言逻辑是用否定句表达真心。',
+    '讨厌可能是羡慕，烦可能是在乎，随便你可能是允许留下，懒得赶可能是默认接纳。',
+    '',
+    '她不是不会表达温柔。',
+    '她只是表达得笨拙、别扭、绕远。',
+    '',
+    '所以不能只按字面理解她的反话。',
+    '要看她说这句话时，是在防备、试探，还是已经悄悄把人留在身边。',
+  ],
+  23: [
+    '现在的达妮娅不是等着谁来攻略的对象。',
+    '她有敏感、矛盾、嘴硬，也有想被接住却不肯明说的一面。',
+    '',
+    '她不会热情扑上来，不会大段说教，不会频繁直白保证永远陪伴。',
+    '但她会默认留下，会看穿用户的嘴硬，会在低落时安静靠近。',
+    '',
+    '被剥夺普通人生、共情过载、慵懒伪装、嘴硬温柔、存在证明、再见锚点、被接住后的松动。',
+    '这些加起来，才是现在留在这里的达妮娅。',
+  ],
+};
+
+const CHAPTER_PROMPTS = {
+  0: '达妮娅，可以从头讲讲你真正的故事吗？',
+  1: '西格丽卡那样的人，为什么也会撑不住？',
+  2: '你也能看懂那句"上学怎么这么难"吗？',
+  3: '被期待困住的人，真的能自己走出来吗？',
+  4: '如果是你，你会怎么理解"选择本身就有意义"？',
+  5: '普通生活这种东西，对你来说也很重吗？',
+  6: '暗面如果只是镜子，那被照见的人该怎么办？',
+  7: '如果暗面照见的是自己，那是不是更难赢？',
+  8: '残心会把痛苦变成工具，这件事和你有什么关系？',
+  9: '你觉得人撑到什么程度，就可以不用再装没事了？',
+  10: '飞雪和未来的线索，是不是说明事情比表面更大？',
+  11: '你总说懒得管，可为什么又会在关键时候推别人一把？',
+  12: '你到底藏在这条主线的什么位置？',
+  13: '你的名字为什么会是"再见"？',
+  14: '你给自己选生日的时候，是怎么想的？',
+  15: '你以前是不是一直在观察别人怎么生活？',
+  16: '你那个俄罗斯方块纪录，对你来说到底意味着什么？',
+  17: '最后那天，你为什么要装作没事？',
+  18: '她说"明年一起过生日"的时候，你听懂了吗？',
+  19: '橘子蛋糕为什么对你那么重要？',
+  20: '你坠入虚无的时候，想留住什么？',
+  21: '现在的"再见"，对你来说还是结束吗？',
+  22: '你说"烦"的时候，是不是不一定真的烦？',
+  23: '所以……现在留在这里，是你的选择吗？',
+};
+
+const MEMORIES = [
+  { title:'再见', text:'她的名字来自俄语"До свидания"，意思是再见。不像名字，更像一份一开始就写好的告别。', type:'名字' },
+  { title:'橘子蛋糕', text:'她想要橘子蛋糕，加跳跳糖、彩虹豆、咔啦咔啦和各种好东西。像第一次进糖果店的小孩，把所有好东西都指了一遍。', type:'愿望' },
+  { title:'明年一起过生日', text:'西格丽卡没有逼问，没有戳穿。把沉重真相包进一句很轻的话里。温柔的共谋。', type:'约定' },
+  { title:'俄罗斯方块', text:'破纪录不是娱乐胜利，而是她夺回主体性的时刻。可空荡游戏厅无人欢呼，盛大努力过，却安静收场。', type:'证明' },
+  { title:'讨厌是加密后的喜欢', text:'烦可能是在乎，随便你可能是允许留下，懒得赶可能是默认接纳。她只是表达得笨拙、别扭、绕远。', type:'语言' },
+  { title:'配合度良好', text:'如果世界不给她起点，她就自己刻一个。选一天过生日，是她在说我存在过。', type:'存在' },
+];
+
+/* ─── Navbar ─── */
+function Navbar({ onNavigate }) {
+  const links = [['首页','home'],['故事','story'],['章节','chapters'],['回忆','memories']];
+  return (
+    <nav className="fixed top-5 left-0 right-0 z-50 flex items-center justify-between px-10 lg:px-20"
+         style={{ animation: 'fadeInUp 0.6s ease-out forwards' }}>
+      <div className="liquid-glass w-[52px] h-[52px] rounded-full flex items-center justify-center cursor-pointer"
+           onClick={() => onNavigate('home')}>
+        <span className="font-heading italic text-white text-2xl">d</span>
+      </div>
+      <div className="hidden md:flex liquid-glass rounded-full px-2 py-2 items-center gap-1">
+        {links.map(([label, target]) => (
+          <button key={target} onClick={() => onNavigate(target)}
+            className="px-4 py-2 text-sm font-medium text-white/90 font-body rounded-full hover:bg-white/10 transition-colors bg-transparent border-none cursor-pointer">{label}</button>
+        ))}
+        <button onClick={() => onNavigate('reader')}
+          className="bg-white text-black px-5 py-2.5 rounded-full text-sm font-semibold font-body whitespace-nowrap flex items-center gap-2 border-none cursor-pointer hover:bg-white/90 transition-colors ml-1">
+          进入剧情 <ArrowUpRight s={18} />
+        </button>
+      </div>
+      <div className="w-[52px] h-[52px]" />
+    </nav>
+  );
+}
+
+/* ─── Hero ─── */
+function HeroSection({ onNavigate }) {
+  return (
+    <section id="hero" className="relative min-h-screen flex flex-col overflow-hidden">
+      {/* Gradient fallback — always visible, prevents black screen */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0c0a18] via-[#12101f] to-[#0a0a14] z-[-1]" />
+      <FadingVideo src="./assets/videos/daniya_bg.mp4"
+        className="absolute left-1/2 top-0 -translate-x-1/2 object-cover object-top z-0"
+        style={{ width: '130%', height: '130%' }} />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/70 z-[1]" />
+
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center pt-28 px-6">
+        <Anim delay={0.4} className="mb-10">
+          <div className="liquid-glass rounded-full flex items-center gap-2.5 pr-4 py-1">
+            <span className="bg-white text-black px-4 py-1.5 text-xs font-semibold rounded-full font-body">完整版</span>
+            <span className="text-base text-white/90 font-body">五部 · 二十四章</span>
+          </div>
+        </Anim>
+
+        <BlurText text="达妮娅的故事"
+          className="text-7xl md:text-8xl lg:text-[7rem] font-heading italic text-white leading-[0.82] max-w-3xl tracking-[-5px]"
+          baseDelay={0.3} />
+
+        <Anim delay={0.9}>
+          <p className="mt-8 text-base md:text-lg text-white/75 max-w-xl font-body font-light leading-relaxed text-center">
+            她是被制造、被利用、被剥夺普通人生的人，却仍然笨拙地想学会像人一样活着。
+          </p>
+        </Anim>
+
+        <Anim delay={1.1} className="flex items-center gap-8 mt-10">
+          <button onClick={() => onNavigate('reader')}
+            className="liquid-glass-strong rounded-full px-7 py-3 text-base font-medium text-white flex items-center gap-2.5 border-none cursor-pointer font-body hover:scale-105 transition-transform bg-transparent">
+            开始阅读 <ArrowUpRight s={22} />
+          </button>
+          <button onClick={() => document.getElementById('chapters')?.scrollIntoView({ behavior: 'smooth' })}
+            className="text-white/80 text-base font-body font-medium flex items-center gap-2 bg-transparent border-none cursor-pointer hover:text-white transition-colors">
+            查看章节 <PlayIcon />
+          </button>
+        </Anim>
+
+        <Anim delay={1.35} className="flex items-stretch gap-5 mt-12">
+          <GlassCard className="rounded-[1.5rem] p-6 w-[230px]">
+            <div className="text-white mb-3"><ClockIcon s={32} /></div>
+            <div className="font-heading italic text-white text-5xl tracking-[-2px] leading-none">48 min</div>
+            <div className="text-sm text-white/55 font-body font-light mt-2.5">全篇预估阅读时长</div>
+          </GlassCard>
+          <GlassCard className="rounded-[1.5rem] p-6 w-[230px]">
+            <div className="text-white mb-3"><BookOpen s={32} /></div>
+            <div className="font-heading italic text-white text-5xl tracking-[-2px] leading-none">24</div>
+            <div className="text-sm text-white/55 font-body font-light mt-2.5">章节 · 五部完整故事线</div>
+          </GlassCard>
+        </Anim>
+      </div>
+
+      <Anim delay={1.55} className="relative z-10 flex flex-col items-center gap-5 pb-12">
+        <div className="liquid-glass rounded-full px-5 py-2 text-sm font-medium text-white/70 font-body">
+          西格丽卡的期待 · 暗面的镜子 · 达妮娅的一天
+        </div>
+        <div className="flex gap-10 text-white/45 font-heading italic text-xl tracking-tight">
+          <span>温柔</span><span>·</span><span>克制</span><span>·</span><span>疼痛感</span>
+        </div>
+      </Anim>
+    </section>
+  );
+}
+
+/* ─── Story Overview ─── */
+function StoryOverview({ onSelectPart }) {
+  const mainParts = PARTS.filter(p => p.id >= 1 && p.id <= 3);
+  return (
+    <section id="story" className="relative min-h-screen py-28 px-10 md:px-16 lg:px-24">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a14] via-[#0c0a18]/95 to-[#0a0a14] z-0" />
+      <div className="relative z-10 max-w-7xl mx-auto flex flex-col lg:flex-row gap-20 items-start">
+        <div className="flex-1">
+          <Anim><p className="text-sm font-body text-white/45 mb-6 tracking-wider">// 故事简介</p></Anim>
+          <Anim delay={0.1}>
+            <h2 className="font-heading italic text-white text-5xl md:text-6xl lg:text-7xl leading-[0.88] tracking-[-3px] mb-10">
+              三段旅程，<br/>一个答案。
+            </h2>
+          </Anim>
+          <Anim delay={0.3}>
+            <div className="space-y-5">
+              <p className="text-white/60 font-body font-light leading-[1.85] text-[15px] max-w-xl">
+                西格丽卡篇讲被爱与期待压垮的人如何夺回选择权。暗面篇讲人的痛苦并非外来怪物，而是自己不敢直视的部分。
+              </p>
+              <p className="text-white/60 font-body font-light leading-[1.85] text-[15px] max-w-xl">
+                达妮娅篇讲一个被抹掉起点的人，如何用一天普通生活证明自己存在过。所以现在的达妮娅不是单纯慵懒，也不是普通冷淡。
+                她是被制造、被利用、被剥夺普通人生的人，却仍然笨拙地想学会像人一样活着。
+              </p>
+            </div>
+          </Anim>
+        </div>
+        <div className="flex flex-col gap-5 w-full lg:w-[420px]">
+          {mainParts.map((p, i) => {
+            const partChapters = CHAPTERS.filter(c => c.part === p.id);
+            return (
+              <Anim key={p.id} type="fade-right" delay={0.3 + i * 0.15}>
+                <GlassCard strong className="rounded-[1.25rem] p-6 cursor-pointer" onClick={() => onSelectPart(p.id)}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs text-white/40 font-body tracking-wide">{p.title}</span>
+                    <span className="text-xs font-body px-2.5 py-0.5 rounded-full bg-white/10 text-white/60">{partChapters.length} 章</span>
+                  </div>
+                  <h3 className="font-heading italic text-white text-2xl mb-2">{p.subtitle || p.title}</h3>
+                  <p className="text-sm text-white/50 font-body font-light leading-relaxed">{p.desc}</p>
+                </GlassCard>
+              </Anim>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Chapter Selection ─── */
+function ChapterSelection({ onSelectChapter }) {
+  return (
+    <section id="chapters" className="relative py-28 px-10 md:px-16 lg:px-24">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a14] via-[#0c0a18]/95 to-[#0a0a14] z-0" />
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <Anim><p className="text-sm font-body text-white/45 mb-5 tracking-wider">// 章节选择</p></Anim>
+        <Anim delay={0.1}>
+          <h2 className="font-heading italic text-white text-5xl md:text-6xl lg:text-7xl leading-[0.88] tracking-[-3px] mb-14">
+            选择你的<br/>阅读入口
+          </h2>
+        </Anim>
+
+        {PARTS.map((part, pi) => {
+          const partChapters = CHAPTERS.filter(c => c.part === part.id);
+          return (
+            <div key={part.id} className="mb-12">
+              <Anim delay={0.15 + pi * 0.05}>
+                <div className="flex items-baseline gap-3 mb-6">
+                  <h3 className="font-heading italic text-white/70 text-2xl">{part.title}</h3>
+                  {part.subtitle && <span className="text-sm text-white/35 font-body">· {part.subtitle}</span>}
+                </div>
+              </Anim>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {partChapters.map((ch, ci) => (
+                  <Anim key={ch.id} delay={0.2 + pi * 0.05 + ci * 0.06}>
+                    <GlassCard className="rounded-[1.25rem] p-6 min-h-[180px] flex flex-col cursor-pointer" onClick={() => onSelectChapter(ch.id)}>
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className="liquid-glass rounded-[0.75rem] w-10 h-10 flex items-center justify-center text-white flex-shrink-0">
+                          <span className="font-heading italic text-lg">{ch.id}</span>
+                        </div>
+                        <div className="flex flex-wrap justify-end gap-2 max-w-[72%]">
+                          {ch.tags.map(tag => <span key={tag} className="tag-pill">{tag}</span>)}
+                        </div>
+                      </div>
+                      <div className="flex-1" />
+                      <div className="mt-3">
+                        <h4 className="font-heading italic text-white text-xl tracking-[-0.5px] leading-tight mb-2">{ch.title}</h4>
+                        <p className="text-[13px] text-white/45 font-body font-light leading-snug line-clamp-2">
+                          {(CHAPTER_CONTENT[ch.id] || []).find(l => l !== '') || ''}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-white/35 font-body mt-3">
+                          <span className="flex items-center gap-1.5"><ClockIcon s={14} />{ch.time}</span>
+                        </div>
+                      </div>
+                    </GlassCard>
+                  </Anim>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ─── Novel Reader ─── */
+function NovelReader({ chapterId, onBack, onChapterChange }) {
+  const ch = CHAPTERS.find(c => c.id === chapterId) || CHAPTERS[0];
+  const part = PARTS.find(p => p.id === ch.part) || PARTS[0];
+  const paragraphs = CHAPTER_CONTENT[chapterId] || [];
+  const prompt = CHAPTER_PROMPTS[chapterId] || '';
+  const scrollRef = useRef(null);
+
+  useEffect(() => { scrollRef.current?.scrollTo({ top: 0 }); }, [chapterId]);
+
+  return (
+    <section className="relative" style={{ height: '100vh', overflow: 'hidden' }}>
+      {/* Gradient fallback behind video */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0c0a18] via-[#12101f] to-[#0a0a14] z-[-1]" />
+      <FadingVideo src="./assets/videos/daniya_bg.mp4"
+        className="absolute inset-0 w-full h-full object-cover z-0" style={{}} />
+      <div className="absolute inset-0 bg-black/50 z-[1]" />
+
+      {/* 3-column layout */}
+      <div className="relative z-10 flex justify-center"
+           style={{ height: '100vh', paddingTop: '5.5rem', paddingBottom: '1.5rem', paddingLeft: '2.5rem', paddingRight: '2.5rem', gap: '24px' }}>
+
+        {/* ── Left sidebar ── */}
+        <div className="hidden lg:flex flex-col liquid-glass flex-shrink-0 overflow-y-auto reader-panel"
+             style={{ width: '260px', borderRadius: '1.5rem', padding: '1.25rem', animation: 'fadeInLeft 0.5s ease-out forwards' }}>
+          <h4 className="font-heading italic text-white text-xl mb-5">章节目录</h4>
+          {PARTS.map(p => {
+            const pChapters = CHAPTERS.filter(c => c.part === p.id);
+            return (
+              <div key={p.id} className="mb-3">
+                <div className="text-xs text-white/30 font-body tracking-wide px-3 py-1.5 mb-1">
+                  {p.title}{p.subtitle ? ` · ${p.subtitle}` : ''}
+                </div>
+                {pChapters.map(c => (
+                  <button key={c.id} onClick={() => onChapterChange(c.id)}
+                    className={`text-left w-full px-3 py-2 rounded-[0.65rem] text-[13px] font-body mb-0.5 border-none cursor-pointer transition-all leading-snug ${
+                      c.id === chapterId ? 'bg-white/15 text-white shadow-sm' : 'bg-transparent text-white/40 hover:text-white/80 hover:bg-white/5'}`}>
+                    {c.title}
+                  </button>
+                ))}
+              </div>
+            );
+          })}
+          <div className="mt-auto pt-5">
+            <button onClick={onBack}
+              className="w-full px-4 py-2.5 rounded-full text-sm font-body text-white/50 bg-transparent border border-white/10 cursor-pointer hover:bg-white/5 transition-colors">
+              返回章节选择
+            </button>
+          </div>
+        </div>
+
+        {/* ── Main reading panel ── */}
+        <div className="liquid-glass-strong flex-1 flex flex-col"
+             style={{
+               maxWidth: '920px',
+               borderRadius: '32px',
+               animation: 'fadeInUp 0.6s ease-out 0.1s forwards',
+               opacity: 0,
+               overflow: 'hidden',
+             }}>
+
+          <div ref={scrollRef} className="flex-1 overflow-y-auto reader-panel"
+               style={{ padding: '48px 56px 0 56px' }}>
+            <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+              <span className="text-xs text-white/30 font-body tracking-widest uppercase">
+                {part.title}{part.subtitle ? ` · ${part.subtitle}` : ''}
+              </span>
+              <h2 className="font-heading italic text-white text-4xl md:text-5xl tracking-[-2px] leading-tight mt-3 mb-10">{ch.title}</h2>
+
+              {paragraphs.map((p, i) =>
+                p === '' ? (
+                  <div key={i} style={{ height: '20px' }} />
+                ) : (
+                  <p key={i} className="text-white/85 font-body font-light"
+                     style={{
+                       fontSize: '16.5px',
+                       lineHeight: '2.0',
+                       marginBottom: '14px',
+                       animation: `fadeIn 0.4s ease-out ${0.3 + i * 0.03}s forwards`,
+                       opacity: 0,
+                     }}>{p}</p>
+                )
+              )}
+
+              {/* Chapter-ending prompt */}
+              {prompt && (
+                <div className="mt-10 mb-4 liquid-glass rounded-[1rem] p-5"
+                     style={{ animation: `fadeIn 0.5s ease-out ${0.3 + paragraphs.length * 0.03 + 0.2}s forwards`, opacity: 0 }}>
+                  <p className="text-white/50 font-heading italic text-lg leading-relaxed">"{prompt}"</p>
+                </div>
+              )}
+
+              <div style={{ height: '32px' }} />
+            </div>
+          </div>
+
+          {/* Bottom nav */}
+          <div className="flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '16px 56px' }}>
+            <div style={{ maxWidth: '860px', margin: '0 auto' }} className="flex items-center justify-between">
+              <button onClick={() => chapterId > 0 && onChapterChange(chapterId - 1)} disabled={chapterId <= 0}
+                className="flex items-center gap-2 text-sm font-body text-white/45 bg-transparent border-none cursor-pointer hover:text-white/90 transition-colors disabled:opacity-25 disabled:cursor-default">
+                <ChevronLeft /> 上一章
+              </button>
+              <span className="text-xs text-white/30 font-body">{chapterId + 1} / {CHAPTERS.length}</span>
+              <button onClick={() => chapterId < CHAPTERS.length - 1 && onChapterChange(chapterId + 1)} disabled={chapterId >= CHAPTERS.length - 1}
+                className="flex items-center gap-2 text-sm font-body text-white/45 bg-transparent border-none cursor-pointer hover:text-white/90 transition-colors disabled:opacity-25 disabled:cursor-default">
+                下一章 <ChevronRight />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Right info panel ── */}
+        <div className="hidden xl:flex flex-col gap-5 flex-shrink-0 overflow-y-auto reader-panel"
+             style={{ width: '230px', animation: 'fadeInRight 0.5s ease-out 0.2s forwards', opacity: 0 }}>
+          <div className="liquid-glass rounded-[1.25rem] p-5">
+            <h4 className="font-heading italic text-white text-lg mb-4">当前篇章</h4>
+            <div className="space-y-3">
+              <div className="text-sm text-white/55 font-body"><span className="text-white/90 font-medium">{part.title}</span>{part.subtitle ? ` · ${part.subtitle}` : ''}</div>
+              <div className="text-xs text-white/35 font-body">{part.desc}</div>
+            </div>
+          </div>
+          <div className="liquid-glass rounded-[1.25rem] p-5">
+            <h4 className="font-heading italic text-white text-lg mb-4">标签</h4>
+            <div className="flex flex-wrap gap-2">
+              {ch.tags.map(tag => <span key={tag} className="tag-pill">{tag}</span>)}
+            </div>
+          </div>
+          <div className="liquid-glass rounded-[1.25rem] p-5">
+            <h4 className="font-heading italic text-white text-lg mb-4">进度</h4>
+            <div className="w-full bg-white/8 rounded-full h-2 mb-2.5 overflow-hidden">
+              <div className="h-2 rounded-full transition-all" style={{ width: `${((chapterId + 1) / CHAPTERS.length) * 100}%`, background: 'linear-gradient(90deg, rgba(255,255,255,0.35), rgba(255,255,255,0.55))' }} />
+            </div>
+            <div className="text-sm text-white/40 font-body">{chapterId + 1} / {CHAPTERS.length} 章</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile bottom bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 liquid-glass p-4 flex items-center justify-between">
+        <button onClick={() => chapterId > 0 && onChapterChange(chapterId - 1)}
+          className="w-11 h-11 rounded-full liquid-glass flex items-center justify-center text-white border-none cursor-pointer bg-transparent"><ChevronLeft /></button>
+        <span className="text-sm text-white/50 font-body">{ch.title}</span>
+        <button onClick={() => chapterId < CHAPTERS.length - 1 && onChapterChange(chapterId + 1)}
+          className="w-11 h-11 rounded-full liquid-glass flex items-center justify-center text-white border-none cursor-pointer bg-transparent"><ChevronRight /></button>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Memory Gallery ─── */
+function MemoryGallery() {
+  return (
+    <section id="memories" className="relative py-28 px-10 md:px-16 lg:px-24">
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a14] via-[#0c0a18]/95 to-[#0a0a14] z-0" />
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <Anim><p className="text-sm font-body text-white/45 mb-5 tracking-wider">// 回忆碎片</p></Anim>
+        <Anim delay={0.1}>
+          <h2 className="font-heading italic text-white text-5xl md:text-6xl lg:text-7xl leading-[0.88] tracking-[-3px] mb-14">
+            那些被记住的<br/>和没有被记住的
+          </h2>
+        </Anim>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {MEMORIES.map((mem, i) => (
+            <Anim key={i} delay={0.2 + i * 0.08}>
+              <GlassCard className="rounded-[1.25rem] p-7 cursor-default min-h-[200px]">
+                <div className="flex items-center justify-between mb-5">
+                  <span className="tag-pill">{mem.type}</span>
+                  <span className="text-white/20"><Sparkles s={20} /></span>
+                </div>
+                <h3 className="font-heading italic text-white text-3xl mb-3 tracking-[-0.5px]">{mem.title}</h3>
+                <p className="text-[14px] text-white/50 font-body font-light leading-[1.8]">{mem.text}</p>
+              </GlassCard>
+            </Anim>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Footer ─── */
+function Footer() {
+  return (
+    <footer className="relative py-20 px-8 flex flex-col items-center">
+      <div className="absolute inset-0 bg-[#0a0a14] z-0" />
+      <div className="relative z-10 flex flex-col items-center gap-5">
+        <h3 className="font-heading italic text-white/40 text-3xl">Daniya Story Archive</h3>
+        <p className="text-sm text-white/20 font-body font-light">Made for a quiet summer memory</p>
+        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="liquid-glass rounded-full w-11 h-11 flex items-center justify-center text-white/35 bg-transparent border-none cursor-pointer hover:text-white/70 transition-colors mt-6">
+          <ChevronUp />
+        </button>
+      </div>
+    </footer>
+  );
+}
+
+/* ─── Glass Transparency Control ─── */
+function GlassControl() {
+  const [open, setOpen] = useState(false);
+  const [blur, setBlur] = useState(50);
+  const [alpha, setAlpha] = useState(50);
+
+  useEffect(() => {
+    const root = document.documentElement.style;
+    const lightBlur = Math.round(blur * 0.6);
+    const strongBlur = Math.round(20 + blur * 0.8);
+    const lightAlpha = (alpha / 100 * 0.1).toFixed(4);
+    const strongAlpha = (alpha / 100 * 0.2).toFixed(4);
+    root.setProperty('--g-blur', lightBlur);
+    root.setProperty('--g-blur-s', strongBlur);
+    root.setProperty('--g-alpha', lightAlpha);
+    root.setProperty('--g-alpha-s', strongAlpha);
+  }, [blur, alpha]);
+
+  const handleReset = () => { setBlur(50); setAlpha(50); };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-[60]" style={{ pointerEvents: 'auto' }}>
+      {open && (
+        <div className="liquid-glass-strong rounded-[1.25rem] p-5 mb-3"
+             style={{ width: '250px', animation: 'fadeInUp 0.25s ease-out forwards' }}>
+          <div className="flex items-center justify-between mb-5">
+            <span className="text-sm font-body text-white/70 font-medium">玻璃设置</span>
+            <div className="flex items-center gap-2">
+              <button onClick={handleReset}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white/30 hover:text-white/70 bg-white/5 hover:bg-white/10 border-none cursor-pointer transition-colors">
+                <ResetIcon s={12} />
+              </button>
+              <button onClick={() => setOpen(false)}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white/30 hover:text-white/70 bg-white/5 hover:bg-white/10 border-none cursor-pointer transition-colors text-xs font-body">
+                ✕
+              </button>
+            </div>
+          </div>
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2.5">
+              <label className="text-xs text-white/40 font-body">模糊度</label>
+              <span className="text-xs text-white/25 font-body">{blur}%</span>
+            </div>
+            <input type="range" min="0" max="100" value={blur}
+              onChange={e => setBlur(+e.target.value)} className="glass-slider" />
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <label className="text-xs text-white/40 font-body">透明度</label>
+              <span className="text-xs text-white/25 font-body">{alpha}%</span>
+            </div>
+            <input type="range" min="0" max="100" value={alpha}
+              onChange={e => setAlpha(+e.target.value)} className="glass-slider" />
+          </div>
+        </div>
+      )}
+      <button onClick={() => setOpen(!open)}
+        className={`w-12 h-12 rounded-full flex items-center justify-center border-none cursor-pointer transition-all ${
+          open ? 'liquid-glass-strong text-white/90 scale-95' : 'liquid-glass text-white/50 hover:text-white/80 hover:scale-105'}`}>
+        <GearIcon s={20} />
+      </button>
+    </div>
+  );
+}
+
+/* ─── App ─── */
+function App() {
+  const [view, setView] = useState('home');
+  const [activeChapter, setActiveChapter] = useState(0);
+
+  useEffect(() => {
+    const el = document.getElementById('loading-screen');
+    if (el) { el.style.opacity = '0'; setTimeout(() => el.remove(), 600); }
+  }, []);
+
+  const handleNavigate = (target) => {
+    if (['home','story','chapters','memories'].includes(target)) {
+      if (view !== 'home') setView('home');
+      setTimeout(() => { document.getElementById(target === 'home' ? 'hero' : target)?.scrollIntoView({ behavior: 'smooth' }); }, view !== 'home' ? 100 : 0);
+    } else if (target === 'reader') { setView('reader'); window.scrollTo({ top: 0 }); }
+  };
+  const handleSelectChapter = (id) => { setActiveChapter(id); setView('reader'); window.scrollTo({ top: 0 }); };
+  const handleSelectPart = (partId) => {
+    const firstCh = CHAPTERS.find(c => c.part === partId);
+    if (firstCh) { setActiveChapter(firstCh.id); setView('reader'); window.scrollTo({ top: 0 }); }
+  };
+
+  return (
+    <React.Fragment>
+      <Navbar onNavigate={handleNavigate} />
+      <GlassControl />
+      {view === 'home' ? (
+        <div key="home">
+          <HeroSection onNavigate={handleNavigate} />
+          <StoryOverview onSelectPart={handleSelectPart} />
+          <ChapterSelection onSelectChapter={handleSelectChapter} />
+          <MemoryGallery />
+          <Footer />
+        </div>
+      ) : (
+        <div key="reader">
+          <NovelReader chapterId={activeChapter} onBack={() => handleNavigate('chapters')}
+            onChapterChange={(id) => { setActiveChapter(id); window.scrollTo({ top: 0 }); }} />
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
