@@ -2,6 +2,34 @@
 
 The project advances through explicit version stages. Each stage should be implemented, tested, and accepted independently.
 
+## v0.81 - Local Growth
+
+Goal:
+- Add opt-in local growth, inventory, feeding, levels, and wardrobe state without Provider dependency.
+
+Status: completed and independently committed.
+
+## v0.82 - Environment Awareness
+
+Goal:
+- Add opt-in weather, privacy-limited media presence, and low-frequency character-pack events.
+
+Status: completed and independently committed.
+
+## v0.83 - Memory Continuity
+
+Goal:
+- Add user-visible conversation-level long-term memory with top-k local retrieval.
+- Add manual observation diary generation from recent event logs.
+
+Acceptance:
+- Both features default to off.
+- Runtime records stay under ignored `data/` and out of release archives.
+- Memory can be reviewed and cleared.
+- Diary sends only after confirmation and never stores a Provider fallback as success.
+
+Status: implementation complete; package and human sign-off pending.
+
 ## v0.60 - Stable Preview Hardening
 
 Goal:

@@ -114,6 +114,7 @@ def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list
     window = data.get("window") if isinstance(data.get("window"), dict) else {}
     growth = data.get("growth") if isinstance(data.get("growth"), dict) else {}
     environment = data.get("environment") if isinstance(data.get("environment"), dict) else {}
+    memory_features = data.get("memory_features") if isinstance(data.get("memory_features"), dict) else {}
     failures: list[str] = []
     if data.get("version") != app_version:
         failures.append(f"{relative} expected version={app_version!r}, got {data.get('version')!r}")
@@ -142,6 +143,8 @@ def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list
         "environment.weather_location_configured": environment.get("weather_location_configured"),
         "environment.media_presence_enabled": environment.get("media_presence_enabled"),
         "environment.ambient_events_enabled": environment.get("ambient_events_enabled"),
+        "memory_features.long_term_enabled": memory_features.get("long_term_enabled"),
+        "memory_features.diary_enabled": memory_features.get("diary_enabled"),
     }
     failures.extend(
         f"{relative} expected {key}=false, got {value!r}"

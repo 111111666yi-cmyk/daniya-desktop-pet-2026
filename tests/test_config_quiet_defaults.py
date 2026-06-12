@@ -29,6 +29,8 @@ def test_default_app_config_is_quiet_by_default() -> None:
     assert DEFAULT_APP_CONFIG["environment"]["weather_enabled"] is False
     assert DEFAULT_APP_CONFIG["environment"]["media_presence_enabled"] is False
     assert DEFAULT_APP_CONFIG["environment"]["ambient_events_enabled"] is False
+    assert DEFAULT_APP_CONFIG["memory_features"]["long_term_enabled"] is False
+    assert DEFAULT_APP_CONFIG["memory_features"]["diary_enabled"] is False
     assert DEFAULT_APP_CONFIG["quiet_defaults_migration"] == QUIET_DEFAULTS_MIGRATION
 
 
@@ -61,6 +63,8 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     noisy["environment"]["weather_location_configured"] = True
     noisy["environment"]["media_presence_enabled"] = True
     noisy["environment"]["ambient_events_enabled"] = True
+    noisy["memory_features"]["long_term_enabled"] = True
+    noisy["memory_features"]["diary_enabled"] = True
 
     failures = _check_quiet_defaults("config/app_config.json", noisy, APP_VERSION)
 
@@ -79,6 +83,8 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     assert any("environment.weather_location_configured=false" in failure for failure in failures)
     assert any("environment.media_presence_enabled=false" in failure for failure in failures)
     assert any("environment.ambient_events_enabled=false" in failure for failure in failures)
+    assert any("memory_features.long_term_enabled=false" in failure for failure in failures)
+    assert any("memory_features.diary_enabled=false" in failure for failure in failures)
     assert any("idle_behavior_seconds >= 600" in failure for failure in failures)
     assert any("system_status_interval_seconds >= 300" in failure for failure in failures)
     assert any("system_status_cooldown_seconds >= 300" in failure for failure in failures)

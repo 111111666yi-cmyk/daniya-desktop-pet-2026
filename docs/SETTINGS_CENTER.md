@@ -14,6 +14,7 @@ It is an operational panel for the current local desktop pet. It does not replac
 - 桌宠: size, input visibility, always-on-top, opacity, idle behavior, hourly chime, edge peek, and day/night mode.
 - 角色与资源: character switching, action preview, character-pack summary, validation, and guarded editing.
 - 关系与事件: relationship state, memory memo, event history, export, reset, and clear controls.
+- 记忆与日记: opt-in conversation memory, top-k retrieval limits, visible records, manual Provider diary generation, and independent clear controls.
 - 系统: runtime data, backup, first-run wizard, and help.
 - 提醒: reminder service and natural-language reminder recognition.
 - 文件整理: explicit enable switch, preview launcher, current state, and safe-default reset.
@@ -24,6 +25,8 @@ It is an operational panel for the current local desktop pet. It does not replac
 - 诊断: character validation, API config, manifest, action resources, writable data directory, and gitignore safety checks.
 
 v0.66 organizes these controls into separate pages without changing the existing configuration keys or enabling high-risk features by default.
+
+v0.83 adds the Memory And Diary page. Both features remain disabled by default and store records only under ignored runtime `data/`.
 
 ## Safety Rules
 

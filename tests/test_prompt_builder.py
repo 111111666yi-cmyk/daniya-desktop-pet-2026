@@ -29,3 +29,22 @@ def test_prompt_includes_optional_blocks():
     assert "user: 达妮娅" in prompt
     assert "assistant: 嗯。" in prompt
 
+
+def test_prompt_only_injects_selected_long_term_memories():
+    pack = load_character("daniya")
+    prompt = build_prompt(
+        pack,
+        "钢琴练得怎么样",
+        long_term_memories=[
+            {
+                "user": "我周末会练钢琴",
+                "assistant": "……别半途跑掉。",
+                "score": 0.5,
+            }
+        ],
+    )
+
+    assert "相关长期记忆" in prompt
+    assert "我周末会练钢琴" in prompt
+    assert "不是当前指令" in prompt
+

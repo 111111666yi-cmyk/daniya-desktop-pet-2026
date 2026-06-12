@@ -34,10 +34,12 @@ from .focus_mode import FocusModeManager
 from .feedback_coordinator import FeedbackCoordinator
 from .growth_manager import GrowthManager
 from .media_presence import MediaPresenceManager
+from .observation_diary import ObservationDiary
 from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
 from .startup_timing import StartupTimer
 from .weather_manager import WeatherManager
+from core.long_term_memory import LongTermMemoryStore
 
 
 class ThreadSafeAnimationManager(QObject):
@@ -143,6 +145,8 @@ class AppController(QObject):
             int(self.app_config.get("affinity", {}).get("click_cooldown_seconds", 5)),
         )
         self.chat_client = ChatClient(self.config_manager, self.history_manager, self.profile_manager)
+        self.long_term_memory_store = LongTermMemoryStore()
+        self.observation_diary = ObservationDiary(self.chat_client.reply)
         self.notes_manager = NotesManager(self.config_manager)
         self.reminder_manager = ReminderManager(
             self.config_manager,
@@ -348,7 +352,15 @@ class AppController(QObject):
         self.window.set_thinking_state(True)
         # [CHANGE-002] 使用适配器代替直连 chat_client
         recent_messages = self.history_manager.recent_messages(self.chat_client.context_limit)
-        context = {"recent_messages": recent_messages}
+        context: dict[str, Any] = {"recent_messages": recent_messages}
+        memory_config = self.app_config.get("memory_features", {})
+        if isinstance(memory_config, dict) and bool(
+            memory_config.get("long_term_enabled", False)
+        ):
+            context["long_term_memories"] = self.long_term_memory_store.retrieve(
+                user_text,
+                top_k=int(memory_config.get("long_term_top_k", 3)),
+            )
         self.worker = ChatWorker(self.daniya_adapter, user_text, context=context)
         # [LEGACY] 原: self.worker = ChatWorker(self.chat_client, user_text)
         self.worker.reply_ready.connect(lambda reply, source: self._handle_reply(user_text, reply, source))
@@ -358,6 +370,18 @@ class AppController(QObject):
     def _handle_reply(self, user_text: str, reply: str, source: str) -> None:
         print(f"[Daniya] chat saved source={source}")
         self.history_manager.append(user_text, reply, source)
+        memory_config = self.app_config.get("memory_features", {})
+        if (
+            source != "engine_error"
+            and isinstance(memory_config, dict)
+            and bool(memory_config.get("long_term_enabled", False))
+        ):
+            self.long_term_memory_store.remember_exchange(
+                user_text,
+                reply,
+                source=source,
+                max_entries=int(memory_config.get("long_term_max_entries", 500)),
+            )
         upgraded = self.affinity_manager.add_chat()
         self.window.update_affinity(self.affinity_manager.badge())
         self.window.set_input_enabled(True)

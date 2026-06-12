@@ -1,18 +1,17 @@
 # Release Checklist
 
-Current source target: `v0.80 stable integration candidate`
+Current source target: `v0.83 memory continuity candidate`
 
-Expected local Windows asset: `DaniyaSummerPet-v0.80-win-x64.zip`
+Expected local Windows asset: `DaniyaSummerPet-v0.83-win-x64.zip`
 
-Published stable release remains `v0.70` until a separate tag and GitHub Release are explicitly approved.
+Published packages remain independent from the source candidate until a separate tag and GitHub Release are explicitly approved.
 
 ## Source Freeze
 
-- Do not add v0.81+ features.
-- Do not implement the independent TTS line.
-- Confirm branch `mainline-v0.75-v0.80` contains only reviewed v0.75-v0.80 work.
-- Confirm the original user worktree and its TTS changes remain untouched.
-- Confirm `src/version.py`, `config/app_config.json`, and `config/app_config.example.json` all report `v0.80`.
+- Do not add v0.84+ features.
+- Do not implement vision, realtime voice, or multi-character orchestration.
+- Confirm v0.80.1, v0.81, v0.82, and v0.83 changes remain independently reviewable.
+- Confirm `src/version.py`, `config/app_config.json`, and `config/app_config.example.json` all report `v0.83`.
 - Confirm the worktree is clean before the final package.
 
 ## Repository Gates
@@ -51,15 +50,15 @@ Build and scan:
 
 ```bat
 pack.bat
-.venv\Scripts\python.exe tools\check_release_zip.py release\DaniyaSummerPet-v0.80-win-x64.zip
+.venv\Scripts\python.exe tools\check_release_zip.py release\DaniyaSummerPet-v0.83-win-x64.zip
 ```
 
 Required package evidence:
 
 - zip opens and `testzip()` reports no corrupt member;
-- package root and packaged config version are `v0.80`;
+- package root and packaged config version are `v0.83`;
 - package contains Daniya and template `story.yaml`;
-- package contains v0.80 integration acceptance and manual QA documents;
+- package contains v0.83 integration acceptance and manual QA documents;
 - packaged exe starts with an isolated `DANIYA_RUNTIME_ROOT`;
 - runtime files are written outside the package directory;
 - size, SHA256, entry count, required-entry count, forbidden-entry count, secret scan, and local-path scan are reported externally.
@@ -88,10 +87,11 @@ Required package evidence:
 - AppData runtime isolation and broken-config recovery;
 - no-network and wrong-key fallback;
 - file organizer, system status, clipboard, and focus-mode safe defaults.
+- story reader, local growth, environment awareness, long-term memory, and observation-diary safe defaults.
 
 ## Manual Sign-Off
 
-Complete `docs/V0.80_MANUAL_QA_CHECKLIST.md`.
+Complete `docs/V0.83_MANUAL_QA_CHECKLIST.md`.
 
 Automation must not claim PASS for:
 
