@@ -32,7 +32,7 @@
       "E_QQ_pet_drag_system": true
     },
     "hover_animation_enabled": false,
-    "edge_peek_enabled": true,
+    "edge_peek_enabled": false,
     "edge_dock_visible_px": 32,
     "edge_dock_hover_visible_px": 52,
     "click_to_call_enabled": false,
@@ -145,7 +145,6 @@
     "show_advanced": false,
     "remember_last_page": true
   },
-  "focus_mode_allow_important_reminders": true,
   "tts": {
     "enabled": false,
     "voice_id": "daniya_voice_v1",

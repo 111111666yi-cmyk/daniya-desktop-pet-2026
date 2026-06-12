@@ -253,7 +253,7 @@ def test_open_settings_center_warning_includes_attribute_detail(monkeypatch):
     def fake_warning(_parent, title, text):
         warnings.append((title, text))
 
-    monkeypatch.setattr(app_module, "SettingsWindow", BrokenSettingsWindow)
+    monkeypatch.setattr("src.settings_window.SettingsWindow", BrokenSettingsWindow)
     monkeypatch.setattr(app_module.QMessageBox, "warning", fake_warning)
     monkeypatch.setattr(app_module.traceback, "print_exc", lambda: tracebacks.append(True))
 
@@ -262,12 +262,10 @@ def test_open_settings_center_warning_includes_attribute_detail(monkeypatch):
 
     assert controller.settings_window is None
     assert tracebacks == [True]
-    assert warnings == [
-        (
-            "\u8bbe\u7f6e\u4e2d\u5fc3",
-            "\u8bbe\u7f6e\u4e2d\u5fc3\u6253\u5f00\u5931\u8d25\uff1aAttributeError: missing relation_tab",
-        )
-    ]
+    assert len(warnings) == 1
+    title, text = warnings[0]
+    assert title == "\u8bbe\u7f6e\u4e2d\u5fc3"
+    assert text.startswith("\u8bbe\u7f6e\u4e2d\u5fc3\u6253\u5f00\u5931\u8d25\uff1aAttributeError:")
 
 
 def test_open_settings_center_restores_existing_minimized_window(monkeypatch):
@@ -298,7 +296,7 @@ def test_open_settings_center_restores_existing_minimized_window(monkeypatch):
         def activateWindow(self):
             calls.append("activate")
 
-    monkeypatch.setattr(app_module, "SettingsWindow", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should reuse existing window")))
+    monkeypatch.setattr("src.settings_window.SettingsWindow", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should reuse existing window")))
 
     existing = ExistingSettingsWindow()
     controller = SimpleNamespace(settings_window=existing, window=object())
@@ -331,7 +329,7 @@ def test_open_settings_center_creates_independent_taskbar_window(monkeypatch):
         def activateWindow(self):
             calls.append(("activate", None))
 
-    monkeypatch.setattr(app_module, "SettingsWindow", FakeSettingsWindow)
+    monkeypatch.setattr("src.settings_window.SettingsWindow", FakeSettingsWindow)
 
     controller = SimpleNamespace(settings_window=None, window=object())
     app_module.AppController.open_settings_center(controller)

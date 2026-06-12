@@ -414,7 +414,8 @@ class SettingsWindow(QDialog):
         self.diagnostics_worker: _DiagnosticsWorker | None = None
         self.ollama_worker: _OllamaPullWorker | None = None
         self.ollama_health_worker: _OllamaHealthWorker | None = None
-        self._lazy_tab_loaders: dict[int, Callable[[], None]] = {}
+        self._lazy_tab_loaders: dict[str, Callable[[], None]] = {}
+        self._lazy_loaded_tabs: set[str] = set()
         self.setWindowTitle("设置中心")
         self.resize(860, 640)
         self.setWindowFlags(
@@ -457,6 +458,7 @@ class SettingsWindow(QDialog):
         initial_mode = sui.get("mode", "simple") if sui.get("mode") in ("simple", "advanced") else "simple"
         self._apply_settings_mode(initial_mode)
 
+        self.tabs.currentChanged.connect(self._on_tab_changed)
         self._mode_simple_btn.clicked.connect(lambda: self._switch_settings_mode("simple"))
         self._mode_advanced_btn.clicked.connect(lambda: self._switch_settings_mode("advanced"))
 
@@ -489,6 +491,19 @@ class SettingsWindow(QDialog):
             if entry_mode == "both" or entry_mode == mode:
                 self.tabs.addTab(widget, get_icon(entry["icon"]), entry["title"])
         self.tabs.blockSignals(False)
+
+    def _on_tab_changed(self, index: int) -> None:
+        if index < 0:
+            return
+        widget = self.tabs.widget(index)
+        if widget is None:
+            return
+        tab_id = widget.property("_tab_id")
+        if tab_id and tab_id not in self._lazy_loaded_tabs:
+            self._lazy_loaded_tabs.add(tab_id)
+            loader = self._lazy_tab_loaders.get(tab_id)
+            if loader:
+                QTimer.singleShot(0, loader)
 
     def _switch_settings_mode(self, mode: str) -> None:
         self._apply_settings_mode(mode)
@@ -2053,9 +2068,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.events_group)
 
         self._register_tab("relationship_events", tab, "download", "关系与事件")
-        self._refresh_relationship()
-        self._refresh_memory()
-        self._refresh_events()
+        self._lazy_tab_loaders["relationship_events"] = self._refresh_relationship_bundle
 
     def _build_system_tab(self) -> None:
         tab = QWidget()
@@ -2140,7 +2153,7 @@ class SettingsWindow(QDialog):
         layout.addWidget(help_group)
 
         self._register_tab("system", tab, "settings", "系统")
-        self._refresh_data()
+        self._lazy_tab_loaders["system"] = self._refresh_data
 
     def _build_reminder_tab(self) -> None:
         config = self.settings_manager.load_app_config()

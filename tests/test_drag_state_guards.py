@@ -128,6 +128,7 @@ def test_due_reminder_does_not_change_pet_topmost_setting() -> None:
         window=window,
         utility_text=Mock(return_value="reminder"),
         _fire_physical_event=Mock(),
+        _tts_play=Mock(),
         reminder_boxes=[],
     )
 

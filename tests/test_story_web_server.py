@@ -52,36 +52,29 @@ def test_bundled_story_site_uses_local_runtime_dependencies() -> None:
     assert "./vendor/babel-7.29.0.min.js" in html
 
 
-def test_menu_manager_opens_bundled_story_site(monkeypatch, tmp_path) -> None:
-    root = tmp_path / "story"
-    root.mkdir()
-    (root / "index.html").write_text("<title>story</title>", encoding="utf-8")
-    opened: list[str] = []
-    monkeypatch.setattr(menu_manager_module, "resource_path", lambda *_parts: root)
-    monkeypatch.setattr(
-        menu_manager_module.QDesktopServices,
-        "openUrl",
-        lambda url: opened.append(url.toString()) or True,
+def test_show_story_dialog_uses_native_book_reader(monkeypatch, tmp_path) -> None:
+    story_file = tmp_path / "story.yaml"
+    story_file.write_text(
+        "chapters:\n- id: 0\n  title: 测试\n  body: 内容\n",
+        encoding="utf-8",
     )
-    manager = MenuManager(window=object(), controller=object())
+    from types import SimpleNamespace
 
-    try:
-        assert manager._open_story_site() is True
-        assert opened == [manager._story_web_server.url()]
-    finally:
-        manager._story_web_server.close()
+    pack = SimpleNamespace(character_root=tmp_path)
+    adapter = SimpleNamespace(character_pack=pack)
+    controller = SimpleNamespace(daniya_adapter=adapter)
+    manager = MenuManager(window=object(), controller=controller)
 
+    exec_calls: list[bool] = []
 
-def test_story_command_falls_back_when_site_cannot_open(monkeypatch) -> None:
-    manager = MenuManager(window=object(), controller=object())
-    fallback_calls: list[bool] = []
-    monkeypatch.setattr(manager, "_open_story_site", lambda: False)
-    monkeypatch.setattr(
-        manager,
-        "_show_legacy_story_dialog",
-        lambda: fallback_calls.append(True),
-    )
+    class FakeStoryBookDialog:
+        def __init__(self, chapters, ctrl, parent):
+            self.chapters = chapters
+        def exec(self):
+            exec_calls.append(True)
+
+    monkeypatch.setattr(menu_manager_module, "StoryBookDialog", FakeStoryBookDialog)
 
     manager.show_story_dialog()
 
-    assert fallback_calls == [True]
+    assert exec_calls == [True]
