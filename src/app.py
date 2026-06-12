@@ -4,7 +4,7 @@ import sys
 import traceback
 from collections import deque
 from datetime import datetime
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from PySide6.QtCore import QObject, QThread, QTimer, Qt, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox
@@ -28,9 +28,9 @@ from .pet_window import PetWindow
 from .profile_manager import ProfileManager
 from .reminder_manager import ReminderManager
 from .natural_reminder_service import NaturalReminderService
-from .settings_window import SettingsWindow
 from .clipboard_interaction import ClipboardInteraction
 from .focus_mode import FocusModeManager
+from .pomodoro import PomodoroSession
 from .feedback_coordinator import FeedbackCoordinator
 from .growth_manager import GrowthManager
 from .media_presence import MediaPresenceManager
@@ -38,6 +38,9 @@ from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
 from .startup_timing import StartupTimer
 from .weather_manager import WeatherManager
+
+if TYPE_CHECKING:
+    from .settings_window import SettingsWindow
 
 
 class ThreadSafeAnimationManager(QObject):
@@ -157,6 +160,7 @@ class AppController(QObject):
         self.system_status_manager = SystemStatusManager()
         self.clipboard_interaction = ClipboardInteraction(self.qapp.clipboard())
         self.focus_mode_manager = FocusModeManager()
+        self.pomodoro = PomodoroSession(self.app_config.get("pomodoro", {}))
         self.startup_timer.mark("managers initialized")
 
         # [CHANGE-001] v0.415 引擎适配器初始化
@@ -230,6 +234,8 @@ class AppController(QObject):
         self.system_status_manager.status_alert.connect(self._on_system_status_alert)
         self.clipboard_interaction.clipboard_alert.connect(self._on_clipboard_alert)
         self.focus_mode_manager.focus_state_changed.connect(self._on_focus_state_changed)
+        self.pomodoro.distraction_detected.connect(self._on_pomodoro_distraction)
+        self.pomodoro.completed.connect(self._on_pomodoro_completed)
         self.window.update_affinity(self.affinity_manager.badge())
         self.worker: ChatWorker | None = None
         self.reminder_boxes: list[QMessageBox] = []
@@ -243,7 +249,7 @@ class AppController(QObject):
         self._pending_phys_events: deque[str] = deque(maxlen=32)
         self._phys_busy = False
         self.feedback_coordinator = FeedbackCoordinator(
-            show_text=self.window.speak,
+            show_text=self._speak_with_tts,
             trigger_action=self._trigger_feedback_action,
             return_to_idle=self.window.animation_manager.play_idle,
             is_dragging=self._is_feedback_dragging,
@@ -259,6 +265,41 @@ class AppController(QObject):
         self.ambient_event_theater.event_ready.connect(self._on_ambient_event)
         self._optional_services_initialized = False
 
+    def _init_tts(self) -> None:
+        from core.tts.voice_asset_manager import VoiceAssetManager
+        from core.tts.tts_service import TTSService
+        from core.tts.audio_player import AudioPlayer
+        from core.tts.clip_pack import ClipPackVoiceService
+        from core.tts.voice_mode_router import VoiceModeRouter
+        tts_config = self.app_config.get("tts", {})
+        self._voice_asset_manager = VoiceAssetManager()
+        self._audio_player = AudioPlayer(self.window)
+        self.tts_service = TTSService(self._voice_asset_manager, self._audio_player, tts_config)
+        self._clip_pack_service = ClipPackVoiceService(audio_player=self._audio_player)
+        self.voice_router = VoiceModeRouter(
+            config=self.app_config,
+            clip_pack_service=self._clip_pack_service,
+            tts_service=self.tts_service,
+            audio_player=self._audio_player,
+        )
+
+    def _tts_play(self, text: str, interaction: bool = False) -> None:
+        if not hasattr(self, "voice_router"):
+            return
+        mode = self.app_config.get("voice", {}).get("mode", "off")
+        if mode == "off":
+            return
+        if interaction:
+            import random
+            prob = self.app_config.get("tts", {}).get("interaction_probability", 0.25)
+            if random.random() > prob:
+                return
+        self.voice_router.play_text(text)
+
+    def _voice_play_event(self, event_type: str, text: str | None = None) -> None:
+        if hasattr(self, "voice_router"):
+            self.voice_router.play_pet_event(event_type, text)
+
     def show(self) -> None:
         self.window.show_at_config_position()
         self.config_manager.save_app_config(self.app_config)
@@ -269,6 +310,7 @@ class AppController(QObject):
         if self._optional_services_initialized:
             return
         self.apply_integrated_feature_config()
+        self._init_tts()
         self._optional_services_initialized = True
         self.startup_timer.mark("optional services initialized")
 
@@ -363,6 +405,7 @@ class AppController(QObject):
         self.window.set_input_enabled(True)
         self.window.set_thinking_state(False)
         self.window.speak(reply)
+        self._tts_play(reply)
         self.worker = None
         if upgraded:
             QTimer.singleShot(2500, lambda: self._check_affinity_upgrade(upgraded))
@@ -505,6 +548,7 @@ class AppController(QObject):
 
     def apply_integrated_feature_config(self) -> None:
         config = self.config_manager._normalize_app_config(self.app_config)
+        self.pomodoro.update_config(config.get("pomodoro", {}))
         self.app_config.update(config)
         self.reminder_manager.set_enabled(bool(config.get("reminder_enabled", True)))
         self.idle_manager.set_enabled(bool(config.get("idle_chat_enabled", False)))
@@ -595,7 +639,9 @@ class AppController(QObject):
 
     def on_reminder_due(self, reminder_id: str, text: str) -> None:
         self.window.animation_manager.trigger_remind()
-        self.window.speak(self.utility_text("reminder_due", text=text))
+        reminder_text = self.utility_text("reminder_due", text=text)
+        self.window.speak(reminder_text)
+        self._tts_play(reminder_text)
         # [CHANGE-003+005] 提醒到期事件流入引擎（后台线程）
         self._fire_physical_event("reminder_due")
         box = QMessageBox(self.window)
@@ -678,6 +724,7 @@ class AppController(QObject):
                 self.settings_window.raise_()
                 self.settings_window.activateWindow()
                 return
+            from .settings_window import SettingsWindow
             self.settings_window = SettingsWindow(self, None)
             self.settings_window.finished.connect(lambda _result: setattr(self, "settings_window", None))
             self.settings_window.show()
@@ -734,6 +781,11 @@ class AppController(QObject):
         elif action == "idle":
             self.window.animation_manager.play_idle()
 
+    def _speak_with_tts(self, text: str) -> None:
+        """Wrapper for feedback coordinator: show bubble + TTS."""
+        self.window.speak(text)
+        self._tts_play(text)
+
     def _speak_idle_behavior(self, text: str) -> None:
         self.feedback_coordinator.present(
             source="idle_behavior",
@@ -753,6 +805,23 @@ class AppController(QObject):
             text=self.utility_text("focus_enter" if active else "focus_exit"),
             action="remind" if active else "happy",
         )
+
+    def start_pomodoro(self, minutes: int | None = None) -> None:
+        mins = self.pomodoro.start(minutes)
+        self._speak_with_tts(f"……开始专注。{mins} 分钟。我看着你。")
+
+    def cancel_pomodoro(self) -> None:
+        if self.pomodoro.active:
+            self.pomodoro.cancel()
+            self._speak_with_tts("……提前停了。也行。")
+
+    def _on_pomodoro_distraction(self, name: str) -> None:
+        self._speak_with_tts("……喂。别分心。")
+
+    def _on_pomodoro_completed(self) -> None:
+        self.affinity_manager.add_value(self.pomodoro.reward_affinity)
+        self.window.update_affinity(self.affinity_manager.badge())
+        self._speak_with_tts("……时间到。这次你做到了。")
 
     def utility_text(self, key: str, **values: Any) -> str:
         return utility_text(self.daniya_adapter.character_pack, key, **values)
@@ -1030,4 +1099,5 @@ def run(process_started_at: float | None = None) -> None:
 
     controller = AppController(app, startup_timer=startup_timer)
     controller.show()
+    print(f"[Daniya] cold start (controller init+show): {(time.perf_counter() - controller_start) * 1000:.0f} ms")
     sys.exit(app.exec())

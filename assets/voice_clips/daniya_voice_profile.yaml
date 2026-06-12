@@ -1,0 +1,19 @@
+voice_style:
+  age_impression: "young adult / soft anime style"
+  tone: "soft, lazy, low-energy, gentle"
+  speed: "slightly slow"
+  emotion: "restrained, sleepy, warm"
+  pitch: "medium-high but not sharp"
+  delivery: "short phrases, light ending, no exaggerated acting"
+
+recommended_params:
+  speed_factor: "0.92-0.98"
+  temperature: "0.75-0.9"
+  top_k: "10-20"
+  top_p: "0.8-1.0"
+
+warnings:
+  - "This profile is a style guide only."
+  - "It cannot reproduce a voice without voice_id, ref_audio, or model weights."
+  - "Do not upload unauthorized voice samples."
+  - "See docs/TTS_VOICE_ASSET_POLICY.md for what may and may not be distributed."

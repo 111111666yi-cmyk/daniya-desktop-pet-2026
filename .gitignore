@@ -9,10 +9,14 @@ data/daniya_relation/
 
 # Private or generated assets
 assets/private/
+assets/voices/*/
+assets/voice_clips/*/
+cache/tts/
 characters/*/assets/
 !characters/template/assets/
 characters/test_dummy/
 models/
+runtime/
 backups/
 output/
 release/
@@ -59,3 +63,7 @@ drag_debug.log
 DaniyaSummerPet_v*.docx
 .repo_audit_tracked_files.txt
 *.pdf
+
+# Voice clip pack distribution candidates
+*_candidate.zip
+*_candidate.zip.sha256

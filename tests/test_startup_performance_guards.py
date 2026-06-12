@@ -99,6 +99,8 @@ def test_settings_runtime_data_is_loaded_only_after_relevant_tab_opens(
 
     assert calls == []
 
+    window._switch_settings_mode("advanced")
+    qapp.processEvents()
     relationship_index = next(
         index
         for index in range(window.tabs.count())

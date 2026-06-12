@@ -134,6 +134,18 @@ for %%F in (
     if exist "docs\%%F" copy /Y "docs\%%F" "%SAFE_DOCS%\%%F" >nul
 )
 
+set "VOICE_CLIP_ARGS="
+if defined INCLUDE_VOICE_CLIPS (
+    if exist "assets\voice_clips\daniya_clip_pack_v1\manifest.json" (
+        set "VOICE_CLIP_ARGS=--add-data assets\voice_clips\daniya_clip_pack_v1;assets\voice_clips\daniya_clip_pack_v1"
+        echo [Daniya] Voice clip pack will be bundled.
+    ) else (
+        echo [Daniya] INCLUDE_VOICE_CLIPS set but clip pack not found. Skipping.
+    )
+) else (
+    echo [Daniya] Voice clip pack not bundled. Set INCLUDE_VOICE_CLIPS=1 to include.
+)
+
 echo [Daniya] Running PyInstaller...
 "%PYTHON_EXE%" -m PyInstaller ^
   --noconfirm ^
@@ -143,6 +155,7 @@ echo [Daniya] Running PyInstaller...
   %ICON_ARGS% ^
   --add-data "assets\placeholder;assets\placeholder" ^
   --add-data "assets\icons;assets\icons" ^
+  %VOICE_CLIP_ARGS% ^
   --add-data "%SAFE_CONFIG%;config" ^
   --add-data "characters\daniya\actions.yaml;characters\daniya" ^
   --add-data "characters\daniya\character.yaml;characters\daniya" ^

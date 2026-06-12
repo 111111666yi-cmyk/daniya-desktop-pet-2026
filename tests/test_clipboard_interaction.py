@@ -47,6 +47,20 @@ def test_clipboard_interaction_checks() -> None:
     res_preview = preview.check_text(long_txt)
     assert len(res_preview["clean_text"]) == 500
 
+def test_bank_card_uses_luhn_check() -> None:
+    inter = ClipboardInteraction()
+
+    # Real card number (passes Luhn) is blocked as sensitive.
+    res_card = inter.check_text("卡号 4111111111111111")
+    assert not res_card["ok"]
+    assert res_card["status"] == "sensitive"
+
+    # 16-digit order number that fails Luhn is no longer a false positive.
+    res_order = inter.check_text("订单号 4111111111111112")
+    assert res_order["ok"]
+    assert res_order["status"] == "safe"
+
+
 def test_clipboard_interaction_signals() -> None:
     # Mock PySide6 Clipboard object
     mock_clip = MagicMock()

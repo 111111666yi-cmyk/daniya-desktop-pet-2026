@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 from .daniya_settings_window import DaniyaSettingsDialog
 from .icon_utils import icon as ic
 from .story_web_server import StoryWebServer
+from .story_window import StoryBookDialog
 from .utils import resource_path
 
 if TYPE_CHECKING:
@@ -138,6 +139,16 @@ class MenuManager:
         dice_action.triggered.connect(self.controller.roll_dice)
         random_action = games.addAction(ic("info"), "随机数 1-100")
         random_action.triggered.connect(self.controller.random_100)
+
+        if self.controller.app_config.get("pomodoro", {}).get("enabled", True):
+            focus_menu = companion.addMenu(ic("refresh"), "专注番茄钟")
+            if getattr(self.controller, "pomodoro", None) is not None and self.controller.pomodoro.active:
+                cancel_focus = focus_menu.addAction(ic("settings"), "结束专注")
+                cancel_focus.triggered.connect(self.controller.cancel_pomodoro)
+            else:
+                for mins in (25, 45):
+                    act = focus_menu.addAction(ic("chip"), f"{mins} 分钟")
+                    act.triggered.connect(lambda checked=False, m=mins: self.controller.start_pomodoro(m))
 
         bookmarks = companion.addMenu(ic("cloud"), "传送门")
         for item in self.controller.bookmark_manager.records():
@@ -331,139 +342,9 @@ class MenuManager:
         return self._STORY_CHAPTERS
 
     def show_story_dialog(self) -> None:
-        """Open the cinematic story site, with the legacy dialog as fallback."""
-        if self._open_story_site():
-            return
-        self._show_legacy_story_dialog()
-
-    def _open_story_site(self) -> bool:
-        root = resource_path("web", "story_ui")
-        try:
-            if self._story_web_server is None:
-                self._story_web_server = StoryWebServer(root)
-            url = self._story_web_server.url()
-        except (OSError, RuntimeError):
-            return False
-        return bool(QDesktopServices.openUrl(QUrl(url)))
-
-    def _show_legacy_story_dialog(self) -> None:
-        dialog = QDialog(self.window)
-        dialog.setWindowTitle("剧情 — 达妮娅的完整故事")
-        dialog.resize(650, 530)
-        dialog.setWindowFlags(dialog.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
-        layout = QVBoxLayout(dialog)
-
-        # 进度条
-        progress = QLabel()
-        progress.setStyleSheet("color: #6c757d; font-size: 11px; margin-bottom: 4px;")
-        layout.addWidget(progress)
-
-        # 标题
-        title_label = QLabel()
-        title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #1a1a2e; margin-bottom: 6px;")
-        title_label.setWordWrap(True)
-        layout.addWidget(title_label)
-
-        # 内容
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
-
-        narrative = QLabel()
-        narrative.setWordWrap(True)
-        narrative.setStyleSheet(
-            "font-size: 13px; color: #2d3436; line-height: 1.6; "
-            "background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 8px; padding: 16px;"
-        )
-        content_layout.addWidget(narrative)
-
-        # 发给达妮娅的提问区
-        question_frame = QWidget()
-        question_frame.setStyleSheet(
-            "background: #fff3cd; border: 1px solid #ffeeba; border-radius: 6px; padding: 10px; margin-top: 8px;"
-        )
-        qf_layout = QHBoxLayout(question_frame); qf_layout.setContentsMargins(10, 8, 10, 8)
-
-        question_label = QLabel("发给达妮娅：")
-        question_label.setStyleSheet("font-size: 12px; color: #856404; font-weight: bold;")
-        question_text = QLabel()
-        question_text.setWordWrap(True)
-        question_text.setStyleSheet("font-size: 12px; color: #856404;")
-        qf_layout.addWidget(question_label)
-        qf_layout.addWidget(question_text, 1)
-        content_layout.addWidget(question_frame)
-
-        content_layout.addStretch(1)
-        scroll.setWidget(content_widget)
-        layout.addWidget(scroll)
-
-        # 按钮行
-        btn_row = QHBoxLayout()
-        prev_btn = QPushButton("◀ 上一章")
-        prev_btn.setStyleSheet("font-size: 12px; padding: 6px 14px;")
-        next_btn = QPushButton("下一章 ▶")
-        next_btn.setStyleSheet("font-size: 12px; padding: 6px 14px; font-weight: bold;")
-        send_btn = QPushButton("把这句话发给达妮娅")
-        send_btn.setStyleSheet("font-size: 12px; padding: 6px 14px; color: #0366d6; font-weight: bold;")
-        close_btn = QPushButton("关闭")
-        btn_row.addWidget(prev_btn)
-        btn_row.addWidget(next_btn)
-        btn_row.addStretch(1)
-        btn_row.addWidget(send_btn)
-        btn_row.addWidget(close_btn)
-        layout.addLayout(btn_row)
-
-        # 状态
+        """剧情阅读：书本风格阅读器。"""
         chapters = self._load_story_chapters()
-        total = len(chapters)
-        idx = [0]  # mutable box
-
-        def _show_chapter():
-            i = idx[0]
-            num, title, body, talk, _ = chapters[i]
-            progress.setText(f"剧情进度：{i + 1} / {total}")
-            title_label.setText(title)
-            narrative.setText(body)
-            question_text.setText(f"「 {talk} 」")
-
-            # button states
-            prev_btn.setEnabled(i > 0)
-            is_last = i >= total - 1
-            next_btn.setText("已完成" if is_last else "下一章 ▶")
-            next_btn.setEnabled(not is_last)
-            send_btn.setVisible(bool(talk))
-            if not talk:
-                question_frame.setVisible(False)
-            else:
-                question_frame.setVisible(True)
-
-        def _go_next():
-            if idx[0] < total - 1:
-                idx[0] += 1
-                _show_chapter()
-
-        def _go_prev():
-            if idx[0] > 0:
-                idx[0] -= 1
-                _show_chapter()
-
-        def _do_send():
-            _, _, _, talk, _ = chapters[idx[0]]
-            if talk:
-                self.controller.send_message(talk)
-        def _do_send_and_next():
-            _do_send()
-            if idx[0] < total - 1:
-                idx[0] += 1
-                _show_chapter()
-
-        next_btn.clicked.connect(_go_next)
-        prev_btn.clicked.connect(_go_prev)
-        send_btn.clicked.connect(_do_send_and_next)
-        close_btn.clicked.connect(dialog.accept)
-
-        _show_chapter()
+        dialog = StoryBookDialog(chapters, self.controller, self.window)
         dialog.exec()
 
     def show_note_dialog(self) -> None:

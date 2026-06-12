@@ -9,7 +9,6 @@ from .config_manager import ConfigManager
 
 DEFAULT_PROFILE = {
     "user_name": "你",
-    "birthday": "",
     "relationship": "陪伴角色与用户",
     "style": "温柔、可爱、简短、陪伴感",
     "birthday": "",

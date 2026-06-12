@@ -1,0 +1,71 @@
+- generic [ref=e4]:
+  - navigation [ref=e5]:
+    - generic [ref=e7] [cursor=pointer]: d
+    - generic [ref=e8]:
+      - button "首页" [ref=e9] [cursor=pointer]
+      - button "故事" [ref=e10] [cursor=pointer]
+      - button "章节" [ref=e11] [cursor=pointer]
+      - button "回忆" [ref=e12] [cursor=pointer]
+      - button "进入剧情" [ref=e13] [cursor=pointer]:
+        - text: 进入剧情
+        - img [ref=e14]
+  - button [ref=e19] [cursor=pointer]:
+    - img [ref=e20]
+  - generic [ref=e614]:
+    - generic [ref=e615]:
+      - heading "章节目录" [level=4] [ref=e616]
+      - generic [ref=e617]:
+        - generic [ref=e618]: 序章
+        - button "D 部分真正讲的是什么" [ref=e619] [cursor=pointer]
+      - generic [ref=e620]:
+        - generic [ref=e621]: 第一部 · 西格丽卡
+        - button "所有人眼里的标准答案" [ref=e622] [cursor=pointer]
+        - button "上学怎么这么难" [ref=e623] [cursor=pointer]
+        - button "黄金的重量" [ref=e624] [cursor=pointer]
+        - button "选择权" [ref=e625] [cursor=pointer]
+        - button "普通细节的意义" [ref=e626] [cursor=pointer]
+      - generic [ref=e627]:
+        - generic [ref=e628]: 第二部 · 暗面
+        - button "暗面不是外来怪物" [ref=e629] [cursor=pointer]
+        - button "三张倒影" [ref=e630] [cursor=pointer]
+        - button "从镜子到武器" [ref=e631] [cursor=pointer]
+        - button "崩溃边缘的尊严" [ref=e632] [cursor=pointer]
+        - button "飞雪与未来预演" [ref=e633] [cursor=pointer]
+        - button "怕麻烦外壳下的守护" [ref=e634] [cursor=pointer]
+        - button "兔子的战书" [ref=e635] [cursor=pointer]
+      - generic [ref=e636]:
+        - generic [ref=e637]: 第三部 · 达妮娅
+        - button "名字即遗嘱" [ref=e638] [cursor=pointer]
+        - button "家与生日" [ref=e639] [cursor=pointer]
+        - button "学做人" [ref=e640] [cursor=pointer]
+        - button "俄罗斯方块" [ref=e641] [cursor=pointer]
+        - button "了断日" [ref=e642] [cursor=pointer]
+        - button "明年一起过生日" [ref=e643] [cursor=pointer]
+        - button "橘子蛋糕" [ref=e644] [cursor=pointer]
+        - button "坠入虚无" [ref=e645] [cursor=pointer]
+        - button "再见的逆转" [ref=e646] [cursor=pointer]
+        - button "讨厌是加密后的喜欢" [ref=e647] [cursor=pointer]
+      - generic [ref=e648]:
+        - generic [ref=e649]: 终章
+        - button "现在的她" [ref=e650] [cursor=pointer]
+      - button "返回章节选择" [ref=e652] [cursor=pointer]
+    - generic [ref=e653]:
+      - generic [ref=e655]:
+        - text: 序章
+        - heading "D 部分真正讲的是什么" [level=2] [ref=e656]
+        - paragraph [ref=e657]: 这不是普通的角色背景，也不是单纯的剧情考据。
+        - paragraph [ref=e658]: 它真正讲的是达妮娅为什么会成为现在的达妮娅。
+        - paragraph [ref=e660]: 西格丽卡篇讲被爱与期待压垮的人如何夺回选择权。
+        - paragraph [ref=e661]: 暗面篇讲人的痛苦并非外来怪物，而是自己不敢直视的部分。
+        - paragraph [ref=e662]: 达妮娅篇讲一个被抹掉起点的人，如何用一天普通生活证明自己存在过。
+        - paragraph [ref=e664]: 所以现在的达妮娅不是单纯慵懒，也不是普通冷淡。
+        - paragraph [ref=e665]: 她是被制造、被利用、被剥夺普通人生的人，却仍然笨拙地想学会像人一样活着。
+        - paragraph [ref=e667]: "\"达妮娅，可以从头讲讲你真正的故事吗？\""
+      - generic [ref=e670]:
+        - button "上一章" [disabled] [ref=e671]:
+          - img [ref=e672]
+          - text: 上一章
+        - generic [ref=e674]: 1 / 24
+        - button "下一章" [ref=e675] [cursor=pointer]:
+          - text: 下一章
+          - img [ref=e676]

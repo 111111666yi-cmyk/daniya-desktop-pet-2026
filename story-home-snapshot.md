@@ -1,0 +1,151 @@
+- generic [ref=e4]:
+  - navigation [ref=e5]:
+    - generic [ref=e7] [cursor=pointer]: d
+    - generic [ref=e8]:
+      - button "首页" [ref=e9] [cursor=pointer]
+      - button "故事" [ref=e10] [cursor=pointer]
+      - button "章节" [ref=e11] [cursor=pointer]
+      - button "回忆" [ref=e12] [cursor=pointer]
+      - button "进入剧情" [ref=e13] [cursor=pointer]:
+        - text: 进入剧情
+        - img [ref=e14]
+  - button [ref=e19] [cursor=pointer]:
+    - img [ref=e20]
+  - generic [ref=e23]:
+    - generic [ref=e24]:
+      - generic [ref=e28]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: 完整版
+          - generic [ref=e32]: 五部 · 二十四章
+        - paragraph [ref=e33]:
+          - generic [ref=e34]: 达
+          - generic [ref=e35]: 妮
+          - generic [ref=e36]: 娅
+          - generic [ref=e37]: 的
+          - generic [ref=e38]: 故
+          - generic [ref=e39]: 事
+        - paragraph [ref=e41]: 她是被制造、被利用、被剥夺普通人生的人，却仍然笨拙地想学会像人一样活着。
+        - generic [ref=e42]:
+          - button "开始阅读" [ref=e43] [cursor=pointer]
+          - button "查看章节" [ref=e47] [cursor=pointer]
+        - generic [ref=e50]:
+          - generic [ref=e51]
+          - generic [ref=e58]
+      - generic [ref=e65]:
+        - generic [ref=e66]: 西格丽卡的期待 · 暗面的镜子 · 达妮娅的一天
+        - generic [ref=e67]:
+          - generic [ref=e68]: 温柔
+          - generic [ref=e69]: ·
+          - generic [ref=e70]: 克制
+          - generic [ref=e71]: ·
+          - generic [ref=e72]: 疼痛感
+    - generic [ref=e75]:
+      - generic [ref=e76]:
+        - paragraph [ref=e78]: // 故事简介
+        - heading "三段旅程， 一个答案。" [level=2] [ref=e80]:
+          - text: 三段旅程，
+          - text: 一个答案。
+        - generic [ref=e82]:
+          - paragraph [ref=e83]: 西格丽卡篇讲被爱与期待压垮的人如何夺回选择权。暗面篇讲人的痛苦并非外来怪物，而是自己不敢直视的部分。
+          - paragraph [ref=e84]: 达妮娅篇讲一个被抹掉起点的人，如何用一天普通生活证明自己存在过。所以现在的达妮娅不是单纯慵懒，也不是普通冷淡。 她是被制造、被利用、被剥夺普通人生的人，却仍然笨拙地想学会像人一样活着。
+      - generic [ref=e85]:
+        - generic [ref=e87] [cursor=pointer]:
+          - generic [ref=e88]
+          - heading "西格丽卡" [level=3] [ref=e91]
+          - paragraph [ref=e92]: 被爱与期待压垮的人如何夺回选择权
+        - generic [ref=e94] [cursor=pointer]:
+          - generic [ref=e95]
+          - heading "暗面" [level=3] [ref=e98]
+          - paragraph [ref=e99]: 人的痛苦并非外来怪物，而是自己不敢直视的部分
+        - generic [ref=e101] [cursor=pointer]:
+          - generic [ref=e102]
+          - heading "达妮娅" [level=3] [ref=e105]
+          - paragraph [ref=e106]: 一个被抹掉起点的人，如何用一天普通生活证明自己存在过
+    - generic [ref=e109]:
+      - paragraph [ref=e111]: // 章节选择
+      - heading "选择你的 阅读入口" [level=2] [ref=e113]:
+        - text: 选择你的
+        - text: 阅读入口
+      - generic [ref=e114]:
+        - heading "序章" [level=3] [ref=e117]
+        - generic [ref=e120] [cursor=pointer]:
+          - generic [ref=e121]
+          - generic [ref=e127]
+      - generic [ref=e135]:
+        - generic [ref=e137]:
+          - heading "第一部" [level=3] [ref=e138]
+          - generic [ref=e139]: · 西格丽卡
+        - generic [ref=e140]:
+          - generic [ref=e142] [cursor=pointer]
+          - generic [ref=e158] [cursor=pointer]
+          - generic [ref=e174] [cursor=pointer]
+          - generic [ref=e190] [cursor=pointer]
+          - generic [ref=e206] [cursor=pointer]
+      - generic [ref=e221]:
+        - generic [ref=e223]:
+          - heading "第二部" [level=3] [ref=e224]
+          - generic [ref=e225]: · 暗面
+        - generic [ref=e226]:
+          - generic [ref=e228] [cursor=pointer]
+          - generic [ref=e244] [cursor=pointer]
+          - generic [ref=e261] [cursor=pointer]
+          - generic [ref=e277] [cursor=pointer]
+          - generic [ref=e293] [cursor=pointer]
+          - generic [ref=e309] [cursor=pointer]
+          - generic [ref=e325] [cursor=pointer]
+      - generic [ref=e340]:
+        - generic [ref=e342]:
+          - heading "第三部" [level=3] [ref=e343]
+          - generic [ref=e344]: · 达妮娅
+        - generic [ref=e345]:
+          - generic [ref=e347] [cursor=pointer]
+          - generic [ref=e363] [cursor=pointer]
+          - generic [ref=e379] [cursor=pointer]
+          - generic [ref=e395] [cursor=pointer]
+          - generic [ref=e411] [cursor=pointer]
+          - generic [ref=e427] [cursor=pointer]
+          - generic [ref=e443] [cursor=pointer]
+          - generic [ref=e459] [cursor=pointer]
+          - generic [ref=e475] [cursor=pointer]
+          - generic [ref=e491] [cursor=pointer]
+      - generic [ref=e506]:
+        - heading "终章" [level=3] [ref=e509]
+        - generic [ref=e512] [cursor=pointer]:
+          - generic [ref=e513]
+          - generic [ref=e519]
+    - generic [ref=e529]:
+      - paragraph [ref=e531]: // 回忆碎片
+      - heading "那些被记住的 和没有被记住的" [level=2] [ref=e533]:
+        - text: 那些被记住的
+        - text: 和没有被记住的
+      - generic [ref=e534]:
+        - generic [ref=e536]:
+          - generic [ref=e537]
+          - heading "再见" [level=3] [ref=e544]
+          - paragraph [ref=e545]: 她的名字来自俄语"До свидания"，意思是再见。不像名字，更像一份一开始就写好的告别。
+        - generic [ref=e547]:
+          - generic [ref=e548]
+          - heading "橘子蛋糕" [level=3] [ref=e555]
+          - paragraph [ref=e556]: 她想要橘子蛋糕，加跳跳糖、彩虹豆、咔啦咔啦和各种好东西。像第一次进糖果店的小孩，把所有好东西都指了一遍。
+        - generic [ref=e558]:
+          - generic [ref=e559]
+          - heading "明年一起过生日" [level=3] [ref=e566]
+          - paragraph [ref=e567]: 西格丽卡没有逼问，没有戳穿。把沉重真相包进一句很轻的话里。温柔的共谋。
+        - generic [ref=e569]:
+          - generic [ref=e570]
+          - heading "俄罗斯方块" [level=3] [ref=e577]
+          - paragraph [ref=e578]: 破纪录不是娱乐胜利，而是她夺回主体性的时刻。可空荡游戏厅无人欢呼，盛大努力过，却安静收场。
+        - generic [ref=e580]:
+          - generic [ref=e581]
+          - heading "讨厌是加密后的喜欢" [level=3] [ref=e588]
+          - paragraph [ref=e589]: 烦可能是在乎，随便你可能是允许留下，懒得赶可能是默认接纳。她只是表达得笨拙、别扭、绕远。
+        - generic [ref=e591]:
+          - generic [ref=e592]
+          - heading "配合度良好" [level=3] [ref=e599]
+          - paragraph [ref=e600]: 如果世界不给她起点，她就自己刻一个。选一天过生日，是她在说我存在过。
+    - contentinfo [ref=e601]:
+      - generic [ref=e603]:
+        - heading "Daniya Story Archive" [level=3] [ref=e604]
+        - paragraph [ref=e605]: Made for a quiet summer memory
+        - button [ref=e606] [cursor=pointer]:
+          - img [ref=e607]

@@ -11,8 +11,27 @@ SENSITIVE_PATTERNS = [
     re.compile(r"(?:api[_-]?key|secret|token|password|passwd|密钥|密码)\s*[:=/\s-]\s*[A-Za-z0-9_.-]{8,}", re.IGNORECASE),
     re.compile(r"(?<!\d)\d{17}[\dXx](?!\d)"),  # ID Card
     re.compile(r"(?<!\d)1[3-9]\d{9}(?!\d)"),   # Mobile
-    re.compile(r"(?<!\d)[3-6]\d{15,18}(?!\d)"),  # Bank Card (starts with 3-6)
 ]
+
+# Bank card: a 16-19 digit run starting 3-6 is only treated as a card if it also
+# passes the Luhn checksum, so order numbers / long IDs / timestamps are not blocked.
+_BANK_CARD_CANDIDATE = re.compile(r"(?<!\d)[3-6]\d{15,18}(?!\d)")
+
+
+def _luhn_valid(number: str) -> bool:
+    total = 0
+    for i, ch in enumerate(reversed(number)):
+        digit = int(ch)
+        if i % 2 == 1:
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        total += digit
+    return total % 10 == 0
+
+
+def _contains_bank_card(text: str) -> bool:
+    return any(_luhn_valid(m.group()) for m in _BANK_CARD_CANDIDATE.finditer(text))
 
 class ClipboardInteraction(QObject):
     clipboard_alert = Signal(dict)  # Emits result dictionary
@@ -46,17 +65,16 @@ class ClipboardInteraction(QObject):
 
         # 1. Check sensitive info
         if self.sensitive_block_enabled:
-            for p in SENSITIVE_PATTERNS:
-                if p.search(text):
-                    return {
-                        "ok": False,
-                        "status": "sensitive",
-                        "message": self._message(
-                            "clipboard_sensitive",
-                            "这段内容可能包含隐私或凭据，我不会显示、保存或发送它。",
-                        ),
-                        "clean_text": ""
-                    }
+            if any(p.search(text) for p in SENSITIVE_PATTERNS) or _contains_bank_card(text):
+                return {
+                    "ok": False,
+                    "status": "sensitive",
+                    "message": self._message(
+                        "clipboard_sensitive",
+                        "这段内容可能包含隐私或凭据，我不会显示、保存或发送它。",
+                    ),
+                    "clean_text": ""
+                }
 
         # 2. Check length
         if len(text) > self.max_chars:

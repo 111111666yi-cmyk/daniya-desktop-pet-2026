@@ -1,0 +1,17 @@
+{
+  "latest_clip_pack": "daniya_clip_pack_v1",
+  "packs": [
+    {
+      "clip_pack_id": "daniya_clip_pack_v1",
+      "character_id": "daniya",
+      "display_name": "Daniya Voice Clip Pack",
+      "download_url": "https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/download/voice-pack-daniya-v1/daniya_clip_pack_v1.zip",
+      "urls": [
+        "https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/download/voice-pack-daniya-v1/daniya_clip_pack_v1.zip"
+      ],
+      "sha256": "b5445643e8d2e51a519fd8c3f4b6b93c78dfa7afe3b0f531d016ba75ee1b1f42",
+      "size_bytes": 2701853,
+      "license_status": "user_responsible"
+    }
+  ]
+}
