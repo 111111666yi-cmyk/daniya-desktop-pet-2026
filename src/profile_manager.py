@@ -104,6 +104,7 @@ class ProfileManager:
             else:
                 clean[key] = str(profile.get(key, clean[key])).strip() or clean[key]
         clean["user_name"] = sanitize_user_name(clean["user_name"])
+        clean["birthday"] = sanitize_birthday(clean["birthday"])
         clean["relationship"] = sanitize_profile_text(clean["relationship"]) or DEFAULT_PROFILE["relationship"]
         clean["style"] = sanitize_profile_text(clean["style"]) or DEFAULT_PROFILE["style"]
         merged.update(clean)

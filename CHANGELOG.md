@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.82 (2026-06-12) - Environment Awareness
+
+- Added opt-in Open-Meteo weather reads on a background thread, with user-confirmed coordinates and rain reminders.
+- Added privacy-limited media presence detection that checks only an allow-list of player process names and never reads titles, lyrics, or file paths.
+- Added low-frequency, character-pack-driven ambient event theater with focus-mode suppression and manual preview.
+- Added a generated transparent umbrella asset and synchronized packaging/release checks.
+
+## v0.81 (2026-06-12) - Local Growth
+
+- Added an opt-in, pure-local growth center with coins, daily supplies, inventory, feeding, levels, outfits, and affinity-gated unlocks.
+- Added public `items.json` and `outfits.json` character-pack catalogs for Daniya and the template pack.
+- Stored all user growth state under ignored `data/growth_state.json`; no growth data is sent to Providers or included in release archives.
+- Added settings and context-menu entry points while keeping the feature disabled by default.
+
+## v0.80.1 (2026-06-12) - Cinematic Story Hotfix
+
+- Integrated the cinematic liquid-glass 24-chapter story site from `eee9816`.
+- Routed the desktop pet's existing Story command to a loopback-only local web server and the user's default browser.
+- Kept the legacy Qt chapter dialog as a fallback when the packaged web files or browser launch are unavailable.
+- Added the story HTML and background video to Windows packaging and release ZIP validation.
+- Did not import the unrelated TTS, voice-pack, streaming, or legacy settings changes from the source feature branches.
+
 ## v0.80 (2026-06-11) - Stable Integration Candidate
 
 - Integrated the independently verified v0.75 character-routing, v0.76 runtime-reliability, v0.77 window-interaction, and v0.7x settings/profile backfill stages.

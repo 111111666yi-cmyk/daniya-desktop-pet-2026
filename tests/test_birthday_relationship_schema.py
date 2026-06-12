@@ -52,7 +52,7 @@ def test_existing_birthday_values_not_overwritten(tmp_path):
         "user_name": "你",
         "relationship": "桌宠与用户",
         "style": "温柔",
-        "birthday": "2000-01-15",
+        "birthday": "01-15",
         "birthday_display": "1月15日",
         "birthday_source": "user_input",
         "birthday_updated_at": "2026-06-01T12:00:00",
@@ -60,7 +60,7 @@ def test_existing_birthday_values_not_overwritten(tmp_path):
     cm.save_json(cm.config_dir / "profile.json", profile)
     pm = ProfileManager(cm)
     loaded = pm.load()
-    assert loaded["birthday"] == "2000-01-15"
+    assert loaded["birthday"] == "01-15"
     assert loaded["birthday_display"] == "1月15日"
     assert loaded["birthday_source"] == "user_input"
     assert loaded["birthday_updated_at"] == "2026-06-01T12:00:00"

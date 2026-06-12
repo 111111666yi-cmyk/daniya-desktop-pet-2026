@@ -89,6 +89,23 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "affinity": {
         "click_cooldown_seconds": 5,
     },
+    "growth": {
+        "enabled": False,
+        "daily_coin_reward": 25,
+    },
+    "environment": {
+        "weather_enabled": False,
+        "weather_location_configured": False,
+        "weather_location_name": "",
+        "weather_latitude": 0.0,
+        "weather_longitude": 0.0,
+        "weather_interval_seconds": 1800,
+        "weather_notify_rain": True,
+        "media_presence_enabled": False,
+        "media_interval_seconds": 60,
+        "ambient_events_enabled": False,
+        "ambient_event_interval_seconds": 1800,
+    },
     "hourly_chime_enabled": False,
     "idle_chat_enabled": False,
     "idle_chat_minutes": 10,
@@ -128,6 +145,7 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
     "focus_mode_silence_edge_peek": True,
     "focus_mode_silence_system_status": True,
     "focus_mode_silence_clipboard": True,
+    "focus_mode_silence_environment": True,
     "focus_mode_allow_important_reminders": True,
     "settings_ui": {
         "mode": "simple",
@@ -337,6 +355,57 @@ class ConfigManager:
 
         config["reminder_enabled"] = bool(config.get("reminder_enabled", True))
         config["natural_reminder_enabled"] = bool(config.get("natural_reminder_enabled", True))
+        growth = config.get("growth")
+        if not isinstance(growth, dict):
+            growth = {}
+            config["growth"] = growth
+        growth["enabled"] = bool(growth.get("enabled", False))
+        try:
+            daily_coin_reward = int(growth.get("daily_coin_reward", 25))
+        except (TypeError, ValueError):
+            daily_coin_reward = 25
+        growth["daily_coin_reward"] = max(1, min(500, daily_coin_reward))
+        environment = config.get("environment")
+        if not isinstance(environment, dict):
+            environment = {}
+            config["environment"] = environment
+        environment["weather_enabled"] = bool(
+            environment.get("weather_enabled", False)
+        )
+        environment["weather_location_configured"] = bool(
+            environment.get("weather_location_configured", False)
+        )
+        environment["weather_location_name"] = str(
+            environment.get("weather_location_name", "")
+        ).strip()[:80]
+        for key, default, minimum, maximum in (
+            ("weather_latitude", 0.0, -90.0, 90.0),
+            ("weather_longitude", 0.0, -180.0, 180.0),
+        ):
+            try:
+                value = float(environment.get(key, default))
+            except (TypeError, ValueError):
+                value = default
+            environment[key] = max(minimum, min(maximum, value))
+        for key, default, minimum, maximum in (
+            ("weather_interval_seconds", 1800, 900, 21600),
+            ("media_interval_seconds", 60, 30, 3600),
+            ("ambient_event_interval_seconds", 1800, 900, 21600),
+        ):
+            try:
+                value = int(environment.get(key, default))
+            except (TypeError, ValueError):
+                value = default
+            environment[key] = max(minimum, min(maximum, value))
+        environment["weather_notify_rain"] = bool(
+            environment.get("weather_notify_rain", True)
+        )
+        environment["media_presence_enabled"] = bool(
+            environment.get("media_presence_enabled", False)
+        )
+        environment["ambient_events_enabled"] = bool(
+            environment.get("ambient_events_enabled", False)
+        )
         config["file_organizer_enabled"] = bool(config.get("file_organizer_enabled", False))
         config["system_status_enabled"] = bool(config.get("system_status_enabled", False))
         try:
@@ -384,6 +453,7 @@ class ConfigManager:
             "focus_mode_silence_edge_peek",
             "focus_mode_silence_system_status",
             "focus_mode_silence_clipboard",
+            "focus_mode_silence_environment",
             "focus_mode_allow_important_reminders",
         ):
             config[key] = bool(config.get(key, DEFAULT_APP_CONFIG[key]))

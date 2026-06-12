@@ -4,13 +4,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
 from PySide6.QtCore import QThread, QTimer, Qt, Signal, QUrl
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtGui import QDesktopServices, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
     QCheckBox,
     QComboBox,
     QDialog,
+    QDoubleSpinBox,
     QFileDialog,
     QFormLayout,
     QGroupBox,
@@ -32,6 +33,7 @@ from .diagnostics_panel import format_diagnostics, run_diagnostics
 from .icon_utils import icon as get_icon
 from .relationship_state_viewer import RelationshipStateViewer
 from .settings_manager import SettingsManager
+from .utils import resource_path
 from .llm.provider_registry import Provider, ProviderMeta
 
 if TYPE_CHECKING:
@@ -43,6 +45,8 @@ TAB_REGISTRY: list[dict[str, str]] = [
     {"id": "pet", "title": "桌宠", "icon": "internet", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_pet_tab"},
     {"id": "character_resources", "title": "角色与资源", "icon": "document", "mode": "both", "category": "character", "risk_level": "normal", "builder": "_build_character_resources_tab"},
     {"id": "relationship_events", "title": "关系与事件", "icon": "download", "mode": "advanced", "category": "character", "risk_level": "advanced", "builder": "_build_relationship_events_tab"},
+    {"id": "growth", "title": "养成", "icon": "chip", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_growth_tab"},
+    {"id": "environment", "title": "环境与内容", "icon": "settings", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_environment_tab"},
     {"id": "system", "title": "系统", "icon": "settings", "mode": "advanced", "category": "tools", "risk_level": "advanced", "builder": "_build_system_tab"},
     {"id": "reminder", "title": "提醒", "icon": "remind", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_reminder_tab"},
     {"id": "file_organizer", "title": "文件整理", "icon": "document", "mode": "advanced", "category": "tools", "risk_level": "dangerous", "builder": "_build_file_organizer_tab"},
@@ -1759,6 +1763,186 @@ class SettingsWindow(QDialog):
         self._refresh_reminder_status()
         self._register_tab("reminder", tab, "remind", "提醒")
 
+    def _build_growth_tab(self) -> None:
+        config = self.settings_manager.load_app_config()
+        growth = config.get("growth", {})
+        if not isinstance(growth, dict):
+            growth = {}
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        description = QLabel(
+            "纯本地功能，默认关闭。硬币、背包、成长和衣柜保存在 data/growth_state.json，"
+            "不会发送给 Provider，也不会进入 Git 或发布包。"
+        )
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        self.growth_enabled = QCheckBox("启用本地养成")
+        self.growth_enabled.setChecked(bool(growth.get("enabled", False)))
+        self.growth_status = QLabel()
+        self.growth_status.setWordWrap(True)
+        buttons = QHBoxLayout()
+        save = QPushButton("保存养成设置")
+        save.setIcon(get_icon("save"))
+        open_center = QPushButton("打开养成中心")
+        open_center.setIcon(get_icon("protect"))
+        reset = QPushButton("恢复关闭")
+        reset.setIcon(get_icon("refresh"))
+        save.clicked.connect(self._save_growth_settings)
+        open_center.clicked.connect(self.controller.open_growth_center)
+        reset.clicked.connect(self._reset_growth_settings)
+        buttons.addWidget(save)
+        buttons.addWidget(open_center)
+        buttons.addWidget(reset)
+        buttons.addStretch(1)
+        layout.addWidget(self.growth_enabled)
+        layout.addLayout(buttons)
+        layout.addWidget(self.growth_status)
+        layout.addStretch(1)
+        self._refresh_growth_status()
+        self._register_tab("growth", tab, "chip", "养成")
+
+    def _build_environment_tab(self) -> None:
+        config = self.settings_manager.load_app_config()
+        environment = config.get("environment", {})
+        if not isinstance(environment, dict):
+            environment = {}
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        description = QLabel(
+            "三个功能均默认关闭。天气只访问 Open-Meteo；媒体只识别受支持播放器的进程名，"
+            "不读取窗口标题、歌名、歌词或文件路径；小剧场只读取角色包本地事件。"
+        )
+        description.setWordWrap(True)
+        layout.addWidget(description)
+
+        weather_group = QGroupBox("天气")
+        weather_layout = QVBoxLayout(weather_group)
+        weather_header = QHBoxLayout()
+        umbrella = QLabel()
+        pixmap = QPixmap(str(resource_path("assets", "icons", "weather_umbrella.png")))
+        if not pixmap.isNull():
+            umbrella.setPixmap(
+                pixmap.scaled(
+                    64,
+                    64,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+        weather_header.addWidget(umbrella)
+        weather_form = QFormLayout()
+        self.weather_enabled = QCheckBox("启用低频天气感知")
+        self.weather_enabled.setChecked(bool(environment.get("weather_enabled", False)))
+        self.weather_location_configured = QCheckBox("坐标已由我确认")
+        self.weather_location_configured.setChecked(
+            bool(environment.get("weather_location_configured", False))
+        )
+        self.weather_location_name = QLineEdit(
+            str(environment.get("weather_location_name", ""))
+        )
+        self.weather_location_name.setPlaceholderText("可选备注，例如：上海")
+        self.weather_latitude = QDoubleSpinBox()
+        self.weather_latitude.setRange(-90.0, 90.0)
+        self.weather_latitude.setDecimals(4)
+        self.weather_latitude.setValue(float(environment.get("weather_latitude", 0.0)))
+        self.weather_longitude = QDoubleSpinBox()
+        self.weather_longitude.setRange(-180.0, 180.0)
+        self.weather_longitude.setDecimals(4)
+        self.weather_longitude.setValue(float(environment.get("weather_longitude", 0.0)))
+        self.weather_interval = QSpinBox()
+        self.weather_interval.setRange(900, 21600)
+        self.weather_interval.setSuffix(" 秒")
+        self.weather_interval.setValue(
+            int(environment.get("weather_interval_seconds", 1800))
+        )
+        self.weather_notify_rain = QCheckBox("下雨时提醒带伞")
+        self.weather_notify_rain.setChecked(
+            bool(environment.get("weather_notify_rain", True))
+        )
+        weather_form.addRow("天气服务", self.weather_enabled)
+        weather_form.addRow("位置备注", self.weather_location_name)
+        weather_form.addRow("纬度", self.weather_latitude)
+        weather_form.addRow("经度", self.weather_longitude)
+        weather_form.addRow("位置确认", self.weather_location_configured)
+        weather_form.addRow("读取间隔", self.weather_interval)
+        weather_form.addRow("降雨提醒", self.weather_notify_rain)
+        weather_header.addLayout(weather_form, 1)
+        weather_layout.addLayout(weather_header)
+        weather_buttons = QHBoxLayout()
+        save_weather = QPushButton("保存环境设置")
+        save_weather.setIcon(get_icon("save"))
+        test_weather = QPushButton("读取一次天气")
+        test_weather.setIcon(get_icon("refresh"))
+        save_weather.clicked.connect(self._save_environment_settings)
+        test_weather.clicked.connect(self._test_weather)
+        weather_buttons.addWidget(save_weather)
+        weather_buttons.addWidget(test_weather)
+        weather_buttons.addStretch(1)
+        weather_layout.addLayout(weather_buttons)
+        self.weather_result = QLabel("尚未读取天气。")
+        self.weather_result.setWordWrap(True)
+        weather_layout.addWidget(self.weather_result)
+        layout.addWidget(weather_group)
+
+        media_group = QGroupBox("媒体与音乐")
+        media_layout = QVBoxLayout(media_group)
+        self.media_presence_enabled = QCheckBox(
+            "启用播放器进程感知（不读取媒体标题）"
+        )
+        self.media_presence_enabled.setChecked(
+            bool(environment.get("media_presence_enabled", False))
+        )
+        self.media_interval = QSpinBox()
+        self.media_interval.setRange(30, 3600)
+        self.media_interval.setSuffix(" 秒")
+        self.media_interval.setValue(int(environment.get("media_interval_seconds", 60)))
+        media_form = QFormLayout()
+        media_form.addRow("媒体感知", self.media_presence_enabled)
+        media_form.addRow("扫描间隔", self.media_interval)
+        media_layout.addLayout(media_form)
+        scan_media = QPushButton("扫描一次受支持播放器")
+        scan_media.setIcon(get_icon("info"))
+        scan_media.clicked.connect(self._test_media_presence)
+        media_layout.addWidget(scan_media, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.media_result = QLabel("尚未扫描。")
+        self.media_result.setWordWrap(True)
+        media_layout.addWidget(self.media_result)
+        layout.addWidget(media_group)
+
+        ambient_group = QGroupBox("随机事件小剧场")
+        ambient_layout = QVBoxLayout(ambient_group)
+        self.ambient_events_enabled = QCheckBox("启用低频本地小剧场")
+        self.ambient_events_enabled.setChecked(
+            bool(environment.get("ambient_events_enabled", False))
+        )
+        self.ambient_interval = QSpinBox()
+        self.ambient_interval.setRange(900, 21600)
+        self.ambient_interval.setSuffix(" 秒")
+        self.ambient_interval.setValue(
+            int(environment.get("ambient_event_interval_seconds", 1800))
+        )
+        ambient_form = QFormLayout()
+        ambient_form.addRow("小剧场", self.ambient_events_enabled)
+        ambient_form.addRow("触发间隔", self.ambient_interval)
+        ambient_layout.addLayout(ambient_form)
+        preview = QPushButton("试播一条")
+        preview.setIcon(get_icon("protect"))
+        preview.clicked.connect(self._preview_ambient_event)
+        ambient_layout.addWidget(preview, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.ambient_result = QLabel("事件内容来自当前角色包。")
+        self.ambient_result.setWordWrap(True)
+        ambient_layout.addWidget(self.ambient_result)
+        layout.addWidget(ambient_group)
+        layout.addStretch(1)
+
+        self.controller.weather_manager.snapshot_ready.connect(
+            self._show_weather_snapshot
+        )
+        self.controller.weather_manager.request_failed.connect(
+            self._show_weather_error
+        )
+        self._register_tab("environment", tab, "settings", "环境与内容")
+
     def _build_file_organizer_tab(self) -> None:
         config = self.settings_manager.load_app_config()
         tab = QWidget()
@@ -1923,6 +2107,10 @@ class SettingsWindow(QDialog):
         self.focus_silence_system.setChecked(bool(config.get("focus_mode_silence_system_status", True)))
         self.focus_silence_clipboard = QCheckBox("静默剪贴板提示")
         self.focus_silence_clipboard.setChecked(bool(config.get("focus_mode_silence_clipboard", True)))
+        self.focus_silence_environment = QCheckBox("静默天气、媒体和小剧场提示")
+        self.focus_silence_environment.setChecked(
+            bool(config.get("focus_mode_silence_environment", True))
+        )
         self.focus_allow_important = QCheckBox("允许重要提醒")
         self.focus_allow_important.setChecked(bool(config.get("focus_mode_allow_important_reminders", True)))
         form.addRow("专注模式", self.focus_enabled)
@@ -1934,6 +2122,7 @@ class SettingsWindow(QDialog):
         form.addRow("", self.focus_silence_edge)
         form.addRow("", self.focus_silence_system)
         form.addRow("", self.focus_silence_clipboard)
+        form.addRow("", self.focus_silence_environment)
         form.addRow("重要提醒", self.focus_allow_important)
         layout.addLayout(form)
         self.focus_result = QLabel()
@@ -2006,6 +2195,89 @@ class SettingsWindow(QDialog):
         self.controller.app_config.update(config)
         self._refresh_reminder_status()
 
+    def _save_growth_settings(self) -> None:
+        enabled = self.growth_enabled.isChecked()
+        self.controller.growth_manager.set_enabled(enabled)
+        self.controller.app_config.setdefault("growth", {})["enabled"] = enabled
+        self.controller.window.set_context_menu(self.controller.menu_manager.create_menu())
+        self._refresh_growth_status()
+
+    def _reset_growth_settings(self) -> None:
+        self.growth_enabled.setChecked(False)
+        self._save_growth_settings()
+
+    def _refresh_growth_status(self) -> None:
+        state = self.controller.growth_manager.snapshot(
+            self.controller.affinity_manager.value()
+        )
+        self.growth_status.setText(
+            f"当前状态：{'已启用' if self.growth_enabled.isChecked() else '已关闭'}；"
+            f"硬币 {state['coins']}；成长等级 {state['level']}；"
+            f"背包 {sum(state['inventory'].values())} 件；"
+            f"衣柜 {len(state['owned_outfits'])} 套。"
+        )
+
+    def _save_environment_settings(self) -> None:
+        config = self.settings_manager.load_app_config()
+        environment = config.setdefault("environment", {})
+        environment["weather_enabled"] = self.weather_enabled.isChecked()
+        environment["weather_location_configured"] = (
+            self.weather_location_configured.isChecked()
+        )
+        environment["weather_location_name"] = self.weather_location_name.text().strip()
+        environment["weather_latitude"] = self.weather_latitude.value()
+        environment["weather_longitude"] = self.weather_longitude.value()
+        environment["weather_interval_seconds"] = self.weather_interval.value()
+        environment["weather_notify_rain"] = self.weather_notify_rain.isChecked()
+        environment["media_presence_enabled"] = (
+            self.media_presence_enabled.isChecked()
+        )
+        environment["media_interval_seconds"] = self.media_interval.value()
+        environment["ambient_events_enabled"] = self.ambient_events_enabled.isChecked()
+        environment["ambient_event_interval_seconds"] = self.ambient_interval.value()
+        self.settings_manager.save_app_config(config)
+        self.controller.app_config.update(config)
+        self.controller.apply_integrated_feature_config()
+        self.weather_result.setText(
+            "环境设置已保存；关闭的服务不会运行，天气坐标不会发送给聊天 Provider。"
+        )
+        if hasattr(self, "privacy_status"):
+            self._refresh_privacy_status()
+
+    def _test_weather(self) -> None:
+        self._save_environment_settings()
+        if self.controller.weather_manager.refresh(force=True):
+            self.weather_result.setText("正在后台读取 Open-Meteo 天气……")
+
+    def _show_weather_snapshot(self, payload: object) -> None:
+        if not isinstance(payload, dict):
+            return
+        location = self.weather_location_name.text().strip() or "已确认坐标"
+        rain_text = "；当前有降水" if payload.get("is_raining") else ""
+        self.weather_result.setText(
+            f"{location}：{payload.get('description', '未知天气')}，"
+            f"{float(payload.get('temperature_c', 0.0)):.1f}°C，"
+            f"降水 {float(payload.get('precipitation_mm', 0.0)):.1f} mm"
+            f"{rain_text}。来源：{payload.get('source', 'Open-Meteo')}。"
+        )
+
+    def _show_weather_error(self, message: str) -> None:
+        self.weather_result.setText(message)
+
+    def _test_media_presence(self) -> None:
+        player = self.controller.media_presence_manager.detect_now()
+        self.media_result.setText(
+            f"检测到受支持播放器：{player}。未读取标题或内容。"
+            if player
+            else "未检测到受支持播放器；未读取任何窗口标题或媒体内容。"
+        )
+
+    def _preview_ambient_event(self) -> None:
+        event = self.controller.ambient_event_theater.trigger_once(force=True)
+        self.ambient_result.setText(
+            str(event.get("text", "")) if isinstance(event, dict) else "当前角色包没有可用事件。"
+        )
+
     def _reset_reminder_defaults(self) -> None:
         self.reminder_enabled.setChecked(True)
         self.natural_reminder_enabled.setChecked(True)
@@ -2071,6 +2343,7 @@ class SettingsWindow(QDialog):
         self.focus_silence_edge.setChecked(True)
         self.focus_silence_system.setChecked(True)
         self.focus_silence_clipboard.setChecked(True)
+        self.focus_silence_environment.setChecked(True)
         self.focus_allow_important.setChecked(True)
         self._save_integrated_features()
 
@@ -2103,6 +2376,21 @@ class SettingsWindow(QDialog):
                 ("系统状态", config.get("system_status_enabled", False)),
                 ("剪贴板", config.get("clipboard_interaction_enabled", False)),
                 ("专注模式", config.get("focus_mode_enabled", False)),
+                (
+                    "天气",
+                    isinstance(config.get("environment"), dict)
+                    and config["environment"].get("weather_enabled", False),
+                ),
+                (
+                    "媒体感知",
+                    isinstance(config.get("environment"), dict)
+                    and config["environment"].get("media_presence_enabled", False),
+                ),
+                (
+                    "随机小剧场",
+                    isinstance(config.get("environment"), dict)
+                    and config["environment"].get("ambient_events_enabled", False),
+                ),
             )
             if bool(enabled)
         ]
@@ -2118,6 +2406,10 @@ class SettingsWindow(QDialog):
         config["focus_mode_enabled"] = False
         config["focus_mode_manual"] = False
         config["focus_mode_auto_game_detect"] = False
+        environment = config.setdefault("environment", {})
+        environment["weather_enabled"] = False
+        environment["media_presence_enabled"] = False
+        environment["ambient_events_enabled"] = False
         self.settings_manager.save_app_config(config)
         self.controller.app_config.update(config)
         self.controller.apply_integrated_feature_config()
@@ -2128,6 +2420,10 @@ class SettingsWindow(QDialog):
             self.focus_enabled.setChecked(False)
             self.focus_manual.setChecked(False)
             self.focus_auto.setChecked(False)
+            if hasattr(self, "weather_enabled"):
+                self.weather_enabled.setChecked(False)
+                self.media_presence_enabled.setChecked(False)
+                self.ambient_events_enabled.setChecked(False)
         self._refresh_integrated_feature_status()
         self._refresh_privacy_status()
 
@@ -2157,6 +2453,7 @@ class SettingsWindow(QDialog):
         config["focus_mode_silence_edge_peek"] = self.focus_silence_edge.isChecked()
         config["focus_mode_silence_system_status"] = self.focus_silence_system.isChecked()
         config["focus_mode_silence_clipboard"] = self.focus_silence_clipboard.isChecked()
+        config["focus_mode_silence_environment"] = self.focus_silence_environment.isChecked()
         config["focus_mode_allow_important_reminders"] = self.focus_allow_important.isChecked()
         self.settings_manager.save_app_config(config)
         self.controller.app_config.update(config)

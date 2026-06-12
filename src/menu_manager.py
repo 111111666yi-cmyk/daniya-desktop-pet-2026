@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 import yaml
 
-from PySide6.QtCore import QDateTime, Qt
-from PySide6.QtGui import QCursor
+from PySide6.QtCore import QDateTime, Qt, QUrl
+from PySide6.QtGui import QCursor, QDesktopServices
 from PySide6.QtWidgets import (
     QDateTimeEdit,
     QDialog,
@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from .daniya_settings_window import DaniyaSettingsDialog
 from .icon_utils import icon as ic
+from .story_web_server import StoryWebServer
 from .utils import resource_path
 
 if TYPE_CHECKING:
@@ -36,6 +37,7 @@ class MenuManager:
     def __init__(self, window: "PetWindow", controller: "AppController") -> None:
         self.window = window
         self.controller = controller
+        self._story_web_server: StoryWebServer | None = None
 
     def create_menu(self) -> QMenu:
         menu = QMenu(self.window)
@@ -122,6 +124,8 @@ class MenuManager:
         note_action.triggered.connect(self.show_note_dialog)
         reminder_action = companion.addAction(ic("refresh"), "日程提醒")
         reminder_action.triggered.connect(self.show_reminder_dialog)
+        growth_action = companion.addAction(ic("protect"), "养成中心")
+        growth_action.triggered.connect(self.controller.open_growth_center)
         organizer_action = companion.addAction(ic("document"), "文件整理助手（预览）")
         organizer_action.triggered.connect(self.controller.open_file_organizer)
 
@@ -327,7 +331,22 @@ class MenuManager:
         return self._STORY_CHAPTERS
 
     def show_story_dialog(self) -> None:
-        """剧情阅读：用户逐章阅读达妮娅的完整过去。"""
+        """Open the cinematic story site, with the legacy dialog as fallback."""
+        if self._open_story_site():
+            return
+        self._show_legacy_story_dialog()
+
+    def _open_story_site(self) -> bool:
+        root = resource_path("web", "story_ui")
+        try:
+            if self._story_web_server is None:
+                self._story_web_server = StoryWebServer(root)
+            url = self._story_web_server.url()
+        except (OSError, RuntimeError):
+            return False
+        return bool(QDesktopServices.openUrl(QUrl(url)))
+
+    def _show_legacy_story_dialog(self) -> None:
         dialog = QDialog(self.window)
         dialog.setWindowTitle("剧情 — 达妮娅的完整故事")
         dialog.resize(650, 530)
