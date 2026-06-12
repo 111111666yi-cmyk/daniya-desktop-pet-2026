@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 import yaml
 
-from PySide6.QtCore import QDateTime, Qt, QUrl
-from PySide6.QtGui import QCursor, QDesktopServices
+from PySide6.QtCore import QDateTime, Qt
+from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QDateTimeEdit,
     QDialog,
@@ -25,7 +25,6 @@ from PySide6.QtWidgets import (
 
 from .daniya_settings_window import DaniyaSettingsDialog
 from .icon_utils import icon as ic
-from .story_web_server import StoryWebServer
 from .story_window import StoryBookDialog
 from .utils import resource_path
 
@@ -38,7 +37,6 @@ class MenuManager:
     def __init__(self, window: "PetWindow", controller: "AppController") -> None:
         self.window = window
         self.controller = controller
-        self._story_web_server: StoryWebServer | None = None
 
     def create_menu(self) -> QMenu:
         menu = QMenu(self.window)

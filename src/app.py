@@ -1099,5 +1099,4 @@ def run(process_started_at: float | None = None) -> None:
 
     controller = AppController(app, startup_timer=startup_timer)
     controller.show()
-    print(f"[Daniya] cold start (controller init+show): {(time.perf_counter() - controller_start) * 1000:.0f} ms")
     sys.exit(app.exec())
