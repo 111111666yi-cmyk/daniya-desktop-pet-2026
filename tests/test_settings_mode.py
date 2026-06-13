@@ -6,7 +6,7 @@ import pytest
 from PySide6.QtWidgets import QApplication
 
 from src.app import AppController
-from src.settings_window import SIMPLE_SETTINGS_TABS, SettingsWindow
+from src.settings_window import TAB_REGISTRY, SettingsWindow
 
 
 @pytest.fixture
@@ -29,16 +29,11 @@ def test_settings_center_defaults_to_simple_without_resetting_hidden_values(
     window = SettingsWindow(controller)
     try:
         visible_tabs = {
-            window.tabs.tabText(index)
-            for index in range(window.tabs.count())
-            if window.tabs.isTabVisible(index)
+            window.tabs.tabText(index) for index in range(window.tabs.count())
         }
+        expected_tabs = {e["title"] for e in TAB_REGISTRY if e["mode"] == "both"}
 
-        assert window._settings_mode == "simple"
-        assert visible_tabs == SIMPLE_SETTINGS_TABS
-        assert window.local_model_group.isHidden()
-        assert window.pack_group.isHidden()
-        assert window.events_group.isHidden()
+        assert visible_tabs == expected_tabs
         assert controller.config_manager.load_app_config()["clipboard_interaction_enabled"] is True
     finally:
         window.close()
@@ -49,14 +44,18 @@ def test_advanced_mode_is_persisted_and_reveals_existing_pages(qapp: QApplicatio
     controller = AppController(qapp)
     window = SettingsWindow(controller)
     try:
-        window.advanced_mode_button.click()
+        window._mode_advanced_btn.click()
 
-        assert window._settings_mode == "advanced"
-        assert all(window.tabs.isTabVisible(index) for index in range(window.tabs.count()))
-        assert not window.local_model_group.isHidden()
-        assert not window.pack_group.isHidden()
-        assert not window.events_group.isHidden()
-        assert controller.config_manager.load_app_config()["settings_mode"] == "advanced"
+        visible_tabs = {
+            window.tabs.tabText(index) for index in range(window.tabs.count())
+        }
+        expected_tabs = {e["title"] for e in TAB_REGISTRY}
+
+        assert visible_tabs == expected_tabs
+        assert (
+            controller.config_manager.load_app_config()["settings_ui"]["mode"]
+            == "advanced"
+        )
     finally:
         window.close()
         controller.window.close()
