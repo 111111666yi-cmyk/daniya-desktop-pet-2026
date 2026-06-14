@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from .daniya_settings_window import DaniyaSettingsDialog
 from .icon_utils import icon as ic
+from .story_landing import StoryLandingWindow
 from .story_window import StoryBookDialog
 from .utils import resource_path
 
@@ -340,9 +341,8 @@ class MenuManager:
         return self._STORY_CHAPTERS
 
     def show_story_dialog(self) -> None:
-        """剧情阅读：书本风格阅读器。"""
-        chapters = self._load_story_chapters()
-        dialog = StoryBookDialog(chapters, self.controller, self.window)
+        """剧情阅读：电影式 Liquid Glass 落地页 + 阅读器。"""
+        dialog = StoryLandingWindow(self.controller, self.window)
         dialog.exec()
 
     def show_note_dialog(self) -> None:
