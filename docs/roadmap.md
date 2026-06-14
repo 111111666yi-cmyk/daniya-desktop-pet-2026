@@ -28,7 +28,7 @@ Acceptance:
 - Memory can be reviewed and cleared.
 - Diary sends only after confirmation and never stores a Provider fallback as success.
 
-Status: implementation complete; package and human sign-off pending.
+Status: implementation, automated validation, and local package complete; human sign-off remains pending.
 
 ## v0.60 - Stable Preview Hardening
 

@@ -133,6 +133,7 @@ for %%F in (
     V0.80_MANUAL_QA_CHECKLIST.md
     V0.83_INTEGRATION_ACCEPTANCE.md
     V0.83_MANUAL_QA_CHECKLIST.md
+    V0.81_V0.83_RELEASE_REPORT.md
 ) do (
     if exist "docs\%%F" copy /Y "docs\%%F" "%SAFE_DOCS%\%%F" >nul
 )
