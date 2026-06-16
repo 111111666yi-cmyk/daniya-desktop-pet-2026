@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.83 (2026-06-12) - Memory Continuity
+
+- Added opt-in conversation-level long-term memory using local sparse vectors and cosine retrieval.
+- Injected only the top relevant historical exchanges into the shared text Provider prompt path.
+- Added a user-visible Settings Center page for reviewing and clearing long-term memory.
+- Added manual observation-diary generation from the last 1-30 days of relationship events, with explicit Provider-send confirmation.
+- Kept both features disabled by default; runtime records remain under ignored `data/` and are excluded from release packages.
+- Prevented API Key, token, password, and secret-like user text from being written into long-term memory.
+
 ## v0.82 (2026-06-12) - Environment Awareness
 
 - Added opt-in Open-Meteo weather reads on a background thread, with user-confirmed coordinates and rain reminders.

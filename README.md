@@ -1,20 +1,20 @@
 # Daniya Summer Desktop Pet
 
-**Published stable release: v0.70 · Current source milestone: v0.80 RC**
+**Current source milestone: v0.83 · Published packages: see GitHub Releases**
 
-[Source](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026) · [Download v0.70](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases/tag/v0.70) · [Documentation](docs/index.md) · [Release Checklist](docs/release_checklist.md)
+[Source](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026) · [GitHub Releases](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases) · [Documentation](docs/index.md) · [Release Checklist](docs/release_checklist.md)
 
 达妮娅夏日桌宠是一个 Windows 桌面陪伴应用，基于 Python + PySide6 构建。它提供透明置顶桌宠、拖拽移动、气泡对话、设置中心、角色关系、记忆备忘录、提醒、文件整理预览、系统状态感知、隐私剪贴板交互和专注/游戏模式。
 
 本项目是非官方同人作品。仓库不分发官方游戏资源、私有角色素材、用户聊天记录、关系数据或 API Key。
 
-v0.80 源码候选已经整合 v0.75-v0.77 的角色语句、运行可靠性和多屏交互收尾，并完成默认简单设置模式、无损档案字段迁移和全链路发布检查。可下载的公开稳定包仍为 v0.70；v0.80 在 tag 和 GitHub Release 获得单独确认前只作为源码与本地候选包。
+v0.83 源码候选包含离线电影式 24 章剧情站、默认关闭的本地养成、隐私受限的天气/媒体/小剧场感知，以及用户可见、可清空的对话级长期记忆与手动观察日记。源码版本、Windows 包和 GitHub Release 是三个独立状态；请用文件名和应用版本确认自己运行的构建。
 
 ## Quick Start
 
 ### 方式一：下载 Windows 包
 
-1. 从 GitHub Releases 下载 `DaniyaSummerPet-v0.70-win-x64.zip`。
+1. 从 GitHub Releases 下载所需版本的 `DaniyaSummerPet-vX.XX-win-x64.zip`。
 2. 解压到桌面、下载目录或其他普通文件夹。
 3. 运行 `DaniyaSummerPet.exe`。
 
@@ -49,6 +49,11 @@ python main.py
 | 对话系统 | 云端 API、本地 fallback、角色包、关系状态、剧情片段控制 |
 | 设置中心 | 默认简单模式保留常用入口，进阶模式提供模型、本地部署、角色资源、关系状态和诊断 |
 | 记忆备忘录 | 用户可见、可清空，运行态保存在本地，不进入 Git 或 release 包 |
+| 长期记忆 | 默认关闭；对话记录本地向量检索，只注入当前问题最相关的少量记录 |
+| 观察日记 | 默认关闭且仅手动生成；发送前确认，Provider fallback 不会冒充成功日记 |
+| 剧情阅读 | 本机回环地址打开电影式 24 章阅读器；浏览器不可用时回退 Qt 阅读窗 |
+| 本地养成 | 默认关闭；硬币、补给、背包、成长与衣柜状态只保存在本机 |
+| 环境感知 | 默认关闭；Open-Meteo 天气、播放器进程存在性与角色包小剧场 |
 | 自然语言提醒 | 支持相对时间、绝对时间和循环提醒解析 |
 | 文件整理预览 | 先预览再执行，避免直接移动用户文件 |
 | 系统状态感知 | 本地 CPU、内存、电量、磁盘和网络状态提示 |
@@ -57,13 +62,15 @@ python main.py
 
 ## Defaults And Privacy
 
-当前稳定版与 v0.80 源码均采用安静启动策略：
+当前 v0.83 源码采用安静启动策略：
 
 - 默认不展开输入框。
 - 默认关闭空闲小动作。
 - 默认关闭空闲闲聊和整点主动提醒。
 - 默认关闭边缘探头。
 - 用户记忆、聊天历史、提醒、便签和 API Key 只保存在本地运行态目录。
+- 长期记忆和观察日记默认关闭，内容可在设置中心查看并清空。
+- 观察日记只有在用户手动确认后才会把近期事件摘要发送给当前文本 Provider。
 - `.env`、`data/`、`assets/private/`、`models/`、`dist/`、`build/` 和 `release/` 不应提交到 Git。
 
 ## AI Providers
@@ -123,19 +130,19 @@ ZAI_API_KEY=your_key_here
 
 | 项目 | 当前状态 |
 |---|---|
-| 当前源码 | `v0.80 stable integration candidate` |
-| 已发布 Windows Release | `DaniyaSummerPet-v0.70-win-x64.zip` |
-| 本地候选包 | `DaniyaSummerPet-v0.80-win-x64.zip` |
+| 当前源码 | `v0.83 memory continuity candidate` |
+| 已发布 Windows Release | 以 [GitHub Releases](https://github.com/111111666yi-cmyk/daniya-desktop-pet-2026/releases) 页面为准 |
+| 本地候选包 | `DaniyaSummerPet-v0.83-win-x64.zip` |
 | 自动检查 | pytest、敏感文件、角色包、配置模板、文档链接、公开面审查 |
 | 发布包检查 | `pack.bat`、zip 内容扫描、隔离运行态 exe 启动烟测 |
 | 仍需外部证据 | 真实 Provider Key、第二块实体混合 DPI 显示器、不同 Windows/杀软策略 |
 
-v0.80 自动验收记录在 [V0.80 Integration Acceptance](docs/V0.80_INTEGRATION_ACCEPTANCE.md)，人工项目见 [V0.80 Manual QA Checklist](docs/V0.80_MANUAL_QA_CHECKLIST.md)。
+v0.83 自动验收记录在 [V0.83 Integration Acceptance](docs/V0.83_INTEGRATION_ACCEPTANCE.md)，人工项目见 [V0.83 Manual QA Checklist](docs/V0.83_MANUAL_QA_CHECKLIST.md)。
 
 Local candidate:
 
 ```text
-DaniyaSummerPet-v0.80-win-x64.zip
+DaniyaSummerPet-v0.83-win-x64.zip
 SHA256: verify locally with `Get-FileHash`; publish only after separate release approval.
 ```
 
@@ -150,6 +157,7 @@ SHA256: verify locally with `Get-FileHash`; publish only after separate release 
 - [System Status](docs/system_status.md)
 - [Clipboard Privacy](docs/clipboard_privacy.md)
 - [Focus Mode](docs/focus_mode.md)
+- [Memory And Observation Diary](docs/memory_and_diary.md)
 - [Known Issues](docs/KNOWN_ISSUES.md)
 - [Development Workflow](docs/dev_workflow.md)
 - [Version Log](VERSION_LOG.md)
@@ -167,11 +175,11 @@ python tools\check_public_surface.py
 pytest -q
 ```
 
-Before validating the v0.80 Windows candidate:
+Before validating the v0.83 Windows candidate:
 
 ```bat
 pack.bat
-python tools\check_release_zip.py release\DaniyaSummerPet-v0.80-win-x64.zip
+python tools\check_release_zip.py release\DaniyaSummerPet-v0.83-win-x64.zip
 ```
 
 Keep changes stage-scoped. Do not commit `.env`, runtime `data/`, private assets, model files, packaged `release/` output, `dist/`, or `build/`.

@@ -45,6 +45,7 @@ TAB_REGISTRY: list[dict[str, str]] = [
     {"id": "pet", "title": "桌宠", "icon": "internet", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_pet_tab"},
     {"id": "character_resources", "title": "角色与资源", "icon": "document", "mode": "both", "category": "character", "risk_level": "normal", "builder": "_build_character_resources_tab"},
     {"id": "relationship_events", "title": "关系与事件", "icon": "download", "mode": "advanced", "category": "character", "risk_level": "advanced", "builder": "_build_relationship_events_tab"},
+    {"id": "memory_diary", "title": "记忆与日记", "icon": "document", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_memory_diary_tab"},
     {"id": "growth", "title": "养成", "icon": "chip", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_growth_tab"},
     {"id": "environment", "title": "环境与内容", "icon": "settings", "mode": "both", "category": "basic", "risk_level": "normal", "builder": "_build_environment_tab"},
     {"id": "system", "title": "系统", "icon": "settings", "mode": "advanced", "category": "tools", "risk_level": "advanced", "builder": "_build_system_tab"},
@@ -56,6 +57,22 @@ TAB_REGISTRY: list[dict[str, str]] = [
     {"id": "privacy", "title": "隐私与安全", "icon": "info", "mode": "both", "category": "privacy", "risk_level": "normal", "builder": "_build_privacy_tab"},
     {"id": "diagnostics", "title": "诊断", "icon": "settings", "mode": "both", "category": "diagnostics", "risk_level": "normal", "builder": "_build_diagnostics_tab"},
 ]
+
+SIMPLE_SETTINGS_TABS = {
+    "模型与引擎",
+    "桌宠",
+    "角色与资源",
+    "关系与事件",
+    "记忆与日记",
+    "养成",
+    "环境与内容",
+    "提醒",
+    "隐私与安全",
+}
+
+
+def normalize_settings_mode(value: Any) -> str:
+    return "advanced" if str(value or "").strip().lower() == "advanced" else "simple"
 
 
 class _ApiTestWorker(QThread):
@@ -110,6 +127,27 @@ class _DiagnosticsWorker(QThread):
         if startup_timer is not None:
             text += "\n\n" + startup_timer.format_summary()
         self.finished_with_text.emit(text)
+
+
+class _DiaryWorker(QThread):
+    finished_with_result = Signal(object)
+
+    def __init__(self, controller: "AppController", days: int) -> None:
+        super().__init__()
+        self.controller = controller
+        self.days = days
+
+    def run(self) -> None:
+        try:
+            result = self.controller.observation_diary.generate(days=self.days)
+        except Exception as exc:
+            result = {
+                "ok": False,
+                "message": f"观察日记生成失败：{exc.__class__.__name__}",
+                "source": "error",
+                "event_count": 0,
+            }
+        self.finished_with_result.emit(result)
 
 
 class _OllamaHealthWorker(QThread):
@@ -345,6 +383,40 @@ def _format_user_memory_summary(profile: dict[str, str], memory: dict[str, Any],
     return "\n".join(lines)
 
 
+def _format_long_term_memory_summary(records: list[dict[str, Any]]) -> str:
+    if not records:
+        return "暂无对话级长期记忆。启用后，新完成的对话会保存在本机。"
+    lines = [f"本机共保存 {len(records)} 条对话级长期记忆。", ""]
+    for record in records[-50:][::-1]:
+        timestamp = str(record.get("timestamp", ""))[:19] or "未知时间"
+        user = " ".join(str(record.get("user", "")).split())[:220]
+        assistant = " ".join(str(record.get("assistant", "")).split())[:260]
+        lines.append(f"{timestamp}")
+        lines.append(f"- 你：{user or '（空）'}")
+        lines.append(f"- 达妮娅：{assistant or '（空）'}")
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+def _format_diary_summary(records: list[dict[str, Any]]) -> str:
+    if not records:
+        return "暂无观察日记。只有手动生成且 Provider 真实返回成功的内容才会保存。"
+    lines: list[str] = []
+    for record in records[-20:][::-1]:
+        timestamp = str(record.get("timestamp", ""))[:19] or "未知时间"
+        event_count = record.get("event_count", 0)
+        source = str(record.get("source", "unknown"))
+        text = str(record.get("text", "")).strip()
+        lines.extend(
+            [
+                f"{timestamp}｜{event_count} 条互动｜来源 {source}",
+                text or "（空）",
+                "",
+            ]
+        )
+    return "\n".join(lines).rstrip()
+
+
 def _read_recent_text_lines(path: Path, limit: int) -> list[str]:
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
@@ -412,6 +484,7 @@ class SettingsWindow(QDialog):
         self.relationship_viewer = RelationshipStateViewer(character_id=char_id)
         self.api_worker: _ApiTestWorker | None = None
         self.diagnostics_worker: _DiagnosticsWorker | None = None
+        self.diary_worker: _DiaryWorker | None = None
         self.ollama_worker: _OllamaPullWorker | None = None
         self.ollama_health_worker: _OllamaHealthWorker | None = None
         self._lazy_tab_loaders: dict[str, Callable[[], None]] = {}
@@ -2070,6 +2143,109 @@ class SettingsWindow(QDialog):
         self._register_tab("relationship_events", tab, "download", "关系与事件")
         self._lazy_tab_loaders["relationship_events"] = self._refresh_relationship_bundle
 
+    def _build_memory_diary_tab(self) -> None:
+        config = self.settings_manager.load_app_config()
+        memory_config = config.get("memory_features", {})
+        if not isinstance(memory_config, dict):
+            memory_config = {}
+
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        long_term_group = QGroupBox("对话级长期记忆")
+        long_term_layout = QVBoxLayout(long_term_group)
+        long_term_form = QFormLayout()
+        self.long_term_memory_enabled = QCheckBox(
+            "启用本地长期记忆（仅记录启用后的新对话）"
+        )
+        self.long_term_memory_enabled.setChecked(
+            bool(memory_config.get("long_term_enabled", False))
+        )
+        self.long_term_memory_top_k = QSpinBox()
+        self.long_term_memory_top_k.setRange(1, 10)
+        self.long_term_memory_top_k.setValue(
+            int(memory_config.get("long_term_top_k", 3))
+        )
+        self.long_term_memory_max_entries = QSpinBox()
+        self.long_term_memory_max_entries.setRange(20, 2000)
+        self.long_term_memory_max_entries.setValue(
+            int(memory_config.get("long_term_max_entries", 500))
+        )
+        long_term_form.addRow("", self.long_term_memory_enabled)
+        long_term_form.addRow("每次检索数量", self.long_term_memory_top_k)
+        long_term_form.addRow("本机最多保存", self.long_term_memory_max_entries)
+        long_term_layout.addLayout(long_term_form)
+        long_term_hint = QLabel(
+            "记忆内容对用户完全可见；只向当前文本 Provider 注入与本次输入最相关的少量记录。"
+            "检测到 API Key、Token 或密码样式时不会写入。"
+        )
+        long_term_hint.setWordWrap(True)
+        long_term_layout.addWidget(long_term_hint)
+        long_term_buttons = QHBoxLayout()
+        save_memory = QPushButton("保存设置")
+        save_memory.setIcon(get_icon("save"))
+        save_memory.clicked.connect(self._save_memory_diary_settings)
+        refresh_memory = QPushButton("刷新记录")
+        refresh_memory.setIcon(get_icon("refresh"))
+        refresh_memory.clicked.connect(self._refresh_memory_diary)
+        clear_long_term = QPushButton("清空长期记忆")
+        clear_long_term.setIcon(get_icon("protect"))
+        clear_long_term.clicked.connect(self._clear_long_term_memory)
+        long_term_buttons.addWidget(save_memory)
+        long_term_buttons.addWidget(refresh_memory)
+        long_term_buttons.addWidget(clear_long_term)
+        long_term_buttons.addStretch(1)
+        long_term_layout.addLayout(long_term_buttons)
+        self.long_term_memory_text = QTextEdit()
+        self.long_term_memory_text.setReadOnly(True)
+        long_term_layout.addWidget(self.long_term_memory_text)
+        layout.addWidget(long_term_group)
+
+        diary_group = QGroupBox("观察日记")
+        diary_layout = QVBoxLayout(diary_group)
+        diary_form = QFormLayout()
+        self.observation_diary_enabled = QCheckBox(
+            "允许手动把近期互动发送给当前文本 Provider 生成日记"
+        )
+        self.observation_diary_enabled.setChecked(
+            bool(memory_config.get("diary_enabled", False))
+        )
+        self.observation_diary_days = QSpinBox()
+        self.observation_diary_days.setRange(1, 30)
+        self.observation_diary_days.setSuffix(" 天")
+        self.observation_diary_days.setValue(
+            int(memory_config.get("diary_days", 3))
+        )
+        diary_form.addRow("", self.observation_diary_enabled)
+        diary_form.addRow("读取最近互动", self.observation_diary_days)
+        diary_layout.addLayout(diary_form)
+        diary_hint = QLabel(
+            "不会后台自动生成。点击生成后会再次确认；Provider 未连通或仅返回 fallback 时不保存。"
+        )
+        diary_hint.setWordWrap(True)
+        diary_layout.addWidget(diary_hint)
+        diary_buttons = QHBoxLayout()
+        generate_diary = QPushButton("生成观察日记")
+        generate_diary.setIcon(get_icon("document"))
+        generate_diary.clicked.connect(self._generate_observation_diary)
+        clear_diary = QPushButton("清空观察日记")
+        clear_diary.setIcon(get_icon("protect"))
+        clear_diary.clicked.connect(self._clear_observation_diary)
+        diary_buttons.addWidget(generate_diary)
+        diary_buttons.addWidget(clear_diary)
+        diary_buttons.addStretch(1)
+        diary_layout.addLayout(diary_buttons)
+        self.observation_diary_status = QLabel()
+        self.observation_diary_status.setWordWrap(True)
+        diary_layout.addWidget(self.observation_diary_status)
+        self.observation_diary_text = QTextEdit()
+        self.observation_diary_text.setReadOnly(True)
+        diary_layout.addWidget(self.observation_diary_text)
+        layout.addWidget(diary_group)
+
+        self._register_tab("memory_diary", tab, "document", "记忆与日记")
+        self._lazy_tab_loaders["memory_diary"] = self._refresh_memory_diary
+
     def _build_system_tab(self) -> None:
         tab = QWidget()
         layout = QVBoxLayout(tab)
@@ -2814,6 +2990,16 @@ class SettingsWindow(QDialog):
                     isinstance(config.get("environment"), dict)
                     and config["environment"].get("ambient_events_enabled", False),
                 ),
+                (
+                    "长期记忆",
+                    isinstance(config.get("memory_features"), dict)
+                    and config["memory_features"].get("long_term_enabled", False),
+                ),
+                (
+                    "观察日记",
+                    isinstance(config.get("memory_features"), dict)
+                    and config["memory_features"].get("diary_enabled", False),
+                ),
             )
             if bool(enabled)
         ]
@@ -2833,6 +3019,9 @@ class SettingsWindow(QDialog):
         environment["weather_enabled"] = False
         environment["media_presence_enabled"] = False
         environment["ambient_events_enabled"] = False
+        memory_features = config.setdefault("memory_features", {})
+        memory_features["long_term_enabled"] = False
+        memory_features["diary_enabled"] = False
         self.settings_manager.save_app_config(config)
         self.controller.app_config.update(config)
         self.controller.apply_integrated_feature_config()
@@ -2847,6 +3036,9 @@ class SettingsWindow(QDialog):
                 self.weather_enabled.setChecked(False)
                 self.media_presence_enabled.setChecked(False)
                 self.ambient_events_enabled.setChecked(False)
+            if hasattr(self, "long_term_memory_enabled"):
+                self.long_term_memory_enabled.setChecked(False)
+                self.observation_diary_enabled.setChecked(False)
         self._refresh_integrated_feature_status()
         self._refresh_privacy_status()
 
@@ -3132,6 +3324,99 @@ class SettingsWindow(QDialog):
         if hasattr(self, "memory_text"):
             self.memory_text.setPlainText(_format_user_memory_summary(profile, memory, notes))
 
+    def _save_memory_diary_settings(self) -> None:
+        config = self.settings_manager.load_app_config()
+        memory_config = config.setdefault("memory_features", {})
+        if not isinstance(memory_config, dict):
+            memory_config = {}
+            config["memory_features"] = memory_config
+        memory_config["long_term_enabled"] = self.long_term_memory_enabled.isChecked()
+        memory_config["long_term_top_k"] = self.long_term_memory_top_k.value()
+        memory_config["long_term_max_entries"] = (
+            self.long_term_memory_max_entries.value()
+        )
+        memory_config["diary_enabled"] = self.observation_diary_enabled.isChecked()
+        memory_config["diary_days"] = self.observation_diary_days.value()
+        self.settings_manager.save_app_config(config)
+        self.controller.app_config.update(config)
+        self.observation_diary_status.setText(
+            "设置已保存。长期记忆和观察日记仍只保存在本机运行态目录。"
+        )
+        if hasattr(self, "privacy_status"):
+            self._refresh_privacy_status()
+
+    def _refresh_memory_diary(self) -> None:
+        long_term_records = self.controller.long_term_memory_store.records()
+        diary_records = self.controller.observation_diary.records()
+        if hasattr(self, "long_term_memory_text"):
+            self.long_term_memory_text.setPlainText(
+                _format_long_term_memory_summary(long_term_records)
+            )
+        if hasattr(self, "observation_diary_text"):
+            self.observation_diary_text.setPlainText(
+                _format_diary_summary(diary_records)
+            )
+
+    def _clear_long_term_memory(self) -> None:
+        result = QMessageBox.question(
+            self,
+            "清空长期记忆",
+            "会永久清空本机保存的对话级长期记忆，但不删除聊天历史。继续吗？",
+        )
+        if result != QMessageBox.StandardButton.Yes:
+            return
+        self.controller.long_term_memory_store.clear()
+        self._refresh_memory_diary()
+        self.observation_diary_status.setText("对话级长期记忆已清空。")
+
+    def _generate_observation_diary(self) -> None:
+        self._save_memory_diary_settings()
+        if not self.observation_diary_enabled.isChecked():
+            QMessageBox.information(
+                self,
+                "观察日记",
+                "请先启用“允许手动把近期互动发送给当前文本 Provider”。",
+            )
+            return
+        if self.diary_worker is not None and self.diary_worker.isRunning():
+            return
+        days = self.observation_diary_days.value()
+        result = QMessageBox.question(
+            self,
+            "发送近期互动",
+            f"将把最近 {days} 天的事件日志摘要发送给当前文本 Provider，"
+            "用于生成第一人称观察日记。继续吗？",
+        )
+        if result != QMessageBox.StandardButton.Yes:
+            return
+        self.observation_diary_status.setText("正在生成观察日记……")
+        self.diary_worker = _DiaryWorker(self.controller, days)
+        self.diary_worker.finished_with_result.connect(
+            self._on_observation_diary_finished
+        )
+        self.diary_worker.finished.connect(self.diary_worker.deleteLater)
+        self.diary_worker.start()
+
+    def _on_observation_diary_finished(self, result: object) -> None:
+        payload = result if isinstance(result, dict) else {}
+        message = str(payload.get("message", "观察日记生成失败。"))
+        source = str(payload.get("source", "unknown"))
+        self.observation_diary_status.setText(f"{message} 来源：{source}。")
+        self.diary_worker = None
+        self._refresh_memory_diary()
+
+    def _clear_observation_diary(self) -> None:
+        result = QMessageBox.question(
+            self,
+            "清空观察日记",
+            "会永久清空本机保存的观察日记。继续吗？",
+        )
+        if result != QMessageBox.StandardButton.Yes:
+            return
+        self.controller.observation_diary.clear()
+        self._refresh_memory_diary()
+        self.observation_diary_status.setText("观察日记已清空。")
+
     def _save_profile_settings(self) -> None:
         self.controller.save_profile(
             {
@@ -3162,7 +3447,7 @@ class SettingsWindow(QDialog):
         result = QMessageBox.question(
             self,
             "清空记忆",
-            "会清空自动记忆和手动备忘，但不会重置关系状态。继续吗？",
+            "会清空自动记忆、手动备忘和对话级长期记忆，但不会重置关系状态。继续吗？",
         )
         if result != QMessageBox.StandardButton.Yes:
             return
@@ -3170,10 +3455,17 @@ class SettingsWindow(QDialog):
 
         clear_user_memory()
         self.controller.notes_manager.clear()
+        self.controller.long_term_memory_store.clear()
         if hasattr(self.controller, "chat_client"):
             self.controller.chat_client.reload()
         self._refresh_memory()
-        QMessageBox.information(self, "记忆备忘录", "已清空自动记忆和手动备忘。")
+        if hasattr(self, "long_term_memory_text"):
+            self._refresh_memory_diary()
+        QMessageBox.information(
+            self,
+            "记忆备忘录",
+            "已清空自动记忆、手动备忘和对话级长期记忆。",
+        )
 
     def _toggle_relationship_raw(self) -> None:
         visible = not self.relationship_raw_text.isVisible()

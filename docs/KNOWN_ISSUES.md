@@ -1,5 +1,17 @@
 # KNOWN_ISSUES
 
+## v0.83 Candidate Boundaries (2026-06-12)
+
+| ID | Level | Status | Required evidence |
+|---|---|---|---|
+| QA83-PROVIDER-001 | P1 | MANUAL REQUIRED | One real cloud or local text Provider reply and one diary generation using a user-owned/configured service. Never record the key. |
+| QA83-MEMORY-001 | P2 | HUMAN SIGN-OFF REQUIRED | Review whether top-k recalled records feel relevant across several real conversations; automated cosine tests only prove deterministic ranking. |
+| QA83-DIARY-001 | P2 | HUMAN SIGN-OFF REQUIRED | Confirm diary wording stays first-person and fact-bound on real personal event logs. |
+| QA83-MONITOR-001 | P2 | MANUAL REQUIRED / NOT AVAILABLE | A second physical mixed-DPI monitor and real cross-screen movement. |
+| QA83-MOUSE-001 | P2 | MANUAL REQUIRED | Physical click, double-click, long-press, drag, snap, and focus-steal feel. |
+| QA83-SMARTSCREEN-001 | P3 | EXPECTED WARNING | The candidate is unsigned. SmartScreen depends on download origin and Windows policy. |
+| QA83-SIGNING-001 | P3 | NOT SIGNED | No code-signing operation is included. |
+
 ## v0.80 RC Boundaries (2026-06-11)
 
 | ID | Level | Status | Required evidence |

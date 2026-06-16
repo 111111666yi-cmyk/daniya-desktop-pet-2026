@@ -106,6 +106,13 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
         "ambient_events_enabled": False,
         "ambient_event_interval_seconds": 1800,
     },
+    "memory_features": {
+        "long_term_enabled": False,
+        "long_term_top_k": 3,
+        "long_term_max_entries": 500,
+        "diary_enabled": False,
+        "diary_days": 3,
+    },
     "hourly_chime_enabled": False,
     "idle_chat_enabled": False,
     "idle_chat_minutes": 10,
@@ -299,6 +306,7 @@ class ConfigManager:
             pass
 
     def _normalize_app_config(self, config: dict[str, Any]) -> dict[str, Any]:
+        config["version"] = APP_VERSION
         config["quiet_defaults_migration"] = str(
             config.get("quiet_defaults_migration", QUIET_DEFAULTS_MIGRATION)
         )
@@ -452,6 +460,26 @@ class ConfigManager:
         environment["ambient_events_enabled"] = bool(
             environment.get("ambient_events_enabled", False)
         )
+        memory_features = config.get("memory_features")
+        if not isinstance(memory_features, dict):
+            memory_features = {}
+            config["memory_features"] = memory_features
+        memory_features["long_term_enabled"] = bool(
+            memory_features.get("long_term_enabled", False)
+        )
+        memory_features["diary_enabled"] = bool(
+            memory_features.get("diary_enabled", False)
+        )
+        for key, default, minimum, maximum in (
+            ("long_term_top_k", 3, 1, 10),
+            ("long_term_max_entries", 500, 20, 2000),
+            ("diary_days", 3, 1, 30),
+        ):
+            try:
+                value = int(memory_features.get(key, default))
+            except (TypeError, ValueError):
+                value = default
+            memory_features[key] = max(minimum, min(maximum, value))
         config["file_organizer_enabled"] = bool(config.get("file_organizer_enabled", False))
         config["system_status_enabled"] = bool(config.get("system_status_enabled", False))
         try:

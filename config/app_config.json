@@ -1,5 +1,5 @@
 {
-  "version": "v0.82",
+  "version": "v0.83",
   "quiet_defaults_migration": "v0.61-quiet-defaults",
   "current_character": "daniya",
   "settings_mode": "simple",
@@ -98,6 +98,13 @@
     "media_interval_seconds": 60,
     "ambient_events_enabled": false,
     "ambient_event_interval_seconds": 1800
+  },
+  "memory_features": {
+    "long_term_enabled": false,
+    "long_term_top_k": 3,
+    "long_term_max_entries": 500,
+    "diary_enabled": false,
+    "diary_days": 3
   },
   "hourly_chime_enabled": false,
   "idle_chat_enabled": false,

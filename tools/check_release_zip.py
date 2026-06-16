@@ -77,6 +77,10 @@ REQUIRED_ENTRY_SUFFIXES = (
     "docs/focus_mode.md",
     "docs/V0.80_INTEGRATION_ACCEPTANCE.md",
     "docs/V0.80_MANUAL_QA_CHECKLIST.md",
+    "docs/memory_and_diary.md",
+    "docs/V0.83_INTEGRATION_ACCEPTANCE.md",
+    "docs/V0.83_MANUAL_QA_CHECKLIST.md",
+    "docs/V0.81_V0.83_RELEASE_REPORT.md",
 )
 TEXT_SUFFIXES = {".txt", ".md", ".json", ".yaml", ".yml", ".py", ".bat", ".env", ".ini", ".cfg", ".example"}
 MAX_TEXT_SCAN_BYTES = 1_000_000

@@ -81,6 +81,7 @@ class DialogueEngine:
                 relationship_state=state,
                 lore_fragments=lore_fragments,
                 recent_messages=context.get("recent_messages"),
+                long_term_memories=context.get("long_term_memories"),
             )
             raw_model_response, source, errors = self._call_model(prompt, user_text)
         response_mode = "technical" if technical_response else "companion"

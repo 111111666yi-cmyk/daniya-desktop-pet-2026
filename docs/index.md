@@ -11,6 +11,7 @@
 - [System Status](system_status.md)
 - [Clipboard Privacy](clipboard_privacy.md)
 - [Focus Mode](focus_mode.md)
+- [Long-Term Memory And Observation Diary](memory_and_diary.md)
 
 ## Project
 
@@ -22,6 +23,9 @@
 - [v0.7x Backfill And Streaming Plan](V0.7X_BACKFILL_AND_STREAMING_PLAN.md)
 - [v0.80 Integration Acceptance](V0.80_INTEGRATION_ACCEPTANCE.md)
 - [v0.80 Manual QA Checklist](V0.80_MANUAL_QA_CHECKLIST.md)
+- [v0.83 Integration Acceptance](V0.83_INTEGRATION_ACCEPTANCE.md)
+- [v0.83 Manual QA Checklist](V0.83_MANUAL_QA_CHECKLIST.md)
+- [v0.81-v0.83 Release Report](V0.81_V0.83_RELEASE_REPORT.md)
 - [v0.70 Integration Acceptance](V0.70_INTEGRATION_ACCEPTANCE.md)
 - [v0.70 Manual QA Checklist](V0.70_MANUAL_QA_CHECKLIST.md)
 - [Development Workflow](dev_workflow.md)
