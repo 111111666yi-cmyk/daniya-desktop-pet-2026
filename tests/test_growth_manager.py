@@ -67,13 +67,18 @@ def _manager(monkeypatch, tmp_path: Path) -> GrowthManager:
     return GrowthManager(config_manager, app_config, catalog_root=catalog)
 
 
-def test_growth_is_disabled_by_default_and_blocks_state_changes(
+def test_growth_enabled_by_default_and_disabling_blocks_state_changes(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
     manager = _manager(monkeypatch, tmp_path)
 
-    assert DEFAULT_APP_CONFIG["growth"]["enabled"] is False
+    # 0.81–0.83 build ships the local coin/growth system on by default.
+    assert DEFAULT_APP_CONFIG["growth"]["enabled"] is True
+    assert manager.is_enabled() is True
+
+    # Turning it off re-establishes the consent gate: every state change blocked.
+    manager.set_enabled(False)
     assert manager.is_enabled() is False
     assert manager.claim_daily(date(2026, 6, 12)).ok is False
     assert manager.buy_item("snack").ok is False
@@ -152,14 +157,15 @@ def test_growth_dialog_exposes_opt_in_and_local_state(
     controller = AppController(app)
     dialog = GrowthDialog(controller)
     try:
-        assert dialog.enabled.isChecked() is False
-        assert "已关闭" in dialog.status.text()
-
-        dialog.enabled.click()
-
-        assert controller.growth_manager.is_enabled() is True
-        assert controller.config_manager.load_app_config()["growth"]["enabled"] is True
+        assert dialog.enabled.isChecked() is True
+        assert "已启用" in dialog.status.text()
         assert dialog.daily_button.isEnabled() is True
+
+        dialog.enabled.click()  # toggle the feature off
+
+        assert controller.growth_manager.is_enabled() is False
+        assert controller.config_manager.load_app_config()["growth"]["enabled"] is False
+        assert dialog.daily_button.isEnabled() is False
     finally:
         dialog.close()
         controller.window.close()

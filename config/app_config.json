@@ -83,7 +83,7 @@
     "click_cooldown_seconds": 5
   },
   "growth": {
-    "enabled": false,
+    "enabled": true,
     "daily_coin_reward": 25
   },
   "environment": {

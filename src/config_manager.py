@@ -90,7 +90,7 @@ DEFAULT_APP_CONFIG: dict[str, Any] = {
         "click_cooldown_seconds": 5,
     },
     "growth": {
-        "enabled": False,
+        "enabled": True,
         "daily_coin_reward": 25,
     },
     "environment": {
@@ -405,7 +405,7 @@ class ConfigManager:
         if not isinstance(growth, dict):
             growth = {}
             config["growth"] = growth
-        growth["enabled"] = bool(growth.get("enabled", False))
+        growth["enabled"] = bool(growth.get("enabled", True))
         try:
             daily_coin_reward = int(growth.get("daily_coin_reward", 25))
         except (TypeError, ValueError):

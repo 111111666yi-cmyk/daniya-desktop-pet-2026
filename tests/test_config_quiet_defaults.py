@@ -25,7 +25,9 @@ def test_default_app_config_is_quiet_by_default() -> None:
     assert DEFAULT_APP_CONFIG["system_status_enabled"] is False
     assert DEFAULT_APP_CONFIG["clipboard_interaction_enabled"] is False
     assert DEFAULT_APP_CONFIG["focus_mode_enabled"] is False
-    assert DEFAULT_APP_CONFIG["growth"]["enabled"] is False
+    # growth/coin system ships on from the 0.81–0.83 build — local, passive,
+    # no network or notifications, so it doesn't break the "quiet" contract.
+    assert DEFAULT_APP_CONFIG["growth"]["enabled"] is True
     assert DEFAULT_APP_CONFIG["environment"]["weather_enabled"] is False
     assert DEFAULT_APP_CONFIG["environment"]["media_presence_enabled"] is False
     assert DEFAULT_APP_CONFIG["environment"]["ambient_events_enabled"] is False
