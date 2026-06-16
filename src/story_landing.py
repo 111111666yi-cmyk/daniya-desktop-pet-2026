@@ -465,7 +465,7 @@ class _HeroSection(QWidget):
         start_btn = QPushButton("开始阅读  ↗")
         start_btn.setStyleSheet(
             "QPushButton { background: rgba(255,255,255,0.08);"
-            "  backdrop-filter: blur(20px); color: white; border: 1px solid rgba(255,255,255,0.15);"
+            "  color: white; border: 1px solid rgba(255,255,255,0.15);"
             "  padding: 12px 28px; font-size: 14px; font-weight: 500;"
             "  border-radius: 20px; }"
             "QPushButton:hover { background: rgba(255,255,255,0.15); }"
