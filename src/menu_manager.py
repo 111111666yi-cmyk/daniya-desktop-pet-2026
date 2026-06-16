@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
 from .daniya_settings_window import DaniyaSettingsDialog
 from .icon_utils import icon as ic
 from .story_landing import StoryLandingWindow
-from .story_window import StoryBookDialog
 from .utils import resource_path
 
 if TYPE_CHECKING:

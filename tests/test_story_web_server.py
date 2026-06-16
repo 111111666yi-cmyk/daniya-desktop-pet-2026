@@ -67,13 +67,13 @@ def test_show_story_dialog_uses_native_book_reader(monkeypatch, tmp_path) -> Non
 
     exec_calls: list[bool] = []
 
-    class FakeStoryBookDialog:
-        def __init__(self, chapters, ctrl, parent):
-            self.chapters = chapters
+    class FakeStoryLandingWindow:
+        def __init__(self, ctrl, parent):
+            self.ctrl = ctrl
         def exec(self):
             exec_calls.append(True)
 
-    monkeypatch.setattr(menu_manager_module, "StoryBookDialog", FakeStoryBookDialog)
+    monkeypatch.setattr(menu_manager_module, "StoryLandingWindow", FakeStoryLandingWindow)
 
     manager.show_story_dialog()
 
