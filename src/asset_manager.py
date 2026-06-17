@@ -32,6 +32,7 @@ ACTION_ALIASES: dict[str, tuple[str, ...]] = {
     "walking": ("walking",),
     "edge_peek_left": ("edge_peek_left",),
     "edge_peek_right": ("edge_peek_right",),
+    "taskbar_sit": ("taskbar_sit", "idle"),
 }
 
 ACTION_MODULES: dict[str, str] = {

@@ -1,0 +1,444 @@
+{
+  "name": "daniya_summer",
+  "display_name": "Daniya Summer",
+  "default_height": 96,
+  "actions_version": "1.0-actual",
+  "asset_sets": {
+    "v1_actual": {
+      "root": "v1_actual",
+      "source_package": "Daniya_DesktopPet_Assets_v1_actual",
+      "source_px": 1024,
+      "format": "PNG RGBA transparent"
+    },
+    "v1_actual_runtime": {
+      "root": "v1_actual_runtime",
+      "derived_from": "v1_actual",
+      "source_px": 1024,
+      "format": "PNG RGBA transparent",
+      "normalization": "alpha bbox scaled per anchor group for consistent desktop display"
+    }
+  },
+  "anchor_templates": {
+    "sit_base": {
+      "normalized_anchor": {
+        "x": 0.5,
+        "y": 0.84
+      },
+      "weight": 0.4
+    },
+    "stand_base": {
+      "normalized_anchor": {
+        "x": 0.5,
+        "y": 0.88
+      },
+      "weight": 0.25
+    },
+    "sleep_base": {
+      "normalized_anchor": {
+        "x": 0.5,
+        "y": 0.72
+      },
+      "weight": 0.15
+    },
+    "special_base": {
+      "normalized_anchor": {
+        "x": 0.5,
+        "y": 0.55
+      },
+      "weight": 0.2
+    },
+    "drag_pet_base": {
+      "normalized_anchor": {
+        "x": 0.5,
+        "y": 0.18
+      },
+      "weight": 0.0,
+      "trigger": "long_press_or_mouse_hold"
+    }
+  },
+  "state_weights": {
+    "idle_pool": {
+      "A_sit_base": 0.4,
+      "B_stand_base_pack": 0.25,
+      "C_sleep_base_pack": 0.15,
+      "D_special_motion_pack": 0.2,
+      "E_QQ_pet_drag_system": 0.0,
+      "E_group_pending_review": 0.0
+    },
+    "drag_pool": {
+      "E_QQ_pet_drag_system": 1.0
+    }
+  },
+  "animations": {
+    "idle": [
+      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+      "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
+      "v1_actual_runtime/D_special_motion_pack/float_01.png"
+    ],
+    "talk": [
+      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+      "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
+      "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
+      "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png"
+    ],
+    "talking": [
+      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+      "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
+      "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
+      "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png"
+    ],
+    "hover": [
+      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png"
+    ],
+    "clicked": [
+      "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
+      "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_01.png"
+    ],
+    "drag": [
+      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
+      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+    ],
+    "dragging": [
+      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
+      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+    ],
+    "drag_pickup": [
+      "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
+      "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png"
+    ],
+    "drag_hold": [
+      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
+      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+    ],
+    "drag_drop": [
+      "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
+      "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png"
+    ],
+    "sleep": [
+      "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
+      "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
+      "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
+      "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
+      "v1_actual_runtime/C_sleep_base_pack/wake_up_01.png"
+    ],
+    "sleeping": [
+      "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
+      "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
+      "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
+      "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
+      "v1_actual_runtime/C_sleep_base_pack/wake_up_01.png"
+    ],
+    "happy": [
+      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+      "v1_actual_runtime/B_stand_base_pack/wave_01.png",
+      "v1_actual_runtime/B_stand_base_pack/wave_02.png"
+    ],
+    "remind": [
+      "v1_actual_runtime/B_stand_base_pack/remind_stand_01.png",
+      "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png"
+    ],
+    "walking": [
+      "v1_actual_runtime/B_walk_generated/walk_01.png",
+      "v1_actual_runtime/B_walk_generated/walk_02.png",
+      "v1_actual_runtime/B_walk_generated/walk_03.png",
+      "v1_actual_runtime/B_walk_generated/walk_04.png",
+      "v1_actual_runtime/B_walk_generated/walk_05.png",
+      "v1_actual_runtime/B_walk_generated/walk_06.png",
+      "v1_actual_runtime/B_walk_generated/walk_07.png",
+      "v1_actual_runtime/B_walk_generated/walk_08.png",
+      "v1_actual_runtime/B_walk_generated/walk_09.png",
+      "v1_actual_runtime/B_walk_generated/walk_10.png",
+      "v1_actual_runtime/B_walk_generated/walk_11.png",
+      "v1_actual_runtime/B_walk_generated/walk_12.png"
+    ],
+    "taskbar_sit": [
+      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png"
+    ],
+    "edge_peek_left": [
+      "v1_actual_runtime/D_special_motion_pack/peek_left_01.png"
+    ],
+    "edge_peek_right": [
+      "v1_actual_runtime/D_special_motion_pack/peek_right_01.png"
+    ]
+  },
+  "animation_groups": {
+    "idle": [
+      {
+        "name": "A_sit_base",
+        "anchor": "sit_base",
+        "weight": 0.4,
+        "pick": "one",
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/angry_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/angry_02.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_02.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/eat_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/sad_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/sad_02.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png"
+        ]
+      },
+      {
+        "name": "B_stand_base_pack",
+        "anchor": "stand_base",
+        "weight": 0.25,
+        "pick": "one",
+        "frames": [
+          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
+          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
+          "v1_actual_runtime/B_stand_base_pack/wave_02.png"
+        ]
+      },
+      {
+        "name": "C_sleep_base_pack",
+        "anchor": "sleep_base",
+        "weight": 0.15,
+        "pick": "one",
+        "frames": [
+          "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/sleep_pillow_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/yawn_01.png"
+        ]
+      },
+      {
+        "name": "D_special_motion_pack",
+        "anchor": "special_base",
+        "weight": 0.2,
+        "pick": "one",
+        "frames": [
+          "v1_actual_runtime/D_special_motion_pack/float_01.png",
+          "v1_actual_runtime/D_special_motion_pack/float_02.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png"
+        ]
+      }
+    ],
+    "talking": [
+      {
+        "name": "A_sit_talk",
+        "anchor": "sit_base",
+        "weight": 0.75,
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png"
+        ]
+      },
+      {
+        "name": "B_stand_talk",
+        "anchor": "stand_base",
+        "weight": 0.25,
+        "frames": [
+          "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png"
+        ]
+      },
+      {
+        "name": "C_sleep_talk",
+        "anchor": "sleep_base",
+        "weight": 0.15,
+        "frames": [
+          "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/yawn_01.png"
+        ]
+      },
+      {
+        "name": "D_special_talk",
+        "anchor": "special_base",
+        "weight": 0.2,
+        "frames": [
+          "v1_actual_runtime/D_special_motion_pack/float_01.png",
+          "v1_actual_runtime/D_special_motion_pack/float_02.png"
+        ]
+      }
+    ],
+    "hover": [
+      {
+        "name": "A_hover",
+        "anchor": "sit_base",
+        "weight": 0.8,
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png"
+        ]
+      },
+      {
+        "name": "B_hover",
+        "anchor": "stand_base",
+        "weight": 0.2,
+        "frames": [
+          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png"
+        ]
+      }
+    ],
+    "clicked": [
+      {
+        "name": "A_clicked",
+        "anchor": "sit_base",
+        "weight": 1.0,
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_02.png"
+        ]
+      }
+    ],
+    "happy": [
+      {
+        "name": "A_happy",
+        "anchor": "sit_base",
+        "weight": 0.7,
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png"
+        ]
+      },
+      {
+        "name": "B_wave",
+        "anchor": "stand_base",
+        "weight": 0.3,
+        "frames": [
+          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
+          "v1_actual_runtime/B_stand_base_pack/wave_02.png"
+        ]
+      }
+    ],
+    "remind": [
+      {
+        "name": "B_remind",
+        "anchor": "stand_base",
+        "weight": 0.8,
+        "frames": [
+          "v1_actual_runtime/B_stand_base_pack/remind_stand_01.png"
+        ]
+      },
+      {
+        "name": "A_thinking",
+        "anchor": "sit_base",
+        "weight": 0.2,
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png"
+        ]
+      }
+    ],
+    "sleeping": [
+      {
+        "name": "C_sleep_cycle",
+        "anchor": "sleep_base",
+        "weight": 1.0,
+        "frames": [
+          "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
+          "v1_actual_runtime/C_sleep_base_pack/wake_up_01.png"
+        ]
+      }
+    ],
+    "drag_pickup": [
+      {
+        "name": "E_pickup",
+        "anchor": "drag_pet_base",
+        "weight": 1.0,
+        "frames": [
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png"
+        ]
+      }
+    ],
+    "drag_hold": [
+      {
+        "name": "E_hold",
+        "anchor": "drag_pet_base",
+        "weight": 1.0,
+        "frames": [
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+        ]
+      }
+    ],
+    "drag_drop": [
+      {
+        "name": "E_drop",
+        "anchor": "drag_pet_base",
+        "weight": 1.0,
+        "frames": [
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png"
+        ]
+      }
+    ],
+    "walking": [
+      {
+        "name": "B_generated_walk",
+        "anchor": "stand_base",
+        "weight": 1.0,
+        "frames": [
+          "v1_actual_runtime/B_walk_generated/walk_01.png",
+          "v1_actual_runtime/B_walk_generated/walk_02.png",
+          "v1_actual_runtime/B_walk_generated/walk_03.png",
+          "v1_actual_runtime/B_walk_generated/walk_04.png",
+          "v1_actual_runtime/B_walk_generated/walk_05.png",
+          "v1_actual_runtime/B_walk_generated/walk_06.png",
+          "v1_actual_runtime/B_walk_generated/walk_07.png",
+          "v1_actual_runtime/B_walk_generated/walk_08.png",
+          "v1_actual_runtime/B_walk_generated/walk_09.png",
+          "v1_actual_runtime/B_walk_generated/walk_10.png",
+          "v1_actual_runtime/B_walk_generated/walk_11.png",
+          "v1_actual_runtime/B_walk_generated/walk_12.png"
+        ]
+      }
+    ],
+    "taskbar_sit": [
+      {
+        "name": "A_taskbar_sit",
+        "anchor": "sit_base",
+        "weight": 1.0,
+        "pick": "one",
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png"
+        ]
+      }
+    ],
+    "edge_peek_left": [
+      {
+        "name": "D_peek_left",
+        "anchor": "special_base",
+        "weight": 1.0,
+        "frames": [
+          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png"
+        ]
+      }
+    ],
+    "edge_peek_right": [
+      {
+        "name": "D_peek_right",
+        "anchor": "special_base",
+        "weight": 1.0,
+        "frames": [
+          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png"
+        ]
+      }
+    ]
+  },
+  "pending_review": {
+    "enabled_in_runtime": false,
+    "frames": [
+      "v1_actual_runtime/E_group_pending_review/pending_01.png",
+      "v1_actual_runtime/E_group_pending_review/pending_02.png",
+      "v1_actual_runtime/E_group_pending_review/pending_03.png",
+      "v1_actual_runtime/E_group_pending_review/pending_04.png",
+      "v1_actual_runtime/E_group_pending_review/pending_05.png",
+      "v1_actual_runtime/E_group_pending_review/pending_06.png"
+    ]
+  }
+}

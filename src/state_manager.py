@@ -14,6 +14,7 @@ class StateManager:
         "walking": "walking",
         "edge_peek_left": "edge_peek_left",
         "edge_peek_right": "edge_peek_right",
+        "taskbar_sit": "taskbar_sit",
     }
 
     V0415_FALLBACKS = {
@@ -65,7 +66,7 @@ class StateManager:
 
         # 如果正在说话，不允许普通动作打断，除非是更高级别交互（比如 clicked, happy）
         if current_state == "talking":
-            if next_state in ["sleeping", "walking", "edge_peek_left", "edge_peek_right"]:
+            if next_state in ["sleeping", "walking", "edge_peek_left", "edge_peek_right", "taskbar_sit"]:
                 return False
             return True
 

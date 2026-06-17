@@ -43,10 +43,13 @@ class PetBehaviorEngine(QObject):
         self.idle_behavior = IdleBehavior(
             config=self.config,
             is_allowed=is_allowed_callback,
-            is_night=is_night_callback
+            is_night=is_night_callback,
+            get_position=lambda: self.window.pos(),
+            get_screen_bounds=self._get_screen_bounds,
         )
         self.idle_behavior.idle_action_triggered.connect(self._handle_idle_action)
         self.idle_behavior.idle_bubble_triggered.connect(self._handle_idle_bubble)
+        self.idle_behavior.wander_requested.connect(self._handle_wander)
 
     def reload_config(self, app_config: dict[str, Any]) -> None:
         self.app_config = app_config
@@ -154,3 +157,14 @@ class PetBehaviorEngine(QObject):
             self.speak_callback(text)
         else:
             getattr(self.window, "speak", lambda s: None)(text)
+
+    def _handle_wander(self, target: QPoint) -> None:
+        if not self.config.behavior_enabled:
+            return
+        move_near = getattr(self.window, "move_near", None)
+        if callable(move_near):
+            move_near(target)
+
+    def _get_screen_bounds(self) -> tuple[int, int, int, int]:
+        bounds = self.snap_controller.get_screen_bounds(self.window.pos())
+        return bounds.x(), bounds.y(), bounds.width(), bounds.height()

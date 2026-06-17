@@ -18,7 +18,8 @@ DEFAULT_MANIFEST: dict[str, Any] = {
         "remind": {"frames": ["normal2.png"], "loop": False, "duration_ms": 350, "fallback": ["normal2.png", "normal1.png"]},
         "walking": {"frames": ["normal1.png", "normal2.png"], "loop": True, "duration_ms": 150, "fallback": ["normal1.png", "normal2.png"]},
         "edge_peek_left": {"frames": ["normal1.png"], "loop": True, "duration_ms": 500, "fallback": ["normal1.png"]},
-        "edge_peek_right": {"frames": ["normal1.png"], "loop": True, "duration_ms": 500, "fallback": ["normal1.png"]}
+        "edge_peek_right": {"frames": ["normal1.png"], "loop": True, "duration_ms": 500, "fallback": ["normal1.png"]},
+        "taskbar_sit": {"frames": ["normal1.png"], "loop": True, "duration_ms": 700, "fallback": ["normal1.png"]}
     }
 }
 

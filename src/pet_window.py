@@ -641,6 +641,8 @@ class PetWindow(QWidget):
             self.move(self._docked_position(self.dock_side, self._dock_visible_px_for_cursor()))
             if self.dock_side in {"left", "right"}:
                 self.animation_manager.set_edge_peek(self.dock_side)
+            elif self.dock_side == "bottom":
+                self.animation_manager.set_state("taskbar_sit")
 
     def _nearest_edge_side(self, threshold: int) -> str | None:
         bounds = self._screen_bounds_for_position(self.pos())
