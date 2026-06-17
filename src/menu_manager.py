@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
-
-import yaml
 
 from PySide6.QtCore import QDateTime, Qt
 from PySide6.QtGui import QCursor
@@ -299,46 +296,6 @@ class MenuManager:
         dialog = DaniyaSettingsDialog(self.controller, self.window)
         dialog.exec()
 
-    # ── 剧情阅读：章节从角色包 story.yaml 加载。
-    _STORY_CHAPTERS: list[tuple[int, str, str, str, str | None]] = [
-        (0, "剧情未配置", "当前角色包没有可用的 story.yaml。", "", None),
-    ]
-
-    def _story_yaml_path(self) -> Path:
-        pack = getattr(getattr(self.controller, "daniya_adapter", None), "character_pack", None)
-        root = getattr(pack, "root", None)
-        if root:
-            return Path(root) / "story.yaml"
-        return resource_path("characters", "daniya", "story.yaml")
-
-    def _load_story_chapters(self) -> list[tuple[int, str, str, str, str | None]]:
-        path = self._story_yaml_path()
-        if path.exists():
-            try:
-                loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-                chapters = []
-                for index, item in enumerate(loaded.get("chapters", [])):
-                    if not isinstance(item, dict):
-                        continue
-                    body = str(item.get("body") or "").strip()
-                    if not body:
-                        continue
-                    action = item.get("action")
-                    chapters.append(
-                        (
-                            int(item.get("id", index)),
-                            str(item.get("title") or f"第 {index + 1} 章"),
-                            body,
-                            str(item.get("prompt") or ""),
-                            str(action) if action else None,
-                        )
-                    )
-                if chapters:
-                    return chapters
-            except (OSError, ValueError, TypeError, yaml.YAMLError):
-                pass
-        return self._STORY_CHAPTERS
-
     def show_story_dialog(self) -> None:
         """剧情阅读：电影式 Liquid Glass 落地页 + 阅读器。"""
         dialog = StoryLandingWindow(self.controller, self.window)
@@ -423,7 +380,7 @@ class MenuManager:
         layout = QVBoxLayout(dialog)
         editor = QTextEdit()
         editor.setReadOnly(True)
-        editor.setPlainText(content)
+        editor.setMarkdown(content)
         layout.addWidget(editor)
         close = QPushButton("关闭")
         close.clicked.connect(dialog.accept)

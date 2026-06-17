@@ -338,28 +338,6 @@ def test_open_settings_center_creates_independent_taskbar_window(monkeypatch):
     assert isinstance(controller.settings_window, FakeSettingsWindow)
 
 
-def test_story_mode_loads_chapters_from_character_pack(tmp_path):
-    from src.menu_manager import MenuManager
-
-    story_file = tmp_path / "story.yaml"
-    story_file.write_text(
-        """
-chapters:
-  - id: 7
-    title: 测试章节
-    body: 这是角色包里的剧情。
-    prompt: 继续讲。
-""".strip(),
-        encoding="utf-8",
-    )
-    controller = SimpleNamespace(
-        daniya_adapter=SimpleNamespace(character_pack=SimpleNamespace(root=tmp_path)),
-    )
-    manager = MenuManager(window=object(), controller=controller)
-
-    assert manager._load_story_chapters() == [(7, "测试章节", "这是角色包里的剧情。", "继续讲。", None)]
-
-
 def test_settings_window_opens_with_expected_tabs_in_subprocess(tmp_path):
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
