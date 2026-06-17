@@ -17,7 +17,18 @@
     "max_pet_height": 160,
     "size_presets": [80, 96, 112, 128, 144, 160],
     "idle_animation_interval_ms": 10000,
+    "active_action_module": "A_sit_base",
+    "enabled_action_modules": {
+      "A_sit_base": true,
+      "B_stand_base_pack": true,
+      "C_sleep_base_pack": true,
+      "D_special_motion_pack": true,
+      "E_QQ_pet_drag_system": true
+    },
+    "hover_animation_enabled": false,
     "edge_peek_enabled": false,
+    "edge_dock_visible_px": 32,
+    "edge_dock_hover_visible_px": 52,
     "click_to_call_enabled": false,
     "states": {
       "idle": "idle",
@@ -66,7 +77,7 @@
     "click_cooldown_seconds": 5
   },
   "growth": {
-    "enabled": false,
+    "enabled": true,
     "daily_coin_reward": 25
   },
   "environment": {
@@ -129,7 +140,6 @@
   "focus_mode_silence_system_status": true,
   "focus_mode_silence_clipboard": true,
   "focus_mode_silence_environment": true,
-  "focus_mode_allow_important_reminders": true,
   "settings_ui": {
     "mode": "simple",
     "show_advanced": false,
@@ -181,5 +191,12 @@
     "scan_interval_sec": 30,
     "warn_cooldown_sec": 60,
     "reward_affinity": 3
+  },
+  "story_reader": {
+    "bg_kind": "preset",
+    "bg_color": "#0d0d1a",
+    "bg_image": "",
+    "bg_opacity": 100,
+    "glass_tint": 0.5
   }
 }

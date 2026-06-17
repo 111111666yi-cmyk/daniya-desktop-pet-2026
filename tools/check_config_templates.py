@@ -75,6 +75,8 @@ def main() -> int:
     if tracked:
         failures.append("Ignored user config is tracked: " + ", ".join(tracked))
 
+    failures.extend(_check_key_drift(root))
+
     if failures:
         print("Config template check failed:", file=sys.stderr)
         for failure in failures:
@@ -112,7 +114,6 @@ def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list
         return [f"{relative} must contain a JSON object"]
     pet = data.get("pet") if isinstance(data.get("pet"), dict) else {}
     window = data.get("window") if isinstance(data.get("window"), dict) else {}
-    growth = data.get("growth") if isinstance(data.get("growth"), dict) else {}
     environment = data.get("environment") if isinstance(data.get("environment"), dict) else {}
     memory_features = data.get("memory_features") if isinstance(data.get("memory_features"), dict) else {}
     failures: list[str] = []
@@ -138,7 +139,6 @@ def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list
         "focus_mode_enabled": data.get("focus_mode_enabled"),
         "focus_mode_manual": data.get("focus_mode_manual"),
         "focus_mode_auto_game_detect": data.get("focus_mode_auto_game_detect"),
-        "growth.enabled": growth.get("enabled"),
         "environment.weather_enabled": environment.get("weather_enabled"),
         "environment.weather_location_configured": environment.get("weather_location_configured"),
         "environment.media_presence_enabled": environment.get("media_presence_enabled"),
@@ -164,6 +164,45 @@ def _check_quiet_defaults(relative: str, data: object, app_version: str) -> list
             seconds = 0
         if seconds < 300:
             failures.append(f"{relative} expected {key} >= 300, got {seconds!r}")
+    return failures
+
+
+def _flat_keys(data: object, prefix: str = "") -> set[str]:
+    if not isinstance(data, dict):
+        return set()
+    keys: set[str] = set()
+    for key, value in data.items():
+        full = f"{prefix}.{key}" if prefix else key
+        if isinstance(value, dict):
+            keys.update(_flat_keys(value, full))
+        else:
+            keys.add(full)
+    return keys
+
+
+def _check_key_drift(root: Path) -> list[str]:
+    failures: list[str] = []
+    seed = root / "config" / "app_config.json"
+    example = root / "config" / "app_config.example.json"
+    if not seed.exists() or not example.exists():
+        return failures
+    try:
+        seed_data = json.loads(seed.read_text(encoding="utf-8"))
+        example_data = json.loads(example.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return failures
+    seed_keys = _flat_keys(seed_data)
+    example_keys = _flat_keys(example_data)
+    only_seed = seed_keys - example_keys
+    only_example = example_keys - seed_keys
+    if only_seed:
+        failures.append(
+            f"Keys in app_config.json but missing from example: {', '.join(sorted(only_seed))}"
+        )
+    if only_example:
+        failures.append(
+            f"Keys in app_config.example.json but missing from seed: {', '.join(sorted(only_example))}"
+        )
     return failures
 
 

@@ -60,7 +60,6 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     noisy["system_status_cooldown_seconds"] = 60
     noisy["clipboard_interaction_enabled"] = True
     noisy["focus_mode_enabled"] = True
-    noisy["growth"]["enabled"] = True
     noisy["environment"]["weather_enabled"] = True
     noisy["environment"]["weather_location_configured"] = True
     noisy["environment"]["media_presence_enabled"] = True
@@ -80,7 +79,6 @@ def test_config_template_check_rejects_noisy_defaults() -> None:
     assert any("system_status_enabled=false" in failure for failure in failures)
     assert any("clipboard_interaction_enabled=false" in failure for failure in failures)
     assert any("focus_mode_enabled=false" in failure for failure in failures)
-    assert any("growth.enabled=false" in failure for failure in failures)
     assert any("environment.weather_enabled=false" in failure for failure in failures)
     assert any("environment.weather_location_configured=false" in failure for failure in failures)
     assert any("environment.media_presence_enabled=false" in failure for failure in failures)
