@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 from PySide6.QtCore import QObject, QPoint, Signal
 from PySide6.QtWidgets import QWidget
 from .behavior_config import BehaviorConfig
@@ -7,6 +7,10 @@ from .interaction_detector import InteractionDetector
 from .drag_controller import DragController
 from .snap_controller import SnapController
 from .idle_behavior import IdleBehavior
+
+if TYPE_CHECKING:
+    from ..mood_manager import MoodManager
+    from ..state_manager import StateManager
 
 class PetBehaviorEngine(QObject):
     action_requested = Signal(str)
@@ -19,6 +23,8 @@ class PetBehaviorEngine(QObject):
         is_allowed_callback: Callable[[], bool],
         is_night_callback: Callable[[], bool],
         speak_callback: Callable[[str], None] | None = None,
+        mood_manager: "MoodManager | None" = None,
+        state_manager: "StateManager | None" = None,
     ) -> None:
         super().__init__()
         self.window = window
@@ -46,6 +52,9 @@ class PetBehaviorEngine(QObject):
             is_night=is_night_callback,
             get_position=lambda: self.window.pos(),
             get_screen_bounds=self._get_screen_bounds,
+            get_window_size=lambda: (self.window.width(), self.window.height()),
+            mood_manager=mood_manager,
+            state_manager=state_manager,
         )
         self.idle_behavior.idle_action_triggered.connect(self._handle_idle_action)
         self.idle_behavior.idle_bubble_triggered.connect(self._handle_idle_bubble)
@@ -146,12 +155,12 @@ class PetBehaviorEngine(QObject):
         self.window.drag_completed.emit(pos.x(), pos.y())
 
     def _handle_idle_action(self, action_name: str) -> None:
-        if not self.config.behavior_enabled:
+        if not self.config.behavior_enabled or self.config.dnd_mode:
             return
         self.action_requested.emit(action_name)
 
     def _handle_idle_bubble(self, text: str) -> None:
-        if not self.config.behavior_enabled:
+        if not self.config.behavior_enabled or self.config.dnd_mode:
             return
         if self.speak_callback:
             self.speak_callback(text)
@@ -159,8 +168,9 @@ class PetBehaviorEngine(QObject):
             getattr(self.window, "speak", lambda s: None)(text)
 
     def _handle_wander(self, target: QPoint) -> None:
-        if not self.config.behavior_enabled:
+        if not self.config.behavior_enabled or self.config.dnd_mode:
             return
+        self.action_requested.emit("walking")
         move_near = getattr(self.window, "move_near", None)
         if callable(move_near):
             move_near(target)

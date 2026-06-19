@@ -129,6 +129,7 @@ def test_due_reminder_does_not_change_pet_topmost_setting() -> None:
         utility_text=Mock(return_value="reminder"),
         _fire_physical_event=Mock(),
         _tts_play=Mock(),
+        _voice_play_event=Mock(),  # [FIX-S2] on_reminder_due 新增语音事件调用
         reminder_boxes=[],
     )
 

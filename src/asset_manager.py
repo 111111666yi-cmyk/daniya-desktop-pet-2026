@@ -35,13 +35,6 @@ ACTION_ALIASES: dict[str, tuple[str, ...]] = {
     "taskbar_sit": ("taskbar_sit", "idle"),
 }
 
-ACTION_MODULES: dict[str, str] = {
-    "A_sit_base": "A_sit_base",
-    "B_stand_base_pack": "B_stand_base_pack",
-    "C_sleep_base_pack": "C_sleep_base_pack",
-    "D_special_motion_pack": "D_special_motion_pack",
-}
-
 DEFAULT_MANIFEST: dict[str, Any] = {
     "name": PET_ID,
     "display_name": "Public Placeholder Asset",
@@ -194,17 +187,6 @@ class AssetManager:
             if pick <= upto:
                 return frames
         return groups[-1][1]
-
-    def active_action_module(self) -> str:
-        pet_config = self.app_config.setdefault("pet", {})
-        module = str(pet_config.get("active_action_module", "A_sit_base"))
-        return module if module in ACTION_MODULES else "A_sit_base"
-
-    def set_active_action_module(self, module: str) -> str:
-        pet_config = self.app_config.setdefault("pet", {})
-        active = module if module in ACTION_MODULES else "A_sit_base"
-        pet_config["active_action_module"] = active
-        return active
 
     def state_name(self, role: str) -> str:
         states = self.app_config.get("pet", {}).get("states", {})
@@ -368,28 +350,5 @@ class AssetManager:
                 frames = [random.choice(frames)]
             if frames:
                 groups.append((weight, frames))
-        return self._filter_groups_for_active_module(state, groups, candidates)
+        return groups
 
-    def _filter_groups_for_active_module(
-        self,
-        state: str,
-        groups: list[tuple[float, list[Path]]],
-        raw_groups: list[Any],
-    ) -> list[tuple[float, list[Path]]]:
-        if state not in {"idle", "talk", "talking", "speaking"}:
-            return groups
-
-        active = self.active_action_module()
-        filtered: list[tuple[float, list[Path]]] = []
-        for parsed, raw in zip(groups, [item for item in raw_groups if isinstance(item, dict) and item.get("enabled", True) is not False]):
-            name = str(raw.get("name", ""))
-            anchor = str(raw.get("anchor", ""))
-            if active == "A_sit_base" and (name.startswith("A_") or anchor == "sit_base"):
-                filtered.append(parsed)
-            elif active == "B_stand_base_pack" and (name.startswith("B_") or anchor == "stand_base"):
-                filtered.append(parsed)
-            elif active == "C_sleep_base_pack" and (name.startswith("C_") or anchor == "sleep_base"):
-                filtered.append(parsed)
-            elif active == "D_special_motion_pack" and (name.startswith("D_") or anchor == "special_base"):
-                filtered.append(parsed)
-        return filtered or groups

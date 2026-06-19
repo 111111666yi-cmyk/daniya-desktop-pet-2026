@@ -1,6 +1,9 @@
 from __future__ import annotations
 from typing import Any
 
+INTENSITY_LEVELS = ("quiet", "lively", "demo")
+
+
 class BehaviorConfig:
     def __init__(self, app_config: dict[str, Any]) -> None:
         self.app_config = app_config
@@ -8,6 +11,15 @@ class BehaviorConfig:
     @property
     def behavior_enabled(self) -> bool:
         return bool(self.app_config.get("behavior_enabled", True))
+
+    @property
+    def behavior_intensity(self) -> str:
+        raw = self.app_config.get("behavior_intensity", "lively")
+        return raw if raw in INTENSITY_LEVELS else "lively"
+
+    @property
+    def dnd_mode(self) -> bool:
+        return bool(self.app_config.get("dnd_mode", False))
 
     @property
     def snap_to_edge_enabled(self) -> bool:

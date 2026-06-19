@@ -6,7 +6,6 @@ from typing import Any, Callable
 
 from PySide6.QtWidgets import (
     QAbstractItemView,
-    QDialog,
     QFileDialog,
     QHBoxLayout,
     QHeaderView,
@@ -20,21 +19,21 @@ from PySide6.QtWidgets import (
 )
 
 from .file_organizer import FileOrganizer, FileOrganizerPlan
+from .ui.liquid_glass import LiquidGlassDialog
 from .utils import runtime_root
 
 
-class FileOrganizerDialog(QDialog):
+class FileOrganizerDialog(LiquidGlassDialog):
     def __init__(self, enabled: bool, parent=None, message_lookup: Callable[..., str] | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="文件整理助手（预览）")
         self.enabled = bool(enabled)
         self.message_lookup = message_lookup
         self.organizer = FileOrganizer(runtime_root() / "data" / "file_organizer")
         self.current_plan: FileOrganizerPlan | None = None
 
-        self.setWindowTitle("文件整理助手（预览）")
         self.resize(900, 560)
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout()
         self.warning = QLabel(
             "默认只生成预览。请选择源目录和目标目录，确认预览后才能执行；不会删除或覆盖文件。"
         )
@@ -92,6 +91,7 @@ class FileOrganizerDialog(QDialog):
         buttons.addStretch(1)
         buttons.addWidget(close_btn)
         layout.addLayout(buttons)
+        self.setLayout(layout)
 
     def _choose_source(self) -> None:
         path = QFileDialog.getExistingDirectory(self, "选择源目录")

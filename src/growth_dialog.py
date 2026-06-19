@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Callable
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
-    QDialog,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -17,26 +16,20 @@ from PySide6.QtWidgets import (
 )
 
 from .growth_manager import GrowthResult
+from .ui.liquid_glass import LiquidGlassDialog
 
 if TYPE_CHECKING:
     from .app import AppController
 
 
-class GrowthDialog(QDialog):
+class GrowthDialog(LiquidGlassDialog):
     def __init__(self, controller: "AppController", parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="养成中心")
         self.controller = controller
         self.manager = controller.growth_manager
-        self.setWindowTitle("养成中心")
         self.resize(720, 620)
-        self.setWindowFlags(
-            self.windowFlags()
-            | Qt.WindowType.Window
-            | Qt.WindowMinimizeButtonHint
-            | Qt.WindowMaximizeButtonHint
-        )
 
-        root = QVBoxLayout(self)
+        root = QVBoxLayout()
         description = QLabel(
             "纯本地养成：背包、硬币、成长和衣柜只保存在本机 data/growth_state.json，"
             "不会进入 Git、发布包或 Provider 请求。"
@@ -84,6 +77,7 @@ class GrowthDialog(QDialog):
         footer.addStretch(1)
         footer.addWidget(close)
         root.addLayout(footer)
+        self.setLayout(root)
 
         self._refresh()
 

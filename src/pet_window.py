@@ -12,6 +12,8 @@ from PySide6.QtWidgets import QHBoxLayout, QMenu, QSizePolicy, QSystemTrayIcon, 
 
 from .animation_manager import AnimationManager
 from .asset_manager import AssetManager
+from .renderer import PNGFrameRenderer
+from .morph_blend_renderer import MorphBlendRenderer
 from .typewriter import Typewriter
 from .window_geometry import (
     available_screen_geometries,
@@ -62,14 +64,28 @@ class PetWindow(QWidget):
         self._setup_tray()
         self._configure_window()
         self._build_ui()
-        self.animation_manager = AnimationManager(self, self.asset_manager)
-        self.animation_manager.set_pixmap_callback(lambda p: self.render_pet_pixmap(Path(p)))
+        self.renderer = self._create_renderer()
+        self.animation_manager = AnimationManager(self, self.asset_manager, self.renderer)
+        self.animation_manager.set_display_callback(self._display_pixmap)
         self.typewriter = Typewriter(self.bubble, self.set_pet_state, app_config)
         self.bubble.clicked.connect(self.typewriter.click)
         self.set_pet_state(self.asset_manager.state_name("idle"))
         self.update_affinity("")
         self._start_pet_feature_timers()
         print("[Daniya] PetWindow created")
+
+    def _create_renderer(self):
+        base_dir = self.asset_manager.active_asset_dir()
+        rtype = self.app_config.get("renderer_type", "png")
+        if rtype == "morph_blend":
+            return MorphBlendRenderer(base_dir)
+        return PNGFrameRenderer(base_dir)
+
+    def set_renderer_type(self, renderer_type: str) -> None:
+        self.app_config["renderer_type"] = renderer_type
+        self.renderer = self._create_renderer()
+        self.animation_manager.renderer = self.renderer
+        self.animation_manager.refresh()
 
     def _configure_window(self) -> None:
         flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
@@ -254,6 +270,7 @@ class PetWindow(QWidget):
 
     def clear_render_cache(self) -> None:
         self._scaled_pixmap_cache.clear()
+        self.renderer.clear_cache()
 
     def _get_scaled_pixmap(self, path: Path, logical_height: int, dpr: float) -> tuple[QPixmap, int, int]:
         key = (str(path), logical_height, round(dpr, 2))
@@ -314,6 +331,19 @@ class PetWindow(QWidget):
             else:
                 self.move(self._clamped_position(self.pos()))
 
+    def _display_pixmap(self, scaled: QPixmap) -> None:
+        dpr = scaled.devicePixelRatio() or 1.0
+        logical_width = max(1, int(round(scaled.width() / dpr)))
+        logical_height = max(1, int(round(scaled.height() / dpr)))
+        container_size = int(max(logical_height, logical_width))
+        self.image_label.setFixedSize(container_size, container_size)
+        self.image_label.setPixmap(scaled)
+        if self.isVisible():
+            if self.dock_side in {"left", "right"}:
+                self.move(self._docked_position(self.dock_side))
+            else:
+                self.move(self._clamped_position(self.pos()))
+
     def speak(self, text: str) -> None:
         self.typewriter.speak(text)
 
@@ -367,6 +397,16 @@ class PetWindow(QWidget):
             self.move(self._clamped_position(position))
             if not was_active:
                 self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)
+
+    def set_click_through(self, enabled: bool) -> None:
+        was_visible = self.isVisible()
+        position = self.pos()
+        self.setWindowFlag(Qt.WindowType.WindowTransparentForInput, enabled)
+        if was_visible:
+            self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
+            self.show()
+            self.move(self._clamped_position(position))
+            self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)
 
     def set_pet_height(self, height: int) -> int:
         self.clear_render_cache()

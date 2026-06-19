@@ -3,23 +3,22 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QPushButton, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QPushButton, QTextEdit, QVBoxLayout, QWidget
 
 from core.daniya_status import build_daniya_status, render_daniya_status_text
+from .ui.liquid_glass import LiquidGlassDialog
 
 if TYPE_CHECKING:
     from .app import AppController
 
 
-class DaniyaSettingsDialog(QDialog):
+class DaniyaSettingsDialog(LiquidGlassDialog):
     def __init__(self, controller: "AppController", parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="达妮娅设定")
         self.controller = controller
-        self.setWindowTitle("达妮娅设定")
         self.resize(760, 560)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout()
         self.editor = QTextEdit()
         self.editor.setReadOnly(True)
         self.editor.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
@@ -29,6 +28,7 @@ class DaniyaSettingsDialog(QDialog):
         close = QPushButton("关闭")
         close.clicked.connect(self.accept)
         layout.addWidget(close, alignment=Qt.AlignmentFlag.AlignRight)
+        self.setLayout(layout)
 
     def _build_text(self) -> str:
         available_actions = _available_actions(self.controller)

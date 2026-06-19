@@ -1,8 +1,13 @@
 from __future__ import annotations
 import random
 import time
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 from PySide6.QtCore import QObject, QPoint, QTimer, Signal
+from .autonomous_behavior import AutonomousBehavior
+
+if TYPE_CHECKING:
+    from ..mood_manager import MoodManager
+    from ..state_manager import StateManager
 
 IDLE_BUBBLES = [
     "你还在吗？",
@@ -24,6 +29,9 @@ class IdleBehavior(QObject):
         is_night: Callable[[], bool],
         get_position: Callable[[], QPoint] | None = None,
         get_screen_bounds: Callable[[], tuple[int, int, int, int]] | None = None,
+        get_window_size: Callable[[], tuple[int, int]] | None = None,
+        mood_manager: "MoodManager | None" = None,
+        state_manager: "StateManager | None" = None,
     ) -> None:
         super().__init__()
         self.config = config
@@ -31,6 +39,15 @@ class IdleBehavior(QObject):
         self.is_night = is_night
         self._get_position = get_position
         self._get_screen_bounds = get_screen_bounds
+        self._get_window_size = get_window_size
+        self._mood_manager = mood_manager
+        self._state_manager = state_manager
+
+        self._autonomous: AutonomousBehavior | None = None
+        if get_position and get_screen_bounds and get_window_size:
+            self._autonomous = AutonomousBehavior(
+                get_position, get_screen_bounds, get_window_size,
+            )
 
         self.last_activity_time = time.time()
         self.last_behavior_time = 0.0
@@ -60,20 +77,48 @@ class IdleBehavior(QObject):
             return
 
         self.last_behavior_time = now
+        idle_seconds = now - self.last_activity_time
+        night = self.is_night()
 
-        if self.is_night():
-            self.idle_action_triggered.emit("sleep")
-            return
+        if self._state_manager and self._mood_manager:
+            mood = self._mood_manager.current_mood
+            self._mood_manager.update_from_interaction("idle_long")
+            if night:
+                self._mood_manager.update_from_interaction("night")
+            intensity = getattr(self.config, "behavior_intensity", "lively")
+            action = self._state_manager.pick_idle_action(mood, idle_seconds, night, intensity)
+        else:
+            if night:
+                action = "sleep"
+            elif random.random() < 0.4 and self._get_position and self._get_screen_bounds:
+                action = "walking"
+            else:
+                action = "idle"
 
-        if random.random() < 0.4 and self._get_position and self._get_screen_bounds:
+        intensity = getattr(self.config, "behavior_intensity", "lively")
+        if intensity != "quiet" and self._autonomous:
+            behavior = self._autonomous.pick_behavior(intensity)
+            if behavior:
+                target = self._autonomous.compute_move_target(behavior)
+                b_action = behavior["action"]
+                if target is not None:
+                    self.idle_action_triggered.emit(b_action)
+                    self.wander_requested.emit(target)
+                    return
+                self.idle_action_triggered.emit(b_action)
+                return
+
+        if action == "walking" and self._get_position and self._get_screen_bounds:
             self._try_wander()
             return
 
-        self.idle_action_triggered.emit("idle")
-
-        if random.random() < 0.3:
+        if action == "bubble":
+            self.idle_action_triggered.emit("idle")
             bubble = random.choice(IDLE_BUBBLES)
             self.idle_bubble_triggered.emit(bubble)
+            return
+
+        self.idle_action_triggered.emit(action)
 
     def _try_wander(self) -> None:
         pos = self._get_position()

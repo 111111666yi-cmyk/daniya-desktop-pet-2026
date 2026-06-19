@@ -14,6 +14,7 @@ from src.behavior.drag_controller import DragController
 from src.behavior.snap_controller import SnapController
 from src.behavior.idle_behavior import IdleBehavior
 from src.behavior.behavior_engine import PetBehaviorEngine
+from src.behavior.autonomous_behavior import AutonomousBehavior
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -65,6 +66,19 @@ class TestBehaviorConfig:
         assert cfg.idle_behavior_seconds == 600
         assert cfg.double_click_enabled is False
         assert cfg.long_press_ms == 1000
+
+    def test_behavior_intensity_default(self) -> None:
+        cfg = BehaviorConfig({})
+        assert cfg.behavior_intensity == "lively"
+
+    def test_behavior_intensity_valid(self) -> None:
+        for level in ("quiet", "lively", "demo"):
+            cfg = BehaviorConfig({"behavior_intensity": level})
+            assert cfg.behavior_intensity == level
+
+    def test_behavior_intensity_invalid_falls_back(self) -> None:
+        cfg = BehaviorConfig({"behavior_intensity": "turbo"})
+        assert cfg.behavior_intensity == "lively"
 
     def test_type_error_fallbacks(self) -> None:
         bad_values = {
@@ -427,3 +441,64 @@ class TestPetBehaviorEngine:
         # Finish drag
         engine._handle_drag_finish(QPoint(120, 130))
         assert mock_window.drag_start_global is None
+
+
+# ═══════════════════════════════════════════════════════════════════
+# AutonomousBehavior Tests
+# ═══════════════════════════════════════════════════════════════════
+
+class TestAutonomousBehavior:
+    def _make(self, x=500, y=500, bx=0, by=0, bw=1920, bh=1040, ww=96, wh=96):
+        return AutonomousBehavior(
+            get_position=lambda: QPoint(x, y),
+            get_screen_bounds=lambda: (bx, by, bw, bh),
+            get_window_size=lambda: (ww, wh),
+        )
+
+    def test_pick_behavior_quiet_excludes_lively(self) -> None:
+        ab = self._make()
+        names = set()
+        for _ in range(200):
+            b = ab.pick_behavior("quiet")
+            if b:
+                names.add(b["name"])
+        assert "taskbar_walk" not in names
+        assert "wall_cling_left" not in names
+
+    def test_pick_behavior_lively_includes_lively_actions(self) -> None:
+        ab = self._make(x=500, y=1040 - 96 + 10)  # near bottom
+        names = set()
+        for _ in range(500):
+            b = ab.pick_behavior("lively")
+            if b:
+                names.add(b["name"])
+        assert "taskbar_walk" in names or "taskbar_sit" in names
+
+    def test_pick_behavior_near_left_wall(self) -> None:
+        ab = self._make(x=10, y=500)
+        names = set()
+        for _ in range(500):
+            b = ab.pick_behavior("lively")
+            if b:
+                names.add(b["name"])
+        assert "wall_cling_left" in names
+
+    def test_compute_move_target_wander_near(self) -> None:
+        ab = self._make()
+        b = {"name": "wander_near", "action": "walking", "move": "wander_near"}
+        target = ab.compute_move_target(b)
+        assert target is not None
+        assert 40 <= target.x() <= 1920 - 96 - 40
+        assert 40 <= target.y() <= 1040 - 96 - 40
+
+    def test_compute_move_target_taskbar_snap(self) -> None:
+        ab = self._make(x=500, y=900)
+        b = {"name": "taskbar_sit", "action": "taskbar_sit", "move": "taskbar_snap"}
+        target = ab.compute_move_target(b)
+        assert target is not None
+        assert target.y() == 1040 - 96  # snapped to bottom
+
+    def test_compute_move_target_none_for_idle(self) -> None:
+        ab = self._make()
+        b = {"name": "idle_pose", "action": "idle", "move": None}
+        assert ab.compute_move_target(b) is None

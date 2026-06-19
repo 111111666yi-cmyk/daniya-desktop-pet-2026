@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
-    QDialog,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -29,6 +28,7 @@ from PySide6.QtWidgets import (
 
 from .llm.provider_registry import Provider, ProviderMeta
 from .settings_manager import SettingsManager
+from .ui.liquid_glass import LiquidGlassDialog
 from .setup_state_manager import SetupStateManager
 from .utils import ensure_dir, resource_path
 
@@ -61,27 +61,21 @@ class _WizardApiTestWorker(QThread):
         self.finished_with_result.emit(ok, message)
 
 
-class FirstRunWizard(QDialog):
+class FirstRunWizard(LiquidGlassDialog):
     """Five-page first-run guide for new users."""
 
     def __init__(self, setup_manager: SetupStateManager) -> None:
-        super().__init__()
+        super().__init__(title="达妮娅首次启动向导")
         self.setup_manager = setup_manager
         self.settings_manager = SettingsManager(root=setup_manager.root)
         self.api_worker: _WizardApiTestWorker | None = None
         self._validated_api_fingerprint: tuple[str, str, str, str, bool] | None = None
         self.page_titles = ["欢迎", "API 设置", "素材说明", "角色包", "完成"]
 
-        self.setWindowTitle("达妮娅首次启动向导")
         self.setMinimumSize(640, 520)
         self.setModal(True)
-        self.setWindowFlags(
-            (self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
-            | Qt.WindowType.WindowMinimizeButtonHint
-            | Qt.WindowType.WindowMaximizeButtonHint
-        )
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout()
         self.title_label = QLabel()
         self.title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
         layout.addWidget(self.title_label)
@@ -110,6 +104,7 @@ class FirstRunWizard(QDialog):
         buttons.addWidget(self.next_btn)
         buttons.addWidget(self.finish_btn)
         layout.addLayout(buttons)
+        self.setLayout(layout)
 
         self._refresh_nav()
 

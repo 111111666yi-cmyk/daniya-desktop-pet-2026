@@ -205,6 +205,8 @@
     "warn_cooldown_sec": 60,
     "reward_affinity": 3
   },
+  "behavior_intensity": "lively",
+  "renderer_type": "png",
   "story_reader": {
     "bg_kind": "preset",
     "bg_color": "#0d0d1a",

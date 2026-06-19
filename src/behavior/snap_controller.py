@@ -132,13 +132,15 @@ class SnapController(QObject):
             return QRect(resolver(position or self.window.pos()))
         return self.get_desktop_bounds()
 
-    def save_window_state(self, x: int, y: int, snap: str) -> None:
+    def save_window_state(self, x: int, y: int, snap: str, behavior_state: str | None = None) -> None:
         data = {
             "x": x,
             "y": y,
             "snap": snap,
-            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
+        if behavior_state:
+            data["last_behavior"] = behavior_state
         path = self.state_file_path()
         if not atomic_write_json(path, data):
             print("[SnapController] Failed to save window state.")

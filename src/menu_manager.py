@@ -11,10 +11,13 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMenu,
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSplitter,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -23,6 +26,7 @@ from PySide6.QtWidgets import (
 from .daniya_settings_window import DaniyaSettingsDialog
 from .icon_utils import icon as ic
 from .story_landing import StoryLandingWindow
+from .ui.liquid_glass import LiquidGlassDialog
 from .utils import resource_path
 
 if TYPE_CHECKING:
@@ -37,13 +41,19 @@ class MenuManager:
 
     def create_menu(self) -> QMenu:
         menu = QMenu(self.window)
-        # [MODERN UI] Apply modern QSS to context menu
+        from PySide6.QtGui import QColor
+        from PySide6.QtWidgets import QGraphicsDropShadowEffect
+        shadow = QGraphicsDropShadowEffect(menu)
+        shadow.setBlurRadius(20)
+        shadow.setColor(QColor(0, 0, 0, 40))
+        shadow.setOffset(0, 4)
+        menu.setGraphicsEffect(shadow)
         menu.setStyleSheet(
             """
             QMenu {
-                background-color: rgba(255, 255, 255, 240);
-                border: 1px solid rgba(200, 200, 200, 150);
-                border-radius: 8px;
+                background-color: rgba(255, 255, 255, 230);
+                border: 1px solid rgba(255, 255, 255, 200);
+                border-radius: 12px;
                 padding: 6px;
                 font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
                 color: #2b2b2b;
@@ -65,24 +75,35 @@ class MenuManager:
             """
         )
 
-        basic = menu.addMenu(ic("settings"), "基础")
-        input_action = basic.addAction(ic("document"), "显示输入框" if not self.window.input_box.isVisible() else "隐藏输入框")
+        # 1. 输入框开关
+        input_action = menu.addAction(
+            ic("document"),
+            "隐藏输入框" if self.window.input_box.isVisible() else "显示输入框",
+        )
         input_action.triggered.connect(self._toggle_input)
 
-        top_action = basic.addAction(ic("upload"), "取消置顶" if self.window.always_on_top else "保持置顶")
-        top_action.triggered.connect(self._toggle_top)
+        # 2. 功能中心
+        hub_action = menu.addAction(ic("chip"), "功能中心")
+        hub_action.triggered.connect(self._open_function_center)
 
-        call_here_action = basic.addAction(ic("laptop"), "召唤到鼠标位置")
-        call_here_action.triggered.connect(self._call_pet_to_cursor)
+        # 3. 设置
+        settings_action = menu.addAction(ic("settings"), "设置")
+        settings_action.triggered.connect(self.controller.open_settings_center)
 
-        if self.window.is_minimized_to_tray():
-            restore_action = basic.addAction(ic("upload"), "恢复显示")
-            restore_action.triggered.connect(self.window.restore_from_tray)
-        else:
-            minimize_action = basic.addAction(ic("download"), "最小化到托盘")
-            minimize_action.triggered.connect(self.window.minimize_to_tray)
+        # 4. 召唤
+        call_action = menu.addAction(ic("laptop"), "召唤到鼠标")
+        call_action.triggered.connect(self._call_pet_to_cursor)
 
-        size_menu = basic.addMenu(ic("size"), "大小")
+        # 5. 帮助
+        help_action = menu.addAction(ic("info"), "帮助")
+        help_action.triggered.connect(self.show_help_dialog)
+
+        menu.addSeparator()
+
+        # 6. 更多
+        more = menu.addMenu(ic("host"), "更多")
+
+        size_menu = more.addMenu(ic("size"), "大小")
         labels = {
             80: "迷你 80px",
             96: "推荐 96px",
@@ -98,80 +119,59 @@ class MenuManager:
             action.setChecked(height == current_height)
             action.triggered.connect(lambda checked=False, value=height: self.controller.save_pet_height(value))
 
-        self._add_action_module_menu(basic)
-        self._add_pet_feature_menu(basic)
+        intensity_menu = more.addMenu(ic("chip"), "行为强度")
+        current_intensity = self.controller.app_config.get("behavior_intensity", "lively")
+        for key, label in [("quiet", "安静"), ("lively", "活泼"), ("demo", "演示")]:
+            act = intensity_menu.addAction(label)
+            act.setCheckable(True)
+            act.setChecked(key == current_intensity)
+            act.triggered.connect(lambda checked=False, k=key: self._set_behavior_intensity(k))
 
-        chat = menu.addMenu(ic("internet"), "对话")
-        history_action = chat.addAction(ic("document"), "历史记录")
-        history_action.triggered.connect(self.show_history_dialog)
-        prompt_action = chat.addAction(ic("settings"), "人设设置")
-        prompt_action.triggered.connect(self.show_prompt_dialog)
-        profile_action = chat.addAction(ic("info"), "用户档案")
-        profile_action.triggered.connect(self.show_profile_dialog)
-        daniya_settings_action = chat.addAction(ic("protect"), "达妮娅设定")
-        daniya_settings_action.triggered.connect(self.show_daniya_settings_dialog)
-        settings_center_action = chat.addAction(ic("chip"), "设置中心")
-        settings_center_action.triggered.connect(self.controller.open_settings_center)
-        story_action = chat.addAction(ic("protect"), "剧情")
-        story_action.triggered.connect(self.show_story_dialog)
+        renderer_menu = more.addMenu(ic("chip"), "渲染器")
+        current_renderer = self.controller.app_config.get("renderer_type", "png")
+        for key, label in [("png", "PNG 帧渲染"), ("morph_blend", "形变混合")]:
+            act = renderer_menu.addAction(label)
+            act.setCheckable(True)
+            act.setChecked(key == current_renderer)
+            act.triggered.connect(lambda checked=False, k=key: self._set_renderer_type(k))
 
-        companion = menu.addMenu(ic("protect"), "陪伴")
-        note_action = companion.addAction(ic("save"), "记一笔")
-        note_action.triggered.connect(self.show_note_dialog)
-        reminder_action = companion.addAction(ic("refresh"), "日程提醒")
-        reminder_action.triggered.connect(self.show_reminder_dialog)
-        growth_action = companion.addAction(ic("protect"), "养成中心")
-        growth_action.triggered.connect(self.controller.open_growth_center)
-        organizer_action = companion.addAction(ic("document"), "文件整理助手（预览）")
-        organizer_action.triggered.connect(self.controller.open_file_organizer)
+        top_action = more.addAction(ic("upload"), "取消置顶" if self.window.always_on_top else "保持置顶")
+        top_action.triggered.connect(self._toggle_top)
 
-        games = companion.addMenu(ic("chip"), "小游戏")
-        rps = games.addMenu(ic("protect"), "猜拳")
-        for choice in ("石头", "剪刀", "布"):
-            action = rps.addAction(choice)
-            action.triggered.connect(lambda checked=False, value=choice: self.controller.play_rps(value))
-        dice_action = games.addAction(ic("download"), "掷骰子")
-        dice_action.triggered.connect(self.controller.roll_dice)
-        random_action = games.addAction(ic("info"), "随机数 1-100")
-        random_action.triggered.connect(self.controller.random_100)
+        if self.window.is_minimized_to_tray():
+            restore_action = more.addAction(ic("upload"), "恢复显示")
+            restore_action.triggered.connect(self.window.restore_from_tray)
+        else:
+            minimize_action = more.addAction(ic("download"), "最小化到托盘")
+            minimize_action.triggered.connect(self.window.minimize_to_tray)
 
-        if self.controller.app_config.get("pomodoro", {}).get("enabled", True):
-            focus_menu = companion.addMenu(ic("refresh"), "专注番茄钟")
-            if getattr(self.controller, "pomodoro", None) is not None and self.controller.pomodoro.active:
-                cancel_focus = focus_menu.addAction(ic("settings"), "结束专注")
-                cancel_focus.triggered.connect(self.controller.cancel_pomodoro)
-            else:
-                for mins in (25, 45):
-                    act = focus_menu.addAction(ic("chip"), f"{mins} 分钟")
-                    act.triggered.connect(lambda checked=False, m=mins: self.controller.start_pomodoro(m))
+        demo_action = more.addAction(ic("chip"), "演示模式")
+        demo_action.triggered.connect(self._start_demo)
 
-        bookmarks = companion.addMenu(ic("cloud"), "传送门")
-        for item in self.controller.bookmark_manager.records():
-            action = bookmarks.addAction(item["name"])
-            action.triggered.connect(lambda checked=False, url=item["url"]: self.controller.open_bookmark(url))
+        dnd_action = more.addAction(ic("host"), "勿扰模式")
+        dnd_action.setCheckable(True)
+        dnd_action.setChecked(bool(self.controller.app_config.get("dnd_mode", False)))
+        dnd_action.triggered.connect(self._toggle_dnd)
 
-        system = menu.addMenu(ic("host"), "系统")
-        help_action = system.addAction(ic("info"), "帮助")
-        help_action.triggered.connect(self.show_help_dialog)
-        exit_action = system.addAction(ic("settings"), "退出")
+        click_through_action = more.addAction(ic("laptop"), "点击穿透")
+        click_through_action.setCheckable(True)
+        click_through_action.setChecked(bool(self.controller.app_config.get("click_through", False)))
+        click_through_action.triggered.connect(self._toggle_click_through)
+
+        self._add_pet_feature_menu(more)
+
+        menu.addSeparator()
+
+        # 7. 退出
+        exit_action = menu.addAction(ic("settings"), "退出")
         exit_action.triggered.connect(self.controller.quit)
 
         return menu
 
-    def _add_action_module_menu(self, parent: QMenu) -> None:
-        module_menu = parent.addMenu(ic("chip"), "动作模组")
-        module_labels = {
-            "A_sit_base": "A 坐姿 / 表情",
-            "B_stand_base_pack": "B 站姿 / 挥手",
-            "C_sleep_base_pack": "C 睡姿",
-            "D_special_motion_pack": "D 特殊 / 探头",
-        }
-        active_module = self.controller.asset_manager.active_action_module()
-        for module, label in module_labels.items():
-            action = module_menu.addAction(label)
-            action.setCheckable(True)
-            action.setChecked(module == active_module)
-            action.triggered.connect(lambda checked=False, value=module: self.controller.set_action_module(value))
+    def _open_function_center(self) -> None:
+        from .function_center import FunctionCenterDialog
+        dialog = FunctionCenterDialog(self.controller, self.window)
+        dialog.exec()
 
     def _add_pet_feature_menu(self, parent: QMenu) -> None:
         pet_features = parent.addMenu(ic("info"), "宠物功能")
@@ -209,6 +209,39 @@ class MenuManager:
         self.window.set_always_on_top(enabled)
         self.controller.app_config.setdefault("window", {})["always_on_top"] = enabled
         self.controller.config_manager.save_app_config(self.controller.app_config)
+        self.window.set_context_menu(self.create_menu())
+
+    def _toggle_dnd(self, checked: bool) -> None:
+        self.controller.app_config["dnd_mode"] = checked
+        self.controller.config_manager.save_app_config(self.controller.app_config)
+        if hasattr(self.controller, "behavior_engine") and self.controller.behavior_engine:
+            self.controller.behavior_engine.reload_config(self.controller.app_config)
+        self.window.set_context_menu(self.create_menu())
+
+    def _toggle_click_through(self, checked: bool) -> None:
+        self.controller.app_config["click_through"] = checked
+        self.controller.config_manager.save_app_config(self.controller.app_config)
+        self.window.set_click_through(checked)
+        self.window.set_context_menu(self.create_menu())
+
+    def _start_demo(self) -> None:
+        from .behavior.demo_mode import DemoMode
+        if not hasattr(self, "_demo") or not self._demo.is_running():
+            self._demo = DemoMode(self.window)
+            self._demo.finished.connect(lambda: self.window.speak("……演示结束。"))
+            self._demo.start()
+
+    def _set_renderer_type(self, renderer_type: str) -> None:
+        self.controller.app_config["renderer_type"] = renderer_type
+        self.controller.config_manager.save_app_config(self.controller.app_config)
+        self.window.set_renderer_type(renderer_type)
+        self.window.set_context_menu(self.create_menu())
+
+    def _set_behavior_intensity(self, intensity: str) -> None:
+        self.controller.app_config["behavior_intensity"] = intensity
+        self.controller.config_manager.save_app_config(self.controller.app_config)
+        if hasattr(self.controller, "behavior_engine") and self.controller.behavior_engine:
+            self.controller.behavior_engine.reload_config(self.controller.app_config)
         self.window.set_context_menu(self.create_menu())
 
     def _toggle_input(self) -> None:
@@ -366,22 +399,53 @@ class MenuManager:
         dialog.exec()
 
     def show_help_dialog(self) -> None:
-        help_path = resource_path("docs", "help.md")
-        if not help_path.exists():
-            help_path = resource_path("README.md")
-        try:
-            content = help_path.read_text(encoding="utf-8")
-        except OSError:
-            content = "没有找到帮助文档。"
+        dialog = HelpDialog(self.window)
+        dialog.exec()
 
+    def _show_portals_dialog(self) -> None:
+        records = self.controller.bookmark_manager.records()
+        if not records:
+            QMessageBox.information(self.window, "传送门", "还没有添加书签。")
+            return
         dialog = QDialog(self.window)
-        dialog.setWindowTitle("帮助")
-        dialog.resize(700, 520)
+        dialog.setWindowTitle("传送门")
+        dialog.resize(360, 300)
         layout = QVBoxLayout(dialog)
-        editor = QTextEdit()
-        editor.setReadOnly(True)
-        editor.setMarkdown(content)
-        layout.addWidget(editor)
+        for item in records:
+            btn = QPushButton(item["name"])
+            url = item["url"]
+            btn.clicked.connect(lambda checked=False, u=url: (dialog.accept(), self.controller.open_bookmark(u)))
+            layout.addWidget(btn)
+        layout.addStretch()
+        close = QPushButton("关闭")
+        close.clicked.connect(dialog.accept)
+        layout.addWidget(close, alignment=Qt.AlignmentFlag.AlignRight)
+        dialog.exec()
+
+    def _show_games_dialog(self) -> None:
+        dialog = QDialog(self.window)
+        dialog.setWindowTitle("小游戏")
+        dialog.resize(300, 240)
+        layout = QVBoxLayout(dialog)
+
+        rps_label = QLabel("猜拳：")
+        layout.addWidget(rps_label)
+        rps_layout = QHBoxLayout()
+        for choice in ("石头", "剪刀", "布"):
+            btn = QPushButton(choice)
+            btn.clicked.connect(lambda checked=False, v=choice: (dialog.accept(), self.controller.play_rps(v)))
+            rps_layout.addWidget(btn)
+        layout.addLayout(rps_layout)
+
+        dice_btn = QPushButton("掷骰子")
+        dice_btn.clicked.connect(lambda: (dialog.accept(), self.controller.roll_dice()))
+        layout.addWidget(dice_btn)
+
+        rand_btn = QPushButton("随机数 1-100")
+        rand_btn.clicked.connect(lambda: (dialog.accept(), self.controller.random_100()))
+        layout.addWidget(rand_btn)
+
+        layout.addStretch()
         close = QPushButton("关闭")
         close.clicked.connect(dialog.accept)
         layout.addWidget(close, alignment=Qt.AlignmentFlag.AlignRight)
@@ -398,17 +462,16 @@ class MenuManager:
         return "\n".join(lines)
 
 
-class HistoryDialog(QDialog):
+class HistoryDialog(LiquidGlassDialog):
     def __init__(self, controller: "AppController", parent: QWidget) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="历史记录")
         self.controller = controller
-        self.setWindowTitle("历史记录")
         self.resize(720, 520)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
-        self.layout = QVBoxLayout(self)
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
-        self.layout.addWidget(self.scroll)
+        layout = QVBoxLayout()
+        layout.addWidget(self.scroll)
+        self.setLayout(layout)
         self.refresh()
 
     def refresh(self) -> None:
@@ -460,3 +523,86 @@ class HistoryDialog(QDialog):
         if result == QMessageBox.StandardButton.Yes:
             self.controller.history_manager.delete(record_id)
             self.refresh()
+
+
+class HelpDialog(LiquidGlassDialog):
+    """帮助页：玻璃外壳 + 左侧 TOC + 搜索。"""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent, title="帮助")
+        self.resize(760, 560)
+
+        content = self._load_content()
+        self._headings = self._parse_headings(content)
+
+        body = QVBoxLayout()
+        body.setSpacing(6)
+
+        self._search = QLineEdit()
+        self._search.setPlaceholderText("搜索帮助内容...")
+        self._search.textChanged.connect(self._on_search)
+        body.addWidget(self._search)
+
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        self._toc = QListWidget()
+        self._toc.setFixedWidth(160)
+        self._toc.setStyleSheet(
+            "QListWidget { background: transparent; border: none; font-size: 12px; }"
+            "QListWidget::item { padding: 4px 6px; border-radius: 4px; }"
+            "QListWidget::item:selected { background: rgba(100, 150, 255, 60); }"
+        )
+        for heading in self._headings:
+            item = QListWidgetItem(heading)
+            self._toc.addItem(item)
+        self._toc.currentRowChanged.connect(self._on_toc_click)
+        splitter.addWidget(self._toc)
+
+        self._editor = QTextEdit()
+        self._editor.setReadOnly(True)
+        self._editor.setMarkdown(content)
+        splitter.addWidget(self._editor)
+
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        body.addWidget(splitter)
+
+        self.setLayout(body)
+
+    @staticmethod
+    def _load_content() -> str:
+        help_path = resource_path("docs", "help.md")
+        if not help_path.exists():
+            help_path = resource_path("README.md")
+        try:
+            return help_path.read_text(encoding="utf-8")
+        except OSError:
+            return "没有找到帮助文档。"
+
+    @staticmethod
+    def _parse_headings(content: str) -> list[str]:
+        headings: list[str] = []
+        for line in content.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("## "):
+                headings.append(stripped.lstrip("# ").strip())
+            elif stripped.startswith("### "):
+                headings.append("  " + stripped.lstrip("# ").strip())
+        return headings
+
+    def _on_toc_click(self, row: int) -> None:
+        if row < 0 or row >= len(self._headings):
+            return
+        heading = self._headings[row].strip()
+        self._editor.find(heading)
+
+    def _on_search(self, text: str) -> None:
+        if not text:
+            cursor = self._editor.textCursor()
+            cursor.movePosition(cursor.MoveOperation.Start)
+            self._editor.setTextCursor(cursor)
+            return
+        cursor = self._editor.textCursor()
+        cursor.movePosition(cursor.MoveOperation.Start)
+        self._editor.setTextCursor(cursor)
+        self._editor.find(text)

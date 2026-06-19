@@ -1,3 +1,6 @@
+import random
+
+
 class StateManager:
     """
     负责管理动作的生命周期与映射
@@ -72,3 +75,73 @@ class StateManager:
 
         # 如果处于 idle, sleeping 等，可以被任何动作打断
         return True
+
+    def transition_weights(
+        self,
+        mood: str = "neutral",
+        idle_seconds: float = 0,
+        is_night: bool = False,
+        intensity: str = "lively",
+    ) -> dict[str, float]:
+        w: dict[str, float] = {
+            "idle": 0.35,
+            "walking": 0.25,
+            "sleep": 0.05,
+            "bubble": 0.20,
+            "happy": 0.05,
+            "taskbar_sit": 0.10,
+        }
+        if intensity == "quiet":
+            w["walking"] -= 0.10
+            w["taskbar_sit"] = 0.0
+            w["happy"] -= 0.03
+            w["idle"] += 0.15
+        elif intensity == "demo":
+            w["walking"] += 0.10
+            w["taskbar_sit"] += 0.10
+            w["happy"] += 0.10
+            w["idle"] -= 0.20
+            w["bubble"] += 0.05
+        if is_night:
+            w["sleep"] += 0.50
+            w["walking"] -= 0.15
+            w["bubble"] -= 0.10
+        if mood == "sleepy":
+            w["sleep"] += 0.25
+            w["walking"] -= 0.10
+        elif mood == "happy":
+            w["happy"] += 0.15
+            w["walking"] += 0.10
+            w["bubble"] += 0.10
+        elif mood == "lonely":
+            w["bubble"] += 0.20
+            w["walking"] += 0.05
+        elif mood == "focused":
+            w["idle"] += 0.20
+            w["walking"] -= 0.15
+            w["bubble"] -= 0.15
+        if idle_seconds > 600:
+            w["sleep"] += 0.10
+            w["bubble"] += 0.05
+        return {k: max(0.0, v) for k, v in w.items()}
+
+    def pick_idle_action(
+        self,
+        mood: str = "neutral",
+        idle_seconds: float = 0,
+        is_night: bool = False,
+        intensity: str = "lively",
+    ) -> str:
+        weights = self.transition_weights(mood, idle_seconds, is_night, intensity)
+        actions = list(weights.keys())
+        values = list(weights.values())
+        total = sum(values)
+        if total <= 0:
+            return "idle"
+        pick = random.uniform(0, total)
+        upto = 0.0
+        for action, w in zip(actions, values):
+            upto += w
+            if pick <= upto:
+                return action
+        return "idle"

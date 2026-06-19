@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import socket
 import sys
 import traceback
 from collections import deque
@@ -23,6 +25,7 @@ from .history_manager import HistoryManager
 from .idle_manager import IdleManager
 from .menu_manager import MenuManager
 from .mini_games import MiniGames
+from .mood_manager import MoodManager
 from .notes_manager import NotesManager
 from .pet_window import PetWindow
 from .profile_manager import ProfileManager
@@ -165,6 +168,7 @@ class AppController(QObject):
         self.clipboard_interaction = ClipboardInteraction(self.qapp.clipboard())
         self.focus_mode_manager = FocusModeManager()
         self.pomodoro = PomodoroSession(self.app_config.get("pomodoro", {}))
+        self.mood_manager = MoodManager()
         self.startup_timer.mark("managers initialized")
 
         # [CHANGE-001] v0.415 引擎适配器初始化
@@ -213,6 +217,8 @@ class AppController(QObject):
         # Inject behavior engine checkers
         self.window.behavior_engine.idle_behavior.is_allowed = self.is_idle_behavior_allowed
         self.window.behavior_engine.idle_behavior.is_night = self.is_night_behavior
+        self.window.behavior_engine.idle_behavior._mood_manager = self.mood_manager
+        self.window.behavior_engine.idle_behavior._state_manager = self.window.animation_manager.state_manager
         self.window.edge_peek_allowed_callback = self._edge_peek_allowed
 
         self.idle_manager = IdleManager(self.app_config, self.window.can_show_idle_message)
@@ -410,6 +416,7 @@ class AppController(QObject):
         self.worker.start()
 
     def _handle_reply(self, user_text: str, reply: str, source: str) -> None:
+        self.mood_manager.update_from_interaction("chat")
         print(f"[Daniya] chat saved source={source}")
         self.history_manager.append(user_text, reply, source)
         memory_config = self.app_config.get("memory_features", {})
@@ -458,16 +465,30 @@ class AppController(QObject):
 
     def on_pet_clicked(self) -> None:
         self.idle_manager.mark_activity()
+        self.mood_manager.update_from_interaction("click")
         success, upgraded = self.affinity_manager.add_click()
         if success:
             self.window.update_affinity(self.affinity_manager.badge())
+        # [FIX-S2] 记录点击前状态，用于 sleep/wake 语音判定（首次入睡 / 从睡眠醒来）
+        was_sleeping = (
+            self.window.animation_manager.state_manager.get_state() == "sleeping"
+        )
         if self.day_night_manager.is_night():
             self.window.animation_manager.trigger_sleeping()
+            # [FIX-S2] sleep 语音：仅首次进入睡眠时播（已在睡眠再点击不重播）
+            if not was_sleeping:
+                self._voice_play_event("sleep")
         else:
             self.window.animation_manager.trigger_clicked()
+            # [FIX-S2] wake 语音：白天点击若宠物刚从睡眠醒来
+            if was_sleeping:
+                self._voice_play_event("wake")
         self.window.speak(self.day_night_manager.click_line())
         # [CHANGE-003+005] 物理点击事件流入引擎（后台线程，不阻塞 GUI）
         self._fire_physical_event("user_click")
+        # [FIX-S2] 接入物理事件语音：clip pack 分类音效（click 类）。
+        # voice_router 未初始化时 _voice_play_event 自动 no-op，不影响首启。
+        self._voice_play_event("pet_click")
         if upgraded:
             QTimer.singleShot(2000, lambda: self._check_affinity_upgrade(upgraded))
 
@@ -486,12 +507,6 @@ class AppController(QObject):
         actual = self.window.set_pet_height(height)
         self.app_config.setdefault("pet", {})["pet_height"] = actual
         self.app_config.setdefault("pet", {})["target_height"] = actual
-        self.config_manager.save_app_config(self.app_config)
-        self.window.set_context_menu(self.menu_manager.create_menu())
-
-    def set_action_module(self, module: str) -> None:
-        active = self.window.animation_manager.set_action_module(module)
-        self.app_config.setdefault("pet", {})["active_action_module"] = active
         self.config_manager.save_app_config(self.app_config)
         self.window.set_context_menu(self.menu_manager.create_menu())
 
@@ -666,6 +681,8 @@ class AppController(QObject):
         reminder_text = self.utility_text("reminder_due", text=text)
         self.window.speak(reminder_text)
         self._tts_play(reminder_text)
+        # [FIX-S2] 接入物理事件语音：clip pack 分类音效（reminder 类）。
+        self._voice_play_event("reminder", text=reminder_text)
         # [CHANGE-003+005] 提醒到期事件流入引擎（后台线程）
         self._fire_physical_event("reminder_due")
         box = QMessageBox(self.window)
@@ -831,6 +848,7 @@ class AppController(QObject):
         )
 
     def start_pomodoro(self, minutes: int | None = None) -> None:
+        self.mood_manager.update_from_interaction("pomodoro_start")
         mins = self.pomodoro.start(minutes)
         self._speak_with_tts(f"……开始专注。{mins} 分钟。我看着你。")
 
@@ -843,6 +861,7 @@ class AppController(QObject):
         self._speak_with_tts("……喂。别分心。")
 
     def _on_pomodoro_completed(self) -> None:
+        self.mood_manager.update_from_interaction("pomodoro_end")
         self.affinity_manager.add_value(self.pomodoro.reward_affinity)
         self.window.update_affinity(self.affinity_manager.badge())
         self._speak_with_tts("……时间到。这次你做到了。")
@@ -939,17 +958,83 @@ class AppController(QObject):
         )
 
     def quit(self) -> None:
-        # Wait for any running chat worker or physical event workers to finish safely
+        # [FIX-S1] 统一退出清理：停止全部后台 QTimer / 线程 / worker，保存最后状态。
+        # 退出路径必须永不抛异常——任何一步失败都用 try/except 兜住，保证最终 qapp.quit()。
+        self._shutdown_background_managers()
+        self._wait_running_workers()
+        self._save_state_on_quit()
+        self._close_open_dialogs()
+        self.qapp.quit()
+
+    def _shutdown_background_managers(self) -> None:
+        """[FIX-S1] 停止所有周期性后台 manager 的 QTimer / 线程。
+
+        各 manager 均为 QTimer 驱动（IdleManager/TimeEventManager/MediaPresenceManager/
+        SystemStatusManager/FocusModeManager/AmbientEventTheater），停 timer 即不再派发新任务。
+        WeatherManager 有完整 shutdown()（含等飞行 worker）。
+        """
+        logger = logging.getLogger("daniya")
+        # (attr_name, stop_callable)：stop_callable 接收 manager 实例
+        stoppers = [
+            ("system_status_manager", _stop_timer_manager),
+            ("focus_mode_manager", _stop_timer_manager),
+            ("idle_manager", _stop_timer_manager),
+            ("time_event_manager", _stop_timer_manager),
+            ("media_presence_manager", _stop_timer_manager),
+            ("ambient_event_theater", _stop_timer_manager),
+            ("weather_manager", lambda m: m.shutdown()),
+        ]
+        for attr_name, stop in stoppers:
+            mgr = getattr(self, attr_name, None)
+            if mgr is None:
+                continue
+            try:
+                stop(mgr)
+            except Exception:
+                logger.debug("quit: stopping %s raised", attr_name, exc_info=True)
+
+    def _wait_running_workers(self) -> None:
+        """[FIX-S1] 等待飞行中的 chat worker / 物理事件 worker 收尾（带超时，避免卡退出）。"""
         if hasattr(self, "worker") and self.worker is not None and self.worker.isRunning():
-            self.worker.wait(1500)
+            try:
+                self.worker.wait(2000)
+            except Exception:
+                pass
         if hasattr(self, "_phys_workers"):
             for w in list(self._phys_workers):
-                if w.isRunning():
-                    w.wait(1500)
-        weather_manager = getattr(self, "weather_manager", None)
-        if weather_manager is not None:
-            weather_manager.shutdown()
-        self.qapp.quit()
+                try:
+                    if w.isRunning():
+                        w.wait(2000)
+                except Exception:
+                    pass
+
+    def _save_state_on_quit(self) -> None:
+        """[FIX-S1] 退出前持久化最后状态（窗口/好感度/提醒等）。原 quit() 缺这步会丢最后一次变更。"""
+        logger = logging.getLogger("daniya")
+        try:
+            self.config_manager.save_app_config(self.app_config)
+        except Exception:
+            logger.debug("quit: save_app_config raised", exc_info=True)
+        # 提醒：若有 save 方法则保存（防御性，方法不存在则跳过）
+        save_fn = getattr(getattr(self, "reminder_manager", None), "save", None)
+        if callable(save_fn):
+            try:
+                save_fn()
+            except Exception:
+                logger.debug("quit: reminder_manager.save raised", exc_info=True)
+
+    def _close_open_dialogs(self) -> None:
+        """[FIX-S1] 关闭仍在屏幕上的提醒弹窗，避免退出时残留或访问已销毁对象。"""
+        boxes = list(getattr(self, "reminder_boxes", []))
+        for box in boxes:
+            try:
+                box.done(0)
+            except Exception:
+                pass
+        try:
+            self.reminder_boxes.clear()
+        except Exception:
+            pass
 
 
     # -- [CHANGE-005] 物理事件后台调度 --
@@ -978,6 +1063,8 @@ class AppController(QObject):
 
     def _fire_drag_event(self) -> None:
         """拖拽防抖定时器到期后触发一次拖拽事件。"""
+        self.mood_manager.update_from_interaction("drag")
+        self._voice_play_event("pet_drag")
         self._fire_physical_event("user_drag")
 
     def _cleanup_phys_worker(self, w: PhysicalEventWorker) -> None:
@@ -1002,11 +1089,65 @@ def _configure_application_lifecycle(app: QApplication) -> None:
     app.setQuitOnLastWindowClosed(False)
 
 
+def _stop_timer_manager(mgr: object) -> None:
+    """[FIX-S1] 停止 QTimer 驱动的 manager。
+
+    优先调用 shutdown()（若存在），否则停 timer。抽成模块级纯函数便于单测 mock。
+    """
+    shutdown = getattr(mgr, "shutdown", None)
+    if callable(shutdown):
+        shutdown()
+        return
+    timer = getattr(mgr, "timer", None)
+    if timer is not None:
+        timer.stop()
+
+
+_SINGLE_INSTANCE_PORT = 52317
+_SINGLE_INSTANCE_LOCK: socket.socket | None = None
+
+
+def _acquire_single_instance_lock() -> bool:
+    """[FIX-S3] 尝试占用单实例锁。
+
+    用绑定到 127.0.0.1:固定端口 的 socket 作为单实例锁。
+    - 绑定成功 → 本进程持锁，返回 True。
+    - 绑定失败（端口被占）→ 已有实例在运行，返回 False。
+    - 进程退出时 socket 由 OS 回收端口，崩溃也不会残留。
+    """
+    global _SINGLE_INSTANCE_LOCK
+    if _SINGLE_INSTANCE_LOCK is not None:
+        return True
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+    try:
+        sock.bind(("127.0.0.1", _SINGLE_INSTANCE_PORT))
+    except OSError:
+        try:
+            sock.close()
+        except OSError:
+            pass
+        return False
+    _SINGLE_INSTANCE_LOCK = sock
+    return True
+
+
 def run(process_started_at: float | None = None) -> None:
     from .logging_setup import configure_logging, install_excepthook
     startup_timer = StartupTimer(started_at=process_started_at)
     configure_logging()
     install_excepthook()
+    logger = logging.getLogger("daniya")
+
+    # [FIX-S3] 单实例锁：防止双开导致配置互覆盖 / 双桌宠重叠
+    if not _acquire_single_instance_lock():
+        logger.info("single_instance: another instance already running, exiting")
+        QMessageBox.information(
+            None,
+            "达妮娅已经在运行",
+            "桌宠已经开着一个啦，去屏幕上找找她吧。",
+        )
+        sys.exit(0)
 
     app = QApplication(sys.argv)
     startup_timer.mark("QApplication created")
@@ -1121,6 +1262,31 @@ def run(process_started_at: float | None = None) -> None:
             # 用户关闭了向导而没有完成设置
             sys.exit(0)
 
-    controller = AppController(app, startup_timer=startup_timer)
-    controller.show()
+    # [FIX-S4] 包住 controller 初始化与首帧显示：任一 manager 初始化抛异常时，
+    # console=False 打包下进程会静默崩溃，用户零反馈。这里兜底弹窗 + 写日志。
+    controller = None
+    try:
+        controller = AppController(app, startup_timer=startup_timer)
+        # [FIX-S1] 绑定 aboutToQuit 作为退出清理双保险：即便托盘退出路径漏调 quit()，
+        # 应用关闭时也会走统一清理。controller 已确认创建成功才绑定。
+        app.aboutToQuit.connect(controller.quit)
+        controller.show()
+    except Exception:
+        _report_fatal_startup_error(logger)
+        sys.exit(1)
     sys.exit(app.exec())
+
+
+def _report_fatal_startup_error(logger: logging.Logger) -> None:
+    """[FIX-S4] 首启崩溃的统一反馈：写日志 + 弹 critical 提示。
+
+    抽成独立函数便于单测（run() 整体含阻塞 wizard，不宜直接单测）。
+    console=False 打包下，AppController 初始化抛异常若不兜底 → 进程静默死、用户零提示。
+    """
+    logger.exception("fatal: AppController init or show failed")
+    QMessageBox.critical(
+        None,
+        "达妮娅启动失败",
+        "桌宠启动时遇到严重错误，无法继续。\n"
+        "详细信息已写入日志。\n请把 logs\\app.log 反馈给开发者。",
+    )

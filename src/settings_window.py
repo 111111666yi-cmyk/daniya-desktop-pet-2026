@@ -33,6 +33,7 @@ from .diagnostics_panel import format_diagnostics, run_diagnostics
 from .icon_utils import icon as get_icon
 from .relationship_state_viewer import RelationshipStateViewer
 from .settings_manager import SettingsManager
+from .ui.liquid_glass import LiquidGlassDialog
 from .utils import resource_path
 from .llm.provider_registry import Provider, ProviderMeta
 
@@ -470,9 +471,9 @@ def _format_pack_file_summary(name: str, text: str, editable: bool) -> str:
     return "\n".join(lines)
 
 
-class SettingsWindow(QDialog):
+class SettingsWindow(LiquidGlassDialog):
     def __init__(self, controller: "AppController", parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, title="设置中心")
         self.controller = controller
         self.settings_manager = SettingsManager(controller.config_manager)
         char_id = "daniya"
@@ -489,16 +490,9 @@ class SettingsWindow(QDialog):
         self.ollama_health_worker: _OllamaHealthWorker | None = None
         self._lazy_tab_loaders: dict[str, Callable[[], None]] = {}
         self._lazy_loaded_tabs: set[str] = set()
-        self.setWindowTitle("设置中心")
         self.resize(860, 640)
-        self.setWindowFlags(
-            self.windowFlags()
-            | Qt.WindowType.Window
-            | Qt.WindowMinimizeButtonHint
-            | Qt.WindowMaximizeButtonHint
-        )
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout()
 
         mode_row = QHBoxLayout()
         self._mode_simple_btn = QPushButton("简单")
@@ -538,6 +532,7 @@ class SettingsWindow(QDialog):
         close = QPushButton("关闭")
         close.clicked.connect(self.accept)
         layout.addWidget(close, alignment=Qt.AlignmentFlag.AlignRight)
+        self.setLayout(layout)
 
     def _register_tab(self, tab_id: str, widget: QWidget, icon_name: str, title: str) -> None:
         self._tab_widgets[tab_id] = widget
@@ -1842,11 +1837,19 @@ class SettingsWindow(QDialog):
         self.edge_peek.setChecked(bool(pet.get("edge_peek_enabled", False)))
         self.day_night = QCheckBox("昼夜作息")
         self.day_night.setChecked(bool(app_config.get("day_night_enabled", True)))
+        self.renderer_combo = QComboBox()
+        self.renderer_combo.addItem("PNG 帧渲染", "png")
+        self.renderer_combo.addItem("形变混合（呼吸/眨眼/交叉淡入）", "morph_blend")
+        current_renderer = app_config.get("renderer_type", "png")
+        idx = self.renderer_combo.findData(current_renderer)
+        if idx >= 0:
+            self.renderer_combo.setCurrentIndex(idx)
 
         form.addRow("桌宠大小", self.pet_size)
         form.addRow("输入框", self.show_input)
         form.addRow("置顶", self.always_on_top)
         form.addRow("透明度", self.opacity)
+        form.addRow("渲染器", self.renderer_combo)
         form.addRow("闲聊", self.idle_chat)
         form.addRow("闲聊间隔", self.idle_minutes)
         form.addRow("空闲小动作", self.idle_behavior)
@@ -3186,12 +3189,15 @@ class SettingsWindow(QDialog):
         config["idle_behavior_seconds"] = self.idle_behavior_seconds.value()
         config["hourly_chime_enabled"] = self.hourly_chime.isChecked()
         config["day_night_enabled"] = self.day_night.isChecked()
+        new_renderer = self.renderer_combo.currentData()
+        config["renderer_type"] = new_renderer
         self.settings_manager.save_app_config(config)
         self.controller.app_config.update(config)
         self.controller.save_pet_height(self.pet_size.value())
         self.controller.window.set_input_visible(self.show_input.isChecked(), expand=self.show_input.isChecked())
         self.controller.window.set_always_on_top(self.always_on_top.isChecked())
         self.controller.window.setWindowOpacity(self.opacity.value() / 100)
+        self.controller.window.set_renderer_type(new_renderer)
         self.controller.window.behavior_engine.reload_config(self.controller.app_config)
         self.controller.window.set_context_menu(self.controller.menu_manager.create_menu())
         self.pet_result.setText("已保存。大小、输入框、置顶、透明度、趴墙已即时生效；部分定时器配置重启后完全生效。")

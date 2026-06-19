@@ -1,7 +1,8 @@
-from PySide6.QtCore import Qt, QPoint
+from PySide6.QtCore import Qt, QPoint, QSize
 from PySide6.QtGui import QMouseEvent, QColor, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QDialog,
+    QSizeGrip,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -15,7 +16,7 @@ class LiquidGlassDialog(QDialog):
     A modern, frameless, translucent dialog with a custom title bar
     and a glassmorphic background effect.
     """
-    def __init__(self, parent=None, title=""):
+    def __init__(self, parent=None, title="", resizable=True):
         super().__init__(parent)
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -143,6 +144,15 @@ class LiquidGlassDialog(QDialog):
             }
             """
         )
+
+        if resizable:
+            grip = QSizeGrip(self)
+            grip.setFixedSize(16, 16)
+            grip.setStyleSheet("background: transparent;")
+            grip_row = QHBoxLayout()
+            grip_row.addStretch()
+            grip_row.addWidget(grip)
+            self.frame_layout.addLayout(grip_row)
 
         self._drag_pos = None
 
