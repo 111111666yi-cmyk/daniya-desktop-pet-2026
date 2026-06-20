@@ -121,7 +121,7 @@ class FirstRunWizard(LiquidGlassDialog):
         layout.addWidget(self._section_label(
             "欢迎使用 Daniya Summer Desktop Pet。\n\n"
             "这是一个本地桌宠应用，可以透明置顶、拖拽移动、右键打开菜单，并通过输入框和达妮娅对话。\n\n"
-            "没有 API Key 也可以启动，程序会使用 local fallback。私有素材和运行态数据只保存在本机，不会被提交到 Git，也不会进入 release 包。"
+            "没有密钥也可以启动，程序会使用本地离线模式。私有素材和运行态数据只保存在本机，不会被提交到版本管理。"
         ))
         layout.addStretch(1)
         return page
@@ -132,7 +132,7 @@ class FirstRunWizard(LiquidGlassDialog):
 
         mode_group = QGroupBox("API 模式")
         mode_layout = QVBoxLayout(mode_group)
-        self.skip_api_radio = QRadioButton("跳过 API，先使用 local fallback")
+        self.skip_api_radio = QRadioButton("跳过，先使用本地离线模式")
         self.configure_api_radio = QRadioButton("配置云端 API")
         self.skip_api_radio.setChecked(True)
         api_mode = QButtonGroup(self)
@@ -150,17 +150,17 @@ class FirstRunWizard(LiquidGlassDialog):
         self.model_input = QLineEdit()
         self.api_key_input = QLineEdit()
         self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.api_key_input.setPlaceholderText("API Key 会写入本机 .env，不会显示完整内容")
-        form.addRow("Provider", self.provider_combo)
-        form.addRow("Base URL", self.base_url_input)
-        form.addRow("Model", self.model_input)
-        form.addRow("API Key", self.api_key_input)
+        self.api_key_input.setPlaceholderText("密钥会写入本机，不会显示完整内容")
+        form.addRow("服务商", self.provider_combo)
+        form.addRow("地址", self.base_url_input)
+        form.addRow("模型", self.model_input)
+        form.addRow("密钥", self.api_key_input)
         layout.addWidget(form_group)
         self.api_form_group = form_group
 
         actions = QHBoxLayout()
         self.test_btn = QPushButton("测试连接")
-        self.api_result = QLabel("跳过 API 后仍可使用 local fallback。")
+        self.api_result = QLabel("跳过后仍可使用本地模型。")
         self.api_result.setWordWrap(True)
         self.test_btn.clicked.connect(self._test_connection)
         actions.addWidget(self.test_btn)
@@ -205,10 +205,10 @@ class FirstRunWizard(LiquidGlassDialog):
         layout = QVBoxLayout(page)
         layout.addWidget(self._section_label(
             "角色包说明：\n\n"
-            "1. 默认公开示例角色是 characters/daniya/。\n"
-            "2. characters/template/ 是新角色起点和 fallback 模板。\n"
-            "3. characters/test_dummy/ 只允许本地测试，clean clone 不要求它存在，也不进入 release。\n"
-            "4. 创建新角色时，复制 template 后再改 metadata、speech、lore 与动作映射。\n"
+            "1. 默认公开示例角色在 characters/daniya/ 目录。\n"
+            "2. characters/template/ 是新角色起点和备用模板。\n"
+            "3. characters/test_dummy/ 仅用于本地测试，不随发布版分发。\n"
+            "4. 创建新角色时，复制模板后修改元数据、语音、设定与动作映射。\n"
             "5. 修改角色包后，可在右键菜单或设置中心重新加载。"
         ))
         layout.addStretch(1)
@@ -243,7 +243,7 @@ class FirstRunWizard(LiquidGlassDialog):
         self.api_form_group.setEnabled(enabled)
         self.test_btn.setEnabled(enabled)
         if not enabled:
-            self.api_result.setText("已选择跳过 API。local fallback 可用，之后可在设置中心补填 Key。")
+            self.api_result.setText("已选择跳过。本地离线模式可用，之后可在设置中心补填密钥。")
 
     def _on_provider_changed(self, provider: str) -> None:
         meta = ProviderMeta.get(provider)

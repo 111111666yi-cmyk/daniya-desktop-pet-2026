@@ -288,14 +288,14 @@ _PACK_FILE_DESCRIPTIONS = {
 
 def _api_key_placeholder(masked_key: str | None) -> str:
     if masked_key and masked_key != "<empty>":
-        return "输入新的 API Key；留空则继续使用已保存 Key"
-    return "输入 API Key；保存后会写入本地 .env"
+        return "输入新密钥；留空则继续使用已保存的密钥"
+    return "输入密钥；保存后会写入本地"
 
 
 def _saved_api_key_status(masked_key: str | None) -> str:
     if masked_key and masked_key != "<empty>":
-        return f"已保存 Key：{masked_key}（这里只显示脱敏值）"
-    return "未保存 Key；输入后点击「保存 API 设置」"
+        return f"已保存密钥：{masked_key}（仅显示脱敏值）"
+    return "未保存密钥；输入后点击「保存」"
 
 
 def _format_relationship_summary(state: dict[str, Any]) -> str:
@@ -401,7 +401,7 @@ def _format_long_term_memory_summary(records: list[dict[str, Any]]) -> str:
 
 def _format_diary_summary(records: list[dict[str, Any]]) -> str:
     if not records:
-        return "暂无观察日记。只有手动生成且 Provider 真实返回成功的内容才会保存。"
+        return "暂无观察日记。只有手动生成且服务商真实返回成功的内容才会保存。"
     lines: list[str] = []
     for record in records[-20:][::-1]:
         timestamp = str(record.get("timestamp", ""))[:19] or "未知时间"
@@ -443,32 +443,13 @@ def _format_data_status_summary(status: dict[str, Any], paths: dict[str, Path]) 
         else:
             state = "暂无记录，运行后会自动生成"
         lines.append(f"{label}：{state}")
-    lines.append("需要排查时可点「导出备份」或展开原始详情。")
     return "\n".join(lines)
 
 
 def _format_pack_file_summary(name: str, text: str, editable: bool) -> str:
     description = _PACK_FILE_DESCRIPTIONS.get(name, "角色包文件。")
-    lines = [
-        f"当前文件：{name}",
-        f"用途：{description}",
-        f"权限：{'可在此编辑，保存前会自动备份并校验' if editable else '只读；如需修改请先确认角色包规则'}",
-        f"内容规模：{len(text.splitlines())} 行，约 {len(text)} 字。",
-    ]
-    if name.endswith((".yaml", ".yml")):
-        keys = []
-        for line in text.splitlines():
-            stripped = line.strip()
-            if line and not line.startswith((" ", "-")) and ":" in stripped:
-                keys.append(stripped.split(":", 1)[0])
-            if len(keys) >= 8:
-                break
-        if keys:
-            lines.append("主要段落：" + "、".join(keys))
-    if name == "story.yaml":
-        count = sum(1 for line in text.splitlines() if line.strip().startswith("- id:"))
-        lines.append(f"剧情章节：{count} 章。")
-    return "\n".join(lines)
+    permission = "可编辑" if editable else "只读"
+    return f"{description}（{permission}）"
 
 
 class SettingsWindow(LiquidGlassDialog):
@@ -522,7 +503,13 @@ class SettingsWindow(LiquidGlassDialog):
 
         app_config = self.settings_manager.load_app_config()
         sui = app_config.get("settings_ui", {})
-        initial_mode = sui.get("mode", "simple") if sui.get("mode") in ("simple", "advanced") else "simple"
+        if not isinstance(sui, dict):
+            sui = {}
+        # Prefer the top-level mode during startup so legacy configs and
+        # stale checked-in settings_ui values cannot force the wrong layout.
+        initial_mode = normalize_settings_mode(
+            app_config.get("settings_mode", sui.get("mode", "simple"))
+        )
         self._apply_settings_mode(initial_mode)
 
         self.tabs.currentChanged.connect(self._on_tab_changed)
@@ -546,7 +533,7 @@ class SettingsWindow(LiquidGlassDialog):
         if mode == "simple":
             self._mode_hint.setText("只显示常用设置。高级功能可在「进阶」中切换。")
         else:
-            self._mode_hint.setText("包含 Provider 详细配置、数据管理、诊断和实验功能，请谨慎修改。")
+            self._mode_hint.setText("包含服务商详细配置、数据管理、诊断和实验功能，请谨慎修改。")
         self.tabs.blockSignals(True)
         while self.tabs.count():
             self.tabs.removeTab(0)
@@ -576,8 +563,13 @@ class SettingsWindow(LiquidGlassDialog):
     def _switch_settings_mode(self, mode: str) -> None:
         self._apply_settings_mode(mode)
         app_config = self.settings_manager.load_app_config()
-        app_config["settings_ui"]["mode"] = mode
-        app_config["settings_ui"]["show_advanced"] = mode == "advanced"
+        app_config["settings_mode"] = mode
+        sui = app_config.get("settings_ui")
+        if not isinstance(sui, dict):
+            sui = {}
+        sui["mode"] = mode
+        sui["show_advanced"] = mode == "advanced"
+        app_config["settings_ui"] = sui
         self.settings_manager.save_app_config(app_config)
 
     def _build_model_tab(self) -> None:
@@ -606,13 +598,13 @@ class SettingsWindow(LiquidGlassDialog):
         self._build_profile_switcher(scroll_layout)
 
         # 云端 API 配置
-        api_group = QGroupBox("云端 API 配置 (Cloud Service)")
+        api_group = QGroupBox("云端配置")
         api_group_layout = QVBoxLayout(api_group)
         self._build_api_section(api_group_layout)
         scroll_layout.addWidget(api_group)
 
         # 本地部署与引擎配置
-        self.local_model_group = QGroupBox("本地部署与引擎配置 (Local Service)")
+        self.local_model_group = QGroupBox("本地模型")
         local_group_layout = QVBoxLayout(self.local_model_group)
         self._build_local_model_section(local_group_layout)
         scroll_layout.addWidget(self.local_model_group)
@@ -671,24 +663,24 @@ class SettingsWindow(LiquidGlassDialog):
         key_col.addWidget(self.saved_api_key_label)
         self._update_saved_api_key_label(active, prov_conf)
 
-        self.local_mode_input = QCheckBox("启用本地 fallback 模式")
+        self.local_mode_input = QCheckBox("启用本地离线模式")
         self.local_mode_input.setChecked(bool(self.api.get("local_mode", False)))
-        self.api_result = QLabel("选择 Provider → 输入新 Key 或留空沿用旧 Key → 测试连接 → 保存后点击「设为当前模型」生效。")
+        self.api_result = QLabel("")
         self.api_result.setWordWrap(True)
 
         self.provider_input.currentTextChanged.connect(self._on_provider_changed)
 
-        form.addRow("Provider", self.provider_input)
-        form.addRow("Base URL", self.base_url_input)
-        form.addRow("Model", self.model_input)
-        form.addRow("Auth Header", self.auth_header_input)
-        form.addRow("API Key", key_widget)
+        form.addRow("服务商", self.provider_input)
+        form.addRow("地址", self.base_url_input)
+        form.addRow("模型", self.model_input)
+        form.addRow("认证", self.auth_header_input)
+        form.addRow("密钥", key_widget)
         form.addRow("本地模式", self.local_mode_input)
         parent_layout.addLayout(form)
 
         # 按钮行 1：保存 / 测试 / 激活
         btn1 = QHBoxLayout()
-        save = QPushButton("保存 API 设置"); save.setIcon(get_icon("save"))
+        save = QPushButton("保存"); save.setIcon(get_icon("save"))
         test = QPushButton("测试连接"); test.setIcon(get_icon("refresh"))
         activate = QPushButton("设为当前模型"); activate.setIcon(get_icon("chip"))
         save.clicked.connect(self._save_api_settings)
@@ -699,9 +691,9 @@ class SettingsWindow(LiquidGlassDialog):
 
         # 按钮行 2：清除 / 重置
         btn2 = QHBoxLayout()
-        clear_key = QPushButton("清除当前 Key"); clear_key.setIcon(get_icon("settings"))
+        clear_key = QPushButton("清除当前密钥"); clear_key.setIcon(get_icon("settings"))
         clear_key.clicked.connect(self._clear_api_key)
-        reset_prov = QPushButton("重置此 Provider"); reset_prov.setIcon(get_icon("refresh"))
+        reset_prov = QPushButton("重置此服务商"); reset_prov.setIcon(get_icon("refresh"))
         reset_prov.clicked.connect(self._reset_current_provider)
         btn2.addWidget(clear_key); btn2.addWidget(reset_prov); btn2.addStretch(1)
         parent_layout.addLayout(btn2)
@@ -726,10 +718,10 @@ class SettingsWindow(LiquidGlassDialog):
 
 
         # ── 语音模式选择 ──
-        mode_group = QGroupBox("语音合成 TTS")
+        mode_group = QGroupBox("语音合成")
         mode_layout = QVBoxLayout(mode_group)
 
-        mode_hint = QLabel("预录语音包模式适合日常使用。\nAPI TTS 和本地 GPT-SoVITS 面向进阶用户。")
+        mode_hint = QLabel("")
         mode_hint.setWordWrap(True)
         mode_hint.setStyleSheet("color: #555; padding: 4px;")
         mode_layout.addWidget(mode_hint)
@@ -738,7 +730,7 @@ class SettingsWindow(LiquidGlassDialog):
         self.voice_mode_combo = QComboBox()
         self.voice_mode_combo.addItem("关闭", "off")
         self.voice_mode_combo.addItem("预录语音包", "clip_pack")
-        self.voice_mode_combo.addItem("API TTS（进阶，自备密钥）", "api_tts")
+        self.voice_mode_combo.addItem("云端语音合成（进阶，自备密钥）", "api_tts")
         self.voice_mode_combo.addItem("本地 GPT-SoVITS 动态合成（进阶）", "local_gpt_sovits")
         current_mode = voice_config.get("mode", "off")
         for i in range(self.voice_mode_combo.count()):
@@ -782,9 +774,9 @@ class SettingsWindow(LiquidGlassDialog):
         mode_layout.addWidget(self._clip_pack_group)
 
         # ── API TTS 面板 (api_tts) ──
-        self._api_tts_group = QGroupBox("API TTS（进阶，自备密钥）")
+        self._api_tts_group = QGroupBox("云端语音合成（进阶，自备密钥）")
         api_layout = QVBoxLayout(self._api_tts_group)
-        api_warn = QLabel("需要你自己的第三方 TTS API、endpoint、api_key 和 voice_id。本项目不会提供官方 API 音色。")
+        api_warn = QLabel("需自备第三方语音合成服务。")
         api_warn.setWordWrap(True)
         api_warn.setStyleSheet("color: #c57600; padding: 4px;")
         api_layout.addWidget(api_warn)
@@ -812,8 +804,8 @@ class SettingsWindow(LiquidGlassDialog):
         self.api_tts_volume = QSpinBox(); self.api_tts_volume.setRange(0, 100)
         self.api_tts_volume.setValue(int(api_cfg.get("volume", 70)))
         api_form.addRow("提供商", self.api_tts_provider)
-        api_form.addRow("API 端点", self.api_tts_endpoint)
-        api_form.addRow("API 密钥", self.api_tts_key)
+        api_form.addRow("端点地址", self.api_tts_endpoint)
+        api_form.addRow("密钥", self.api_tts_key)
         api_form.addRow("声音 ID", self.api_tts_voice_id)
         api_form.addRow("超时（秒）", self.api_tts_timeout)
         api_form.addRow("", self.api_tts_cache)
@@ -827,7 +819,7 @@ class SettingsWindow(LiquidGlassDialog):
         # ── GPT-SoVITS 面板 (local_gpt_sovits) ──
         self._gpt_sovits_group = QGroupBox("本地 GPT-SoVITS 动态合成（进阶）")
         gpt_layout = QVBoxLayout(self._gpt_sovits_group)
-        adv_warn = QLabel("需要你先在本机启动 GPT-SoVITS 推理服务，并准备自己的模型或参考音频。")
+        adv_warn = QLabel("需先在本机启动推理服务。")
         adv_warn.setWordWrap(True)
         adv_warn.setStyleSheet("color: #c57600; padding: 4px;")
         gpt_layout.addWidget(adv_warn)
@@ -843,7 +835,7 @@ class SettingsWindow(LiquidGlassDialog):
         self.tts_volume = QSpinBox(); self.tts_volume.setRange(0, 100)
         self.tts_volume.setValue(int(gpt_cfg.get("volume", tts_config.get("volume", 70))))
         gpt_form.addRow("声线包 ID", self.tts_voice_id)
-        gpt_form.addRow("GPT-SoVITS API 地址", self.tts_api_url)
+        gpt_form.addRow("合成服务地址", self.tts_api_url)
         gpt_form.addRow("音量", self.tts_volume)
         gpt_layout.addLayout(gpt_form)
 
@@ -924,10 +916,10 @@ class SettingsWindow(LiquidGlassDialog):
         endpoint = self.api_tts_endpoint.text().strip()
         key = self.api_tts_key.text().strip()
         if not endpoint:
-            self.voice_status_label.setText("API TTS：未配置端点。请填写 API 端点和密钥。")
+            self.voice_status_label.setText("云端语音合成：未配置端点。请填写端点地址和密钥。")
         else:
             masked = mask_key(key) if key else "未设置"
-            self.voice_status_label.setText(f"API TTS：端点 {endpoint}\n密钥 {masked}")
+            self.voice_status_label.setText(f"云端语音合成：端点 {endpoint}\n密钥 {masked}")
 
     def _import_clip_pack(self) -> None:
         from pathlib import Path as P
@@ -1065,11 +1057,11 @@ class SettingsWindow(LiquidGlassDialog):
                 player = AudioPlayer(self)
                 player.set_volume(self.api_tts_volume.value())
                 player.play_wav(wav)
-                QMessageBox.information(self, "测试播放", "API TTS 测试播放成功。")
+                QMessageBox.information(self, "测试播放", "云端语音合成测试播放成功。")
             else:
-                QMessageBox.warning(self, "测试播放", "API 未返回音频数据。")
+                QMessageBox.warning(self, "测试播放", "服务端未返回音频数据。")
         except ApiTTSError as exc:
-            QMessageBox.warning(self, "测试播放", f"API TTS 测试失败：{exc}")
+            QMessageBox.warning(self, "测试播放", f"云端语音合成测试失败：{exc}")
         except Exception as exc:
             QMessageBox.warning(self, "测试播放", f"测试异常：{exc}")
 
@@ -1289,7 +1281,7 @@ class SettingsWindow(LiquidGlassDialog):
         self.local_model_list.setEditable(True)
 
         form.addRow("服务类型", self.local_service_combo)
-        form.addRow("Base URL", self.local_base_url)
+        form.addRow("地址", self.local_base_url)
         form.addRow("模型", self.local_model_list)
         parent_layout.addLayout(form)
 
@@ -1706,7 +1698,7 @@ class SettingsWindow(LiquidGlassDialog):
         model = self.local_model_list.currentText().strip()
 
         if not url or not model:
-            self.local_status.setText("状态：请填写 Base URL 和模型名称")
+            self.local_status.setText("状态：请填写地址和模型名称")
             self.local_status.setStyleSheet("color: red;")
             return
 
@@ -1749,7 +1741,7 @@ class SettingsWindow(LiquidGlassDialog):
         if local_mode:
             text = (
                 f"当前文本模型：{name} ({model}) [{source_label}]；"
-                "本地 fallback 模式已开启，云端 Provider 当前不会实际调用。"
+                "本地离线模式已开启，云端服务商当前不会实际调用。"
             )
             self.active_profile_status.setText(text)
             self.active_profile_status.setStyleSheet(
@@ -1840,6 +1832,7 @@ class SettingsWindow(LiquidGlassDialog):
         self.renderer_combo = QComboBox()
         self.renderer_combo.addItem("PNG 帧渲染", "png")
         self.renderer_combo.addItem("形变混合（呼吸/眨眼/交叉淡入）", "morph_blend")
+        self.renderer_combo.addItem("Live2D 预览（缺资源自动回退）", "live2d_preview")
         current_renderer = app_config.get("renderer_type", "png")
         idx = self.renderer_combo.findData(current_renderer)
         if idx >= 0:
@@ -1860,7 +1853,7 @@ class SettingsWindow(LiquidGlassDialog):
         layout.addLayout(form)
         save = QPushButton("保存并尽量即时生效"); save.setIcon(get_icon("save"))
         save.clicked.connect(self._save_pet_settings)
-        self.pet_timer_hint = QLabel("提示：闲聊、整点报时、提醒、昼夜作息等定时器配置保存后，可能需要重启后完全生效。")
+        self.pet_timer_hint = QLabel("部分定时器配置需重启后生效。")
         self.pet_timer_hint.setWordWrap(True)
         self.pet_result = QLabel("")
         self.pet_result.setWordWrap(True)
@@ -1903,10 +1896,9 @@ class SettingsWindow(LiquidGlassDialog):
         btn_char_row.addWidget(reload_char_btn)
         btn_char_row.addStretch(1)
 
-        char_layout.addRow("当前角色 ID:", self.char_id_label)
-        char_layout.addRow("角色包路径:", self.char_path_label)
-        char_layout.addRow("加载/校验状态:", self.char_status_label)
-        char_layout.addRow("切换角色 (本地):", self.char_selector)
+        char_layout.addRow("当前角色", self.char_id_label)
+        char_layout.addRow("校验状态", self.char_status_label)
+        char_layout.addRow("切换角色", self.char_selector)
         char_layout.addRow("", btn_char_row)
 
         layout.addWidget(char_group)
@@ -2060,7 +2052,7 @@ class SettingsWindow(LiquidGlassDialog):
         profile_layout.addRow("生日（月-日，可留空）", self.profile_birthday)
         profile_layout.addRow("关系设定", self.profile_relationship)
         profile_layout.addRow("期望风格", self.profile_style)
-        profile_hint = QLabel("生日只保存月和日，不读取系统账户资料；档案和记忆保存在本地运行态目录。")
+        profile_hint = QLabel("档案仅保存在本地。")
         profile_hint.setWordWrap(True)
         profile_layout.addRow("", profile_hint)
         profile_save = QPushButton("保存用户档案")
@@ -2178,10 +2170,7 @@ class SettingsWindow(LiquidGlassDialog):
         long_term_form.addRow("每次检索数量", self.long_term_memory_top_k)
         long_term_form.addRow("本机最多保存", self.long_term_memory_max_entries)
         long_term_layout.addLayout(long_term_form)
-        long_term_hint = QLabel(
-            "记忆内容对用户完全可见；只向当前文本 Provider 注入与本次输入最相关的少量记录。"
-            "检测到 API Key、Token 或密码样式时不会写入。"
-        )
+        long_term_hint = QLabel("记忆保存在本地，不会存入敏感信息。")
         long_term_hint.setWordWrap(True)
         long_term_layout.addWidget(long_term_hint)
         long_term_buttons = QHBoxLayout()
@@ -2208,7 +2197,7 @@ class SettingsWindow(LiquidGlassDialog):
         diary_layout = QVBoxLayout(diary_group)
         diary_form = QFormLayout()
         self.observation_diary_enabled = QCheckBox(
-            "允许手动把近期互动发送给当前文本 Provider 生成日记"
+            "允许手动把近期互动发送给当前文本模型生成日记"
         )
         self.observation_diary_enabled.setChecked(
             bool(memory_config.get("diary_enabled", False))
@@ -2222,9 +2211,7 @@ class SettingsWindow(LiquidGlassDialog):
         diary_form.addRow("", self.observation_diary_enabled)
         diary_form.addRow("读取最近互动", self.observation_diary_days)
         diary_layout.addLayout(diary_form)
-        diary_hint = QLabel(
-            "不会后台自动生成。点击生成后会再次确认；Provider 未连通或仅返回 fallback 时不保存。"
-        )
+        diary_hint = QLabel("需手动触发，生成前会二次确认。")
         diary_hint.setWordWrap(True)
         diary_layout.addWidget(diary_hint)
         diary_buttons = QHBoxLayout()
@@ -2283,7 +2270,7 @@ class SettingsWindow(LiquidGlassDialog):
 
         onboarding_group = QGroupBox("首次启动向导")
         onboarding_layout = QVBoxLayout(onboarding_group)
-        onboarding_layout.addWidget(QLabel("需要重新查看新手流程、API 配置或素材放置说明时，可以重新打开向导。"))
+        onboarding_layout.addWidget(QLabel("重新查看新手流程和初始配置。"))
         open_wizard = QPushButton("重新打开首次启动向导"); open_wizard.setIcon(get_icon("info"))
         open_wizard.clicked.connect(self._open_first_run_wizard)
         onboarding_layout.addWidget(open_wizard, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2304,28 +2291,28 @@ class SettingsWindow(LiquidGlassDialog):
         guide_text.setReadOnly(True)
         guide_text.setMaximumHeight(360)
         guide_text.setMarkdown(
-            "### 模型与 API\n\n"
-            "1. **保存 API 设置** 只保存 Provider / Base URL / Model / Auth Header / Key，不立即切换当前模型。\n"
+            "### 模型配置\n\n"
+            "1. **保存** 只保存服务商、地址、模型、认证方式和密钥，不立即切换当前模型。\n"
             "2. **设为当前模型** 会先验证连接；验证失败不会切换，也不会覆盖上一套可用模型。\n"
-            "3. API Key 行上方显示已保存的脱敏 Key；输入框只用于填写新 Key，留空保存会沿用旧 Key。\n"
-            "4. Auth Header 要和服务商一致：DeepSeek / OpenAI 通常用 `bearer`；MiMo 等兼容服务可选 `api-key` / `x-api-key`。\n"
-            "5. 文本模型、TTS、图像、视频是独立槽位；切换文本模型不会改动 TTS 或图像配置。\n\n"
+            "3. 密钥行上方显示已保存的脱敏密钥；输入框只用于填写新密钥，留空保存会沿用旧密钥。\n"
+            "4. 认证方式要和服务商一致：多数服务商使用默认方式即可。\n"
+            "5. 文本模型、语音、图像、视频是独立槽位；切换文本模型不会改动语音或图像配置。\n\n"
             "### 本地模型\n\n"
-            "6. Ollama / LM Studio 等本地服务要先启动，再拉取模型列表或手动填模型名。\n"
-            "7. 本地 fallback 只表示云端不可用时允许回退，本地模型本身仍需 **测试服务连接** 和 **设为当前模型**。\n\n"
+            "6. 本地服务要先启动，再拉取模型列表或手动填模型名。\n"
+            "7. 本地离线模式只表示云端不可用时允许回退，本地模型本身仍需 **测试服务连接** 和 **设为当前模型**。\n\n"
             "### 切换与历史\n\n"
             "8. 上方 **文本模型切换** 用于直接切换、启用、停用；历史会保留最近使用过的文本模型。\n"
             "9. 顶部状态只表示当前选择的文本模型；实时连通性以 **测试连接** 结果为准。\n\n"
             "### 窗口\n\n"
             "10. 设置中心是独立窗口，可最小化后从任务栏找回；右键角色仍可再次唤起并恢复原窗口。\n\n"
             "### 角色与资源\n\n"
-            "11. 前台只显示摘要；原始 YAML、日志和路径放在 **显示原始** 按钮里。\n"
-            "12. 可编辑文件只有 character / speech / relationship / events 四类 YAML；lore、story、actions 默认只读。\n\n"
+            "11. 前台只显示摘要；原始配置文件、日志和路径放在 **显示原始** 按钮里。\n"
+            "12. 可编辑文件只有角色、语言、关系、事件四类配置；剧情、故事、动作默认只读。\n\n"
             "### 关系与事件\n\n"
             "13. 关系数值不是攻略条，而是达妮娅防御、信任、共情负荷和留下倾向的运行状态。\n"
             "14. 事件日志记录点击、拖拽、回归、情绪与剧情触发；前台翻译成可读摘要，原始日志仅用于排查。\n\n"
             "### 数据安全\n\n"
-            "15. `.env`、`data`、`assets/private`、`models`、`backups`、`dist`、`build` 不应提交；导出备份会放在本地备份目录。"
+            "15. 敏感数据文件夹不应提交到版本管理；导出备份会放在本地备份目录。"
         )
         help_content_layout.addWidget(guide_text)
         help_layout.addWidget(self.help_content)
@@ -2338,7 +2325,7 @@ class SettingsWindow(LiquidGlassDialog):
         config = self.settings_manager.load_app_config()
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        description = QLabel("提醒由用户主动创建；自然语言提醒只解析明确的时间表达，不会代替用户决定任务。")
+        description = QLabel("")
         description.setWordWrap(True)
         layout.addWidget(description)
         form = QFormLayout()
@@ -2372,10 +2359,7 @@ class SettingsWindow(LiquidGlassDialog):
             growth = {}
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        description = QLabel(
-            "纯本地功能，默认关闭。硬币、背包、成长和衣柜保存在 data/growth_state.json，"
-            "不会发送给 Provider，也不会进入 Git 或发布包。"
-        )
+        description = QLabel("纯本地功能，数据不会上传。")
         description.setWordWrap(True)
         layout.addWidget(description)
         self.growth_enabled = QCheckBox("启用本地养成")
@@ -2410,10 +2394,7 @@ class SettingsWindow(LiquidGlassDialog):
             environment = {}
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        description = QLabel(
-            "三个功能均默认关闭。天气只访问 Open-Meteo；媒体只识别受支持播放器的进程名，"
-            "不读取窗口标题、歌名、歌词或文件路径；小剧场只读取角色包本地事件。"
-        )
+        description = QLabel("")
         description.setWordWrap(True)
         layout.addWidget(description)
 
@@ -2585,7 +2566,7 @@ class SettingsWindow(LiquidGlassDialog):
         config = self.settings_manager.load_app_config()
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        description = QLabel("默认关闭，仅在本机低频检查 CPU、内存、电池、磁盘和可选网络状态，不向 Provider 上传硬件信息。")
+        description = QLabel("")
         description.setWordWrap(True)
         layout.addWidget(description)
         form = QFormLayout()
@@ -2610,7 +2591,7 @@ class SettingsWindow(LiquidGlassDialog):
         form.addRow("系统状态", self.system_status_enabled)
         form.addRow("状态检查间隔", self.system_status_interval)
         form.addRow("状态提醒冷却", self.system_status_cooldown)
-        form.addRow("CPU 阈值", self.system_status_cpu)
+        form.addRow("处理器阈值", self.system_status_cpu)
         form.addRow("内存阈值", self.system_status_memory)
         form.addRow("电池阈值", self.system_status_battery)
         form.addRow("网络检查", self.system_status_network)
@@ -2638,7 +2619,7 @@ class SettingsWindow(LiquidGlassDialog):
         config = self.settings_manager.load_app_config()
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        description = QLabel("隐私功能，默认关闭。只处理文本，不自动发送 API，不保存完整剪贴板内容；敏感内容会在本地拦截。")
+        description = QLabel("")
         description.setWordWrap(True)
         layout.addWidget(description)
         form = QFormLayout()
@@ -2685,7 +2666,7 @@ class SettingsWindow(LiquidGlassDialog):
         config = self.settings_manager.load_app_config()
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        description = QLabel("默认关闭。专注模式只静默非必要主动提示，不会拦截用户输入、设置窗口、安全警告或重要提醒。")
+        description = QLabel("")
         description.setWordWrap(True)
         layout.addWidget(description)
         form = QFormLayout()
@@ -2752,9 +2733,8 @@ class SettingsWindow(LiquidGlassDialog):
         group = QGroupBox("本地数据与隐私边界")
         group_layout = QVBoxLayout(group)
         text = QLabel(
-            "API Key、聊天记录、提醒、记忆和关系状态只保存在本机运行态目录。"
-            " `.env`、`data/`、`assets/private/`、`models/`、`backups/`、`dist/`、`build/` 和 `release/`"
-            " 不应进入 Git。剪贴板、系统状态和文件整理均默认关闭。"
+            "密钥、聊天记录、提醒、记忆和关系状态只保存在本机运行态目录。"
+            "敏感数据文件夹不应进入版本管理。剪贴板、系统状态和文件整理均默认关闭。"
         )
         text.setWordWrap(True)
         group_layout.addWidget(text)
@@ -2778,7 +2758,7 @@ class SettingsWindow(LiquidGlassDialog):
     def _build_diagnostics_tab(self) -> None:
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        description = QLabel("诊断只显示脱敏后的配置、资源和运行态结果，不显示完整 API Key。")
+        description = QLabel("诊断只显示脱敏后的配置、资源和运行态结果，不显示完整密钥。")
         description.setWordWrap(True)
         layout.addWidget(description)
         self.diagnostics_text = QTextEdit()
@@ -2841,7 +2821,7 @@ class SettingsWindow(LiquidGlassDialog):
         self.controller.app_config.update(config)
         self.controller.apply_integrated_feature_config()
         self.weather_result.setText(
-            "环境设置已保存；关闭的服务不会运行，天气坐标不会发送给聊天 Provider。"
+            "环境设置已保存；关闭的服务不会运行，天气坐标不会发送给聊天模型。"
         )
         if hasattr(self, "privacy_status"):
             self._refresh_privacy_status()
@@ -2911,7 +2891,7 @@ class SettingsWindow(LiquidGlassDialog):
         battery = "不可用" if status.battery_percent is None else f"{status.battery_percent:.0f}%"
         self.system_status_result.setText(
             f"本地读取结果：CPU {status.cpu_percent:.0f}%；内存 {status.memory_percent:.0f}%；"
-            f"磁盘 {status.disk_percent:.0f}%；电池 {battery}。本次结果未发送给 Provider。"
+            f"磁盘 {status.disk_percent:.0f}%；电池 {battery}。本次结果未发送给服务商。"
         )
 
     def _clear_clipboard_state(self) -> None:
@@ -2920,7 +2900,7 @@ class SettingsWindow(LiquidGlassDialog):
 
     def _test_clipboard_filter(self) -> None:
         result = self.controller.clipboard_interaction.check_text("测试文本，不包含敏感信息。")
-        self.clipboard_result.setText(f"本地过滤测试：{result.get('message', '完成')} 未调用 Provider。")
+        self.clipboard_result.setText(f"本地过滤测试：{result.get('message', '完成')} 未调用服务商。")
 
     def _reset_clipboard_defaults(self) -> None:
         self.clipboard_enabled.setChecked(False)
@@ -3131,8 +3111,8 @@ class SettingsWindow(LiquidGlassDialog):
         self.api = self.settings_manager.load_api_config()
         self._update_saved_api_key_label(provider, self.api.get("providers", {}).get(provider, {}))
         if notify:
-            self.api_result.setText("API 设置已保存；API Key 已写入 .env 或保持原值。点击「设为当前模型」后才会验证并生效。")
-            self.controller.window.speak("……API 设置保存好了。希望你没填错。")
+            self.api_result.setText("设置已保存；密钥已写入本地或保持原值。点击「设为当前模型」后才会验证并生效。")
+            self.controller.window.speak("……设置保存好了。希望你没填错。")
             self.controller.window.animation_manager.trigger_happy()
         self._refresh_active_status()
         self._refresh_profile_switcher()
@@ -3217,13 +3197,11 @@ class SettingsWindow(LiquidGlassDialog):
                 status = "available" if frames and any(frame.exists() for frame in frames) else "missing"
                 (available if status == "available" else missing).append(action)
                 raw_lines.append(f"- {action}: {status}; frames={[str(frame.name) for frame in frames[:3]]}")
-            lines = [
-                f"资源来源：{'私有素材' if source == 'private' else '占位素材'}",
-                "资源清单：可读取",
-                f"可用动作：{len(available)} 个",
-                f"缺失动作：{('、'.join(missing) if missing else '无')}",
-                "需要查看素材目录和帧文件时可展开原始详情。",
-            ]
+            src_label = '私有素材' if source == 'private' else '占位素材'
+            if missing:
+                lines = [f"{src_label}　·　可用 {len(available)} 个　·　缺失：{'、'.join(missing)}"]
+            else:
+                lines = [f"{src_label}　·　{len(available)} 个动作全部就绪"]
         except Exception as exc:
             lines = [f"动作资源读取失败：{exc.__class__.__name__}"]
             raw_lines = [f"manifest: FAILED {exc.__class__.__name__}"]
@@ -3252,18 +3230,20 @@ class SettingsWindow(LiquidGlassDialog):
         files = status.get("files", {})
         missing = [name for name, file_status in files.items() if not file_status.get("exists")]
         yaml_errors = [name for name, file_status in files.items() if file_status.get("yaml_ok") is False]
-        lines = [
-            f"角色包：{'已加载' if status['loaded'] else '加载失败'}",
-            f"结构校验：{'通过' if status['validation_ok'] else '异常'}",
-            "可编辑配置：character.yaml、speech.yaml、relationship.yaml、events.yaml",
-            "只读资产：lore.md、lore_index.yaml、actions.yaml、story.yaml",
-        ]
-        if missing:
-            lines.append("缺失文件：" + "、".join(missing))
-        if yaml_errors:
-            lines.append("YAML 异常：" + "、".join(yaml_errors))
-        if status.get("validation_errors"):
-            lines.append("校验信息：" + str(status["validation_errors"]))
+        if status['loaded'] and status['validation_ok'] and not missing and not yaml_errors:
+            lines = ["角色包正常"]
+        else:
+            lines = []
+            if not status['loaded']:
+                lines.append("角色包加载失败")
+            if not status['validation_ok']:
+                lines.append("结构校验异常")
+            if missing:
+                lines.append("缺失文件：" + "、".join(missing))
+            if yaml_errors:
+                lines.append("格式异常：" + "、".join(yaml_errors))
+            if status.get("validation_errors"):
+                lines.append(str(status["validation_errors"]))
         self.character_status.setText("\n".join(lines))
 
     def _load_pack_file(self, name: str) -> None:
@@ -3381,7 +3361,7 @@ class SettingsWindow(LiquidGlassDialog):
             QMessageBox.information(
                 self,
                 "观察日记",
-                "请先启用“允许手动把近期互动发送给当前文本 Provider”。",
+                "请先启用「允许手动把近期互动发送给当前文本模型」。",
             )
             return
         if self.diary_worker is not None and self.diary_worker.isRunning():
@@ -3390,7 +3370,7 @@ class SettingsWindow(LiquidGlassDialog):
         result = QMessageBox.question(
             self,
             "发送近期互动",
-            f"将把最近 {days} 天的事件日志摘要发送给当前文本 Provider，"
+            f"将把最近 {days} 天的事件日志摘要发送给当前文本模型，"
             "用于生成第一人称观察日记。继续吗？",
         )
         if result != QMessageBox.StandardButton.Yes:
@@ -3554,7 +3534,7 @@ class SettingsWindow(LiquidGlassDialog):
     def _show_api_help(self) -> None:
         """弹出云端 API 配置帮助窗口。分三区：预设 Provider / CC Switch / 自部署代理。"""
         dialog = QDialog(self)
-        dialog.setWindowTitle("云端 API 帮助 — 去哪获取 Key 和 Base URL")
+        dialog.setWindowTitle("云端配置帮助 — 去哪获取密钥和地址")
         dialog.setMinimumSize(680, 560)
         layout = QVBoxLayout(dialog)
 
@@ -3564,8 +3544,8 @@ class SettingsWindow(LiquidGlassDialog):
         cloud_tab = QWidget()
         cloud_layout = QVBoxLayout(cloud_tab)
         cloud_intro = QLabel(
-            "<b>预设 Provider</b> — 直接在下方选择，或点「填入配置」一键填入<br>"
-            "<b>第三方/国产 API</b> — 选「自定义云端 (Custom)」后填入对应 URL"
+            "<b>预设服务商</b> — 直接在下方选择，或点「填入配置」一键填入<br>"
+            "<b>第三方/国产服务</b> — 选「自定义云端」后填入对应地址"
         )
         cloud_intro.setWordWrap(True)
         cloud_layout.addWidget(cloud_intro)
@@ -3613,7 +3593,7 @@ class SettingsWindow(LiquidGlassDialog):
         cloud_content_layout.addStretch(1)
         cloud_scroll.setWidget(cloud_content)
         cloud_layout.addWidget(cloud_scroll)
-        tabs.addTab(cloud_tab, get_icon("cloud"), "云端 API 厂商")
+        tabs.addTab(cloud_tab, get_icon("cloud"), "云端服务商")
 
         # ── Tab 2: CC Switch 本地代理 ──
         cc_tab = QWidget()
@@ -3668,10 +3648,10 @@ class SettingsWindow(LiquidGlassDialog):
             "<a href='https://github.com/farion1231/cc-switch'>farion1231/cc-switch</a>，官网: cswitch.io）<br>"
             "2. 启动 CC Switch，在界面中选择要用的模型供应商<br>"
             "3. 在达妮娅设置中心填入：<br>"
-            "&nbsp;&nbsp;&nbsp;Provider: <b>自定义云端 (Custom)</b><br>"
-            "&nbsp;&nbsp;&nbsp;Base URL: <code>http://127.0.0.1:15721/v1</code><br>"
-            "&nbsp;&nbsp;&nbsp;Model: 与 CC Switch 中显示的模型名一致<br>"
-            "&nbsp;&nbsp;&nbsp;API Key: 任意非空字符串（如 cc-switch）<br>"
+            "&nbsp;&nbsp;&nbsp;服务商: <b>自定义云端</b><br>"
+            "&nbsp;&nbsp;&nbsp;地址: <code>http://127.0.0.1:15721/v1</code><br>"
+            "&nbsp;&nbsp;&nbsp;模型: 与 CC Switch 中显示的模型名一致<br>"
+            "&nbsp;&nbsp;&nbsp;密钥: 任意非空字符串（如 cc-switch）<br>"
             "4. 点「测试连接」→「设为当前模型」<br><br>"
             "<b>之后在 CC Switch 界面切换模型，达妮娅无需任何改动，立即生效。</b>"
         )
@@ -3770,7 +3750,7 @@ class SettingsWindow(LiquidGlassDialog):
         aw_card.setStyleSheet("QWidget#proxyCard { background:#f8f9fa; border:1px solid #e1e4e8; border-radius:6px; }")
         aw_card.setObjectName("proxyCard")
         aw_inner = QVBoxLayout(aw_card)
-        aw_inner.addWidget(QLabel("<b>AI Worker Proxy</b> — Cloudflare Workers 免费方案，零服务器成本"))
+        aw_inner.addWidget(QLabel("<b>AI Worker Proxy</b> — 免费代理方案"))
         aw_inner.addWidget(QLabel(
             "• GitHub: <a href='https://github.com/zxcloli666/AI-Worker-Proxy'>zxcloli666/AI-Worker-Proxy</a><br>"
             "• 部署: 复制代码到 Cloudflare Workers → 1 分钟上线<br>"
@@ -3807,9 +3787,9 @@ class SettingsWindow(LiquidGlassDialog):
         formula = QLabel(
             "<b>接入达妮娅的通用公式</b><br>"
             "无论用哪种代理方案，在达妮娅中只需填 3 个字段：<br><br>"
-            "&nbsp;&nbsp;Base URL = <code>&lt;你的代理地址&gt;/v1</code><br>"
-            "&nbsp;&nbsp;Model = 代理转发的模型名<br>"
-            "&nbsp;&nbsp;API Key = 代理要求的 Key（没有就任意填）<br><br>"
+            "&nbsp;&nbsp;地址 = <code>&lt;你的代理地址&gt;/v1</code><br>"
+            "&nbsp;&nbsp;模型 = 代理转发的模型名<br>"
+            "&nbsp;&nbsp;密钥 = 代理要求的密钥（没有就任意填）<br><br>"
             "达妮娅只做 <code>POST {Base URL}/chat/completions</code> + Bearer Auth，<b>不区分厂商、不校验来源、不做白名单</b>。"
         )
         formula.setWordWrap(True)
@@ -3848,16 +3828,16 @@ class SettingsWindow(LiquidGlassDialog):
         tr.addWidget(tag); cl.addLayout(tr)
 
         info = QLabel(desc); info.setWordWrap(True); info.setStyleSheet("color:#586069;font-size:11px;"); cl.addWidget(info)
-        cl.addWidget(QLabel(f"<span style='color:#586069;font-size:11px;'>URL:</span> <code style='font-size:11px;'>{url}</code>"))
-        cl.addWidget(QLabel(f"<span style='color:#586069;font-size:11px;'>Model:</span> <code style='font-size:11px;'>{model}</code>"))
+        cl.addWidget(QLabel(f"<span style='color:#586069;font-size:11px;'>地址</span> <code style='font-size:11px;'>{url}</code>"))
+        cl.addWidget(QLabel(f"<span style='color:#586069;font-size:11px;'>模型</span> <code style='font-size:11px;'>{model}</code>"))
 
         br = QHBoxLayout()
-        reg_btn = QPushButton(" 注册获取 Key"); reg_btn.setIcon(get_icon("internet"))
+        reg_btn = QPushButton(" 注册获取密钥"); reg_btn.setIcon(get_icon("internet"))
         reg_btn.setFixedHeight(26); reg_btn.setStyleSheet("font-size:11px;")
         reg_btn.clicked.connect(lambda _, u=reg_url: QDesktopServices.openUrl(QUrl(u)))
         br.addWidget(reg_btn)
 
-        copy_btn = QPushButton(" 复制 URL"); copy_btn.setFixedHeight(26); copy_btn.setStyleSheet("font-size:11px;")
+        copy_btn = QPushButton(" 复制地址"); copy_btn.setFixedHeight(26); copy_btn.setStyleSheet("font-size:11px;")
         def _mkcopy(_u, _b):
             def _h(): QApplication.clipboard().setText(_u); _b.setText(" 已复制!")
             return _h
@@ -3876,11 +3856,11 @@ class SettingsWindow(LiquidGlassDialog):
         return card
 
     def _clear_api_key(self) -> None:
-        """清除当前选中 Provider 的 API Key。"""
+        """清除当前选中服务商的密钥。"""
         provider = self._current_provider_key()
         env_key = ProviderMeta.get_api_key_env(provider)
         if not env_key:
-            QMessageBox.information(self, "提示", f"{provider} 不需要 API Key（通过本地服务连接）。")
+            QMessageBox.information(self, "提示", f"{provider} 不需要密钥（通过本地服务连接）。")
             return
         reply = QMessageBox.question(
             self, "确认清除",
@@ -3895,13 +3875,13 @@ class SettingsWindow(LiquidGlassDialog):
             self.api_result.setText(f"已清除 {env_key}。")
 
     def _reset_current_provider(self) -> None:
-        """将当前 Provider 恢复到默认 Base URL 和 Model。"""
+        """将当前服务商恢复到默认地址和模型。"""
         provider = self._current_provider_key()
         meta = ProviderMeta.get(provider)
         reply = QMessageBox.question(
             self, "确认重置",
-            f"将 {provider} 的 Base URL 和 Model 恢复为默认值：\n\n"
-            f"URL: {meta['base_url']}\nModel: {meta['default_model']}\n\n继续？",
+            f"将 {provider} 的地址和模型恢复为默认值：\n\n"
+            f"地址: {meta['base_url']}\n模型: {meta['default_model']}\n\n继续？",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply == QMessageBox.StandardButton.Yes:
@@ -3914,7 +3894,7 @@ class SettingsWindow(LiquidGlassDialog):
         """清空本地模型配置。"""
         reply = QMessageBox.question(
             self, "确认清空",
-            "确定要清空本地模型配置吗？\n这将清空服务类型、Base URL 和模型名称。",
+            "确定要清空本地模型配置吗？\n这将清空服务类型、地址和模型名称。",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply == QMessageBox.StandardButton.Yes:
@@ -3973,10 +3953,10 @@ class SettingsWindow(LiquidGlassDialog):
         desc_input = QLineEdit(); desc_input.setPlaceholderText("我的魔改模型 · 0.5B · ~500MB")
 
         form.addRow("模型名称", name_input)
-        form.addRow("Provider 类型", provider_combo)
-        form.addRow("Base URL", url_input)
-        form.addRow("模型 ID (API 用)", model_input)
-        form.addRow("描述 (厂商 · 大小 · 磁盘)", desc_input)
+        form.addRow("服务商类型", provider_combo)
+        form.addRow("地址", url_input)
+        form.addRow("模型 ID", model_input)
+        form.addRow("描述", desc_input)
 
         btn_row = QHBoxLayout()
         ok = QPushButton("导入"); ok.setIcon(get_icon("save"))
@@ -3989,7 +3969,7 @@ class SettingsWindow(LiquidGlassDialog):
             url = url_input.text().strip()
             model = model_input.text().strip()
             if not name or not url or not model:
-                QMessageBox.warning(dialog, "错误", "请填写模型名称、Base URL 和模型 ID。")
+                QMessageBox.warning(dialog, "错误", "请填写模型名称、地址和模型标识。")
                 return
             provider = provider_combo.currentText()
             self.settings_manager.save_local_model_profile(
