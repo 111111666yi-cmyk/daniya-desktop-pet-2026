@@ -100,7 +100,6 @@ class Typewriter(QObject):
 
     def _tick_mouth(self) -> None:
         self.mouth_open = not self.mouth_open
-        self.set_pet_state(self.speaking_state)
 
     def _show_full_current(self) -> None:
         self.label.setText(self.current_text)

@@ -9,12 +9,18 @@ class StateManager:
     STATE_TO_ACTION = {
         "idle": "idle",
         "talking": "talk",
+        "thinking": "thinking",
         "clicked": "clicked",
-        "dragging": "drag",
+        "dragging": "drag_hold",
+        "drag_pickup": "drag_pickup",
+        "drag_hold": "drag_hold",
+        "drag_drop": "drag_drop",
         "sleeping": "sleep",
         "happy": "happy",
         "reminding": "remind",
         "walking": "walking",
+        "walk_start": "walk_start",
+        "walk_stop": "walk_stop",
         "edge_peek_left": "edge_peek_left",
         "edge_peek_right": "edge_peek_right",
         "taskbar_sit": "taskbar_sit",
@@ -25,7 +31,9 @@ class StateManager:
         "close_idle": "happy",
         "bubble": "happy",
         "look_away": "idle",
-        "drag": "dragging",  # Route straight drag to dragging
+        "drag": "dragging",
+        "talk": "talking",
+        "sleep": "sleeping",
     }
 
     def __init__(self) -> None:
@@ -60,16 +68,16 @@ class StateManager:
 
     def can_interrupt(self, current_state: str, next_state: str) -> bool:
         # drag 能打断一切，除了 drag 自己
-        if next_state == "dragging":
+        if next_state in {"dragging", "drag_pickup", "drag_hold", "drag_drop"}:
             return True
         
         # 正在拖拽时，其他一切状态都不能打断，除了回到 idle
-        if current_state == "dragging":
+        if current_state in {"dragging", "drag_pickup", "drag_hold", "drag_drop"}:
             return next_state == "idle"
 
         # 如果正在说话，不允许普通动作打断，除非是更高级别交互（比如 clicked, happy）
-        if current_state == "talking":
-            if next_state in ["sleeping", "walking", "edge_peek_left", "edge_peek_right", "taskbar_sit"]:
+        if current_state in {"talking", "thinking"}:
+            if next_state in ["sleeping", "walking", "walk_start", "walk_stop", "edge_peek_left", "edge_peek_right", "taskbar_sit"]:
                 return False
             return True
 

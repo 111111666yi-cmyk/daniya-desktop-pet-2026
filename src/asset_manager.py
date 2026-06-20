@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 from typing import Any
 
+from .motion_catalog import MotionCatalog, LocomotionProfile, build_motion_catalog
 from .utils import bundled_root, runtime_root
 
 
@@ -22,6 +23,7 @@ ACTION_ALIASES: dict[str, tuple[str, ...]] = {
     "drag_pickup": ("drag_pickup", "pickup", "dragging", "drag"),
     "drag_hold": ("drag_hold", "dragging", "drag"),
     "drag_drop": ("drag_drop", "drop", "dragging", "drag"),
+    "thinking": ("thinking", "talk", "talking", "speaking"),
     "sleep": ("sleep", "sleeping"),
     "sleeping": ("sleeping", "sleep"),
     "happy": ("happy",),
@@ -30,6 +32,8 @@ ACTION_ALIASES: dict[str, tuple[str, ...]] = {
     "look_away": ("look_away", "idle", "normal1"),
     "close_idle": ("close_idle", "happy", "idle", "normal1"),
     "walking": ("walking",),
+    "walk_start": ("walk_start", "walking"),
+    "walk_stop": ("walk_stop", "walking"),
     "edge_peek_left": ("edge_peek_left",),
     "edge_peek_right": ("edge_peek_right",),
     "taskbar_sit": ("taskbar_sit", "idle"),
@@ -74,6 +78,7 @@ class AssetManager:
             self.characters_dir = bundled_root() / "characters"
         self.pet_id = PET_ID
         self._manifest: dict[str, Any] | None = None
+        self._motion_catalog: MotionCatalog | None = None
         self._asset_dir: Path | None = None
         self._manifest_log_printed = False
 
@@ -140,6 +145,18 @@ class AssetManager:
         self._print_manifest_debug(path, self._manifest)
         return self._manifest
 
+    def motion_catalog(self) -> MotionCatalog:
+        if self._motion_catalog is None:
+            self._motion_catalog = build_motion_catalog(self.active_asset_dir(), self.manifest())
+        return self._motion_catalog
+
+    def action_config(self, state: str) -> dict[str, Any] | None:
+        for key in self._state_keys(state):
+            config = self.motion_catalog().action_config(key)
+            if config is not None:
+                return config
+        return self.motion_catalog().action_config("idle")
+
     def image_path(self, name: str) -> Path:
         frames = self.frames_for_state(name)
         if frames:
@@ -147,17 +164,11 @@ class AssetManager:
         return self._resolve_image_ref(f"{name}.png")
 
     def frames_for_state(self, state: str) -> list[Path]:
-        animations = self.manifest().get("animations", {})
         refs: list[str] = []
-        if isinstance(animations, dict):
-            for key in self._state_keys(state):
-                value = animations.get(key)
-                if isinstance(value, list):
-                    refs = [str(item) for item in value if str(item).strip()]
-                elif isinstance(value, str):
-                    refs = [value]
-                if refs:
-                    break
+        for key in self._state_keys(state):
+            refs = self.motion_catalog().frames_for_state(key)
+            if refs:
+                break
 
         if not refs and state in {"normal1", "normal2"}:
             refs = [f"{state}.png"]
@@ -172,21 +183,32 @@ class AssetManager:
         return [path for ref in fallback_refs if (path := self._resolve_image_ref(ref)).exists()]
 
     def select_frames_for_state(self, state: str) -> list[Path]:
+        motion_catalog = self.manifest().get("motion_catalog", {})
+        if isinstance(motion_catalog, dict) and motion_catalog:
+            return self.frames_for_state(state)
         groups = self._animation_groups_for_state(state)
-        if not groups:
-            return self.frames_for_state(state)
+        if groups:
+            total = sum(weight for weight, _frames in groups)
+            if total > 0:
+                pick = random.uniform(0, total)
+                upto = 0.0
+                for weight, frames in groups:
+                    upto += weight
+                    if pick <= upto:
+                        return frames
+        return self.frames_for_state(state)
 
-        total = sum(weight for weight, _frames in groups)
-        if total <= 0:
-            return self.frames_for_state(state)
+    def locomotion_profile(self, state: str = "walking") -> LocomotionProfile:
+        for key in self._state_keys(state):
+            clip = self.motion_catalog().clip_for_state(key)
+            if clip and clip.locomotion_profile is not None:
+                return clip.locomotion_profile
+        return LocomotionProfile()
 
-        pick = random.uniform(0, total)
-        upto = 0.0
-        for weight, frames in groups:
-            upto += weight
-            if pick <= upto:
-                return frames
-        return groups[-1][1]
+    def live2d_binding(self, state: str) -> dict[str, Any]:
+        config = self.action_config(state) or {}
+        binding = config.get("renderer_binding", {})
+        return binding if isinstance(binding, dict) else {}
 
     def state_name(self, role: str) -> str:
         states = self.app_config.get("pet", {}).get("states", {})
@@ -290,6 +312,8 @@ class AssetManager:
             manifest["animations"] = defaults.copy()
         if not isinstance(data.get("animation_groups"), dict):
             manifest["animation_groups"] = {}
+        if not isinstance(data.get("motion_catalog"), dict):
+            manifest["motion_catalog"] = {}
         return manifest
 
     def _print_manifest_debug(self, path: Path, manifest: dict[str, Any]) -> None:

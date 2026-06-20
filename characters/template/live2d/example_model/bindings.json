@@ -1,0 +1,33 @@
+{
+  "model_id": "example_model",
+  "states": {
+    "idle": {
+      "live2d_model": "example_model",
+      "live2d_motion_group": "idle",
+      "live2d_expression": "neutral",
+      "fallback_state": "idle",
+      "preview_sprite": "normal1.png"
+    },
+    "talk": {
+      "live2d_model": "example_model",
+      "live2d_motion_group": "talk",
+      "live2d_expression": "talking",
+      "fallback_state": "idle",
+      "preview_sprite": "normal2.png"
+    },
+    "happy": {
+      "live2d_model": "example_model",
+      "live2d_motion_group": "happy",
+      "live2d_expression": "happy",
+      "fallback_state": "idle",
+      "preview_sprite": "normal2.png"
+    },
+    "sleeping": {
+      "live2d_model": "example_model",
+      "live2d_motion_group": "sleep",
+      "live2d_expression": "sleepy",
+      "fallback_state": "idle",
+      "preview_sprite": "normal1.png"
+    }
+  }
+}

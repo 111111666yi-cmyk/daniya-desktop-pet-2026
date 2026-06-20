@@ -36,7 +36,7 @@
     "edge_peek_enabled": false,
     "edge_dock_visible_px": 32,
     "edge_dock_hover_visible_px": 52,
-    "click_to_call_enabled": false,
+    "click_to_call_enabled": true,
     "states": {
       "idle": "idle",
       "speaking": "talking"
@@ -118,7 +118,7 @@
   "snap_margin_px": 24,
   "keep_on_screen_enabled": true,
   "drag_return_enabled": true,
-  "idle_behavior_enabled": false,
+  "idle_behavior_enabled": true,
   "idle_behavior_seconds": 600,
   "double_click_enabled": true,
   "long_press_ms": 600,

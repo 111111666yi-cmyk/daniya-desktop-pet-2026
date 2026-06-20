@@ -1,0 +1,61 @@
+{
+  "model_id": "template_model",
+  "states": {
+    "idle": {
+      "live2d_model": "template_model",
+      "live2d_motion_group": "idle",
+      "live2d_expression": "neutral",
+      "fallback_state": "idle",
+      "preview_sprite": "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png"
+    },
+    "talk": {
+      "live2d_model": "template_model",
+      "live2d_motion_group": "talk",
+      "live2d_expression": "talking",
+      "fallback_state": "idle",
+      "preview_sprite": "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png"
+    },
+    "talking": {
+      "live2d_model": "template_model",
+      "live2d_motion_group": "talk",
+      "live2d_expression": "talking",
+      "fallback_state": "idle",
+      "preview_sprite": "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png"
+    },
+    "thinking": {
+      "live2d_model": "template_model",
+      "live2d_motion_group": "thinking",
+      "live2d_expression": "thinking",
+      "fallback_state": "idle",
+      "preview_sprite": "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png"
+    },
+    "clicked": {
+      "live2d_model": "template_model",
+      "live2d_motion_group": "clicked",
+      "live2d_expression": "surprised",
+      "fallback_state": "idle",
+      "preview_sprite": "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png"
+    },
+    "happy": {
+      "live2d_model": "template_model",
+      "live2d_motion_group": "happy",
+      "live2d_expression": "happy",
+      "fallback_state": "idle",
+      "preview_sprite": "v1_actual_runtime/B_stand_base_pack/wave_01.png"
+    },
+    "sleep": {
+      "live2d_model": "template_model",
+      "live2d_motion_group": "sleep",
+      "live2d_expression": "sleepy",
+      "fallback_state": "idle",
+      "preview_sprite": "v1_actual_runtime/C_sleep_base_pack/doze_01.png"
+    },
+    "sleeping": {
+      "live2d_model": "template_model",
+      "live2d_motion_group": "sleep",
+      "live2d_expression": "sleepy",
+      "fallback_state": "idle",
+      "preview_sprite": "v1_actual_runtime/C_sleep_base_pack/doze_01.png"
+    }
+  }
+}

@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from .motion_catalog import MotionCatalog, build_motion_catalog
 from .utils import resource_path
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ DEFAULT_MANIFEST: dict[str, Any] = {
 class ActionManifest:
     def __init__(self, base_dir: Path | None = None) -> None:
         self.data = DEFAULT_MANIFEST.copy()
+        self.catalog: MotionCatalog | None = None
         if base_dir is not None and isinstance(base_dir, (Path, str)):
             self.base_dir = Path(base_dir)
         else:
@@ -46,7 +48,7 @@ class ActionManifest:
                 logger.error(f"Failed to load manifest {manifest_path}: {e}")
 
         # 2. Try template manifest
-        if not content or "actions" not in content:
+        if not content or ("actions" not in content and "motion_catalog" not in content and "animations" not in content):
             from .utils import runtime_root, bundled_root
             template_assets = runtime_root() / "characters" / "template" / "assets"
             if not template_assets.exists():
@@ -58,11 +60,19 @@ class ActionManifest:
                 except Exception as e:
                     logger.error(f"Failed to load template manifest: {e}")
 
-        # 3. Use default manifest if all else fails
-        if content and "actions" in content:
-            self.data = content
+        payload = content if isinstance(content, dict) else DEFAULT_MANIFEST.copy()
+        if isinstance(payload, dict) and "actions" in payload and "motion_catalog" not in payload and "animations" not in payload:
+            self.data = payload
+            self.catalog = build_motion_catalog(self.base_dir, payload)
         else:
-            self.data = DEFAULT_MANIFEST.copy()
+            self.catalog = build_motion_catalog(self.base_dir, payload)
+            self.data = {"actions": {}}
+            for action_name in self.catalog.available_states():
+                config = self.catalog.action_config(action_name)
+                if config is not None:
+                    self.data["actions"][action_name] = config
+            if not self.data["actions"]:
+                self.data = DEFAULT_MANIFEST.copy()
 
         self.validate_manifest()
 

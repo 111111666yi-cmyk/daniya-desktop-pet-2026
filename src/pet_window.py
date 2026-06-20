@@ -12,6 +12,8 @@ from PySide6.QtWidgets import QHBoxLayout, QMenu, QSizePolicy, QSystemTrayIcon, 
 
 from .animation_manager import AnimationManager
 from .asset_manager import AssetManager
+from .live2d_preview_renderer import Live2DPreviewRenderer
+from .locomotion_controller import LocomotionController
 from .renderer import PNGFrameRenderer
 from .morph_blend_renderer import MorphBlendRenderer
 from .typewriter import Typewriter
@@ -60,6 +62,8 @@ class PetWindow(QWidget):
         self._scaled_pixmap_cache: dict[tuple[str, int, float], tuple[QPixmap, int, int]] = {}
         self._screen_signals_connected = False
         self._screen_repair_pending = False
+        self._stable_container_size = 0
+        self.locomotion_controller = LocomotionController(self.asset_manager.locomotion_profile())
 
         self._setup_tray()
         self._configure_window()
@@ -79,6 +83,8 @@ class PetWindow(QWidget):
         rtype = self.app_config.get("renderer_type", "png")
         if rtype == "morph_blend":
             return MorphBlendRenderer(base_dir)
+        if rtype == "live2d_preview":
+            return Live2DPreviewRenderer(base_dir)
         return PNGFrameRenderer(base_dir)
 
     def set_renderer_type(self, renderer_type: str) -> None:
@@ -271,6 +277,7 @@ class PetWindow(QWidget):
     def clear_render_cache(self) -> None:
         self._scaled_pixmap_cache.clear()
         self.renderer.clear_cache()
+        self._stable_container_size = 0
 
     def _get_scaled_pixmap(self, path: Path, logical_height: int, dpr: float) -> tuple[QPixmap, int, int]:
         key = (str(path), logical_height, round(dpr, 2))
@@ -310,10 +317,9 @@ class PetWindow(QWidget):
         logical_width = max(1, int(round(scaled.width() / dpr)))
         logical_display_height = max(1, int(round(scaled.height() / dpr)))
 
-        # FIX: Force a STRICT, square container size based on target_height to completely prevent layout jumping!
-        # The QPixmap will be automatically centered inside it by QLabel.
-        container_size = int(max(logical_height, logical_width))
-        self.image_label.setFixedSize(container_size, container_size)
+        natural_size = int(max(logical_height, logical_width))
+        self._stable_container_size = max(self._stable_container_size, natural_size)
+        self.image_label.setFixedSize(self._stable_container_size, self._stable_container_size)
         self.image_label.setPixmap(scaled)
 
         class MockOriginal:
@@ -335,8 +341,9 @@ class PetWindow(QWidget):
         dpr = scaled.devicePixelRatio() or 1.0
         logical_width = max(1, int(round(scaled.width() / dpr)))
         logical_height = max(1, int(round(scaled.height() / dpr)))
-        container_size = int(max(logical_height, logical_width))
-        self.image_label.setFixedSize(container_size, container_size)
+        natural_size = int(max(logical_height, logical_width))
+        self._stable_container_size = max(self._stable_container_size, natural_size)
+        self.image_label.setFixedSize(self._stable_container_size, self._stable_container_size)
         self.image_label.setPixmap(scaled)
         if self.isVisible():
             if self.dock_side in {"left", "right"}:
@@ -430,7 +437,7 @@ class PetWindow(QWidget):
         return bool(
             self.input_box.isVisible()
             and self.input_box.line_edit.isVisible()
-            and (self.input_box.line_edit.hasFocus() or self.input_box.text().strip())
+            and (self.input_box.line_edit.hasFocus() or self.input_box.line_edit.text().strip())
         )
 
     def _submit_message(self, text: str) -> None:
@@ -489,7 +496,7 @@ class PetWindow(QWidget):
 
         self.walk_move_timer = QTimer(self)
         self.walk_move_timer.timeout.connect(self._tick_walk_move)
-        self.walk_move_timer.setInterval(80)
+        self.walk_move_timer.setInterval(33)
         self.sync_feature_timers()
 
     def sync_feature_timers(self) -> None:
@@ -619,29 +626,29 @@ class PetWindow(QWidget):
         return any(name in desktop_children for name in seen_classes)
 
     def move_near(self, global_pos: QPoint) -> None:
-        was_walking = self._walk_target is not None
         self._cancel_walk_move()
         self.dock_side = None
-        self.animation_manager.set_walking(True)
         target = QPoint(global_pos.x() - self.width() // 2, global_pos.y() - self.height() + 12)
         self._walk_target = self._clamped_position(target)
+        self.locomotion_controller.update_profile(self.asset_manager.locomotion_profile())
+        self.locomotion_controller.start(self.pos(), self._walk_target)
+        self.animation_manager.start_locomotion()
         if not self.walk_move_timer.isActive():
             self.walk_move_timer.start()
-        if not was_walking:
-            self._walk_step = 0
 
     def _cancel_walk_move(self) -> None:
-        if self._walk_target is not None:
+        if self._walk_target is not None or self.locomotion_controller.active:
             self._walk_target = None
             self._walk_step = 0
-            self.animation_manager.set_walking(False)
+            self.locomotion_controller.cancel()
+            self.animation_manager.stop_locomotion(immediate=True)
         self.walk_move_timer.stop()
 
     def _finish_walk_move(self) -> None:
         self._walk_target = None
         self._walk_step = 0
         self.walk_move_timer.stop()
-        self.animation_manager.set_walking(False)
+        self.animation_manager.stop_locomotion(immediate=False)
         self.position_changed.emit(self.x(), self.y())
 
     def _movement_duration_ms(self, start: QPoint, end: QPoint) -> int:
@@ -652,21 +659,19 @@ class PetWindow(QWidget):
     def _tick_walk_move(self) -> None:
         if self._walk_target is None:
             return
-        current = self.pos()
-        dx = self._walk_target.x() - current.x()
-        dy = self._walk_target.y() - current.y()
-        distance = math.hypot(dx, dy)
-        if distance <= 4:
-            self.move(self._walk_target)
+        step = self.locomotion_controller.step(self.pos(), self.walk_move_timer.interval())
+        if step is None:
             self._finish_walk_move()
             return
-
-        step = min(4.0, distance)
-        nx = current.x() + int(round(dx / distance * step))
-        ny = current.y() + int(round(dy / distance * step))
-        self._walk_step += 1
-        bob = int(round(math.sin(self._walk_step * math.pi / 4) * 1))
-        self.move(self._clamped_position(QPoint(nx, ny + bob)))
+        self.move(self._clamped_position(step.position))
+        self.animation_manager.update_locomotion(
+            step_distance_px=step.distance_moved_px,
+            cumulative_distance_px=step.cumulative_distance_px,
+            speed_px_per_s=step.speed_px_per_s,
+        )
+        if step.arrived:
+            self.move(self._walk_target)
+            self._finish_walk_move()
 
     def _dock_if_near_edge(self) -> None:
         pet_config = self.app_config.get("pet", {})

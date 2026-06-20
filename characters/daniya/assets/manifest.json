@@ -430,6 +430,505 @@
       }
     ]
   },
+  "motion_catalog": {
+    "clips": {
+      "idle_breath_loop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 120,
+        "loop": true,
+        "anchor_track": {
+          "root": [0.5, 0.84],
+          "foot_left": [0.42, 0.98],
+          "foot_right": [0.58, 0.98],
+          "hips": [0.5, 0.66],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
+          "v1_actual_runtime/D_special_motion_pack/float_01.png",
+          "v1_actual_runtime/D_special_motion_pack/float_02.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
+          "v1_actual_runtime/D_special_motion_pack/float_01.png",
+          "v1_actual_runtime/D_special_motion_pack/float_02.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png"
+        ]
+      },
+      "talk_loop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 90,
+        "loop": true,
+        "anchor_track": {
+          "root": [0.5, 0.84],
+          "foot_left": [0.42, 0.98],
+          "foot_right": [0.58, 0.98],
+          "hips": [0.5, 0.66],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png"
+        ]
+      },
+      "clicked_react": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 80,
+        "loop": false,
+        "anchor_track": {
+          "root": [0.5, 0.84],
+          "foot_left": [0.42, 0.98],
+          "foot_right": [0.58, 0.98],
+          "hips": [0.5, 0.66],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_02.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_02.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png"
+        ]
+      },
+      "happy_loop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 95,
+        "loop": false,
+        "anchor_track": {
+          "root": [0.5, 0.84],
+          "foot_left": [0.42, 0.98],
+          "foot_right": [0.58, 0.98],
+          "hips": [0.5, 0.66],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png",
+          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
+          "v1_actual_runtime/B_stand_base_pack/wave_02.png",
+          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
+          "v1_actual_runtime/B_stand_base_pack/wave_02.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png",
+          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
+          "v1_actual_runtime/B_stand_base_pack/wave_02.png"
+        ]
+      },
+      "sleep_loop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 160,
+        "loop": true,
+        "anchor_track": {
+          "root": [0.5, 0.72],
+          "foot_left": [0.42, 0.9],
+          "foot_right": [0.58, 0.9],
+          "hips": [0.5, 0.6],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
+          "v1_actual_runtime/C_sleep_base_pack/sleep_pillow_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
+          "v1_actual_runtime/C_sleep_base_pack/sleep_pillow_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/wake_up_01.png",
+          "v1_actual_runtime/C_sleep_base_pack/doze_01.png"
+        ]
+      },
+      "walk_start": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 70,
+        "loop": false,
+        "anchor_track": {
+          "root": [0.5, 0.88],
+          "foot_left": [0.42, 0.98],
+          "foot_right": [0.58, 0.98],
+          "hips": [0.5, 0.7],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
+          "v1_actual_runtime/B_walk_generated/walk_01.png",
+          "v1_actual_runtime/B_walk_generated/walk_02.png",
+          "v1_actual_runtime/B_walk_generated/walk_03.png",
+          "v1_actual_runtime/B_walk_generated/walk_04.png",
+          "v1_actual_runtime/B_walk_generated/walk_05.png",
+          "v1_actual_runtime/B_walk_generated/walk_06.png",
+          "v1_actual_runtime/B_walk_generated/walk_07.png",
+          "v1_actual_runtime/B_walk_generated/walk_08.png"
+        ]
+      },
+      "walk_loop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 60,
+        "loop": true,
+        "anchor_track": {
+          "root": [0.5, 0.88],
+          "foot_left": [0.42, 0.98],
+          "foot_right": [0.58, 0.98],
+          "hips": [0.5, 0.7],
+          "drag_handle": [0.5, 0.18]
+        },
+        "locomotion_profile": {
+          "cycle_distance_px": 64,
+          "min_speed_px_per_s": 48,
+          "default_speed_px_per_s": 72,
+          "max_speed_px_per_s": 96,
+          "start_distance_px": 18,
+          "stop_distance_px": 18
+        },
+        "frames": [
+          "v1_actual_runtime/B_walk_generated/walk_01.png",
+          "v1_actual_runtime/B_walk_generated/walk_01.png",
+          "v1_actual_runtime/B_walk_generated/walk_02.png",
+          "v1_actual_runtime/B_walk_generated/walk_02.png",
+          "v1_actual_runtime/B_walk_generated/walk_03.png",
+          "v1_actual_runtime/B_walk_generated/walk_03.png",
+          "v1_actual_runtime/B_walk_generated/walk_04.png",
+          "v1_actual_runtime/B_walk_generated/walk_04.png",
+          "v1_actual_runtime/B_walk_generated/walk_05.png",
+          "v1_actual_runtime/B_walk_generated/walk_05.png",
+          "v1_actual_runtime/B_walk_generated/walk_06.png",
+          "v1_actual_runtime/B_walk_generated/walk_06.png",
+          "v1_actual_runtime/B_walk_generated/walk_07.png",
+          "v1_actual_runtime/B_walk_generated/walk_07.png",
+          "v1_actual_runtime/B_walk_generated/walk_08.png",
+          "v1_actual_runtime/B_walk_generated/walk_08.png",
+          "v1_actual_runtime/B_walk_generated/walk_09.png",
+          "v1_actual_runtime/B_walk_generated/walk_09.png",
+          "v1_actual_runtime/B_walk_generated/walk_10.png",
+          "v1_actual_runtime/B_walk_generated/walk_10.png",
+          "v1_actual_runtime/B_walk_generated/walk_11.png",
+          "v1_actual_runtime/B_walk_generated/walk_11.png",
+          "v1_actual_runtime/B_walk_generated/walk_12.png",
+          "v1_actual_runtime/B_walk_generated/walk_12.png"
+        ]
+      },
+      "walk_stop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 70,
+        "loop": false,
+        "anchor_track": {
+          "root": [0.5, 0.88],
+          "foot_left": [0.42, 0.98],
+          "foot_right": [0.58, 0.98],
+          "hips": [0.5, 0.7],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/B_walk_generated/walk_12.png",
+          "v1_actual_runtime/B_walk_generated/walk_11.png",
+          "v1_actual_runtime/B_walk_generated/walk_10.png",
+          "v1_actual_runtime/B_walk_generated/walk_09.png",
+          "v1_actual_runtime/B_walk_generated/walk_08.png",
+          "v1_actual_runtime/B_walk_generated/walk_07.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
+          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png"
+        ]
+      },
+      "drag_pickup": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 65,
+        "loop": false,
+        "anchor_track": {
+          "root": [0.5, 0.18],
+          "foot_left": [0.42, 0.3],
+          "foot_right": [0.58, 0.3],
+          "hips": [0.5, 0.3],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png"
+        ]
+      },
+      "drag_hold_loop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 85,
+        "loop": true,
+        "anchor_track": {
+          "root": [0.5, 0.18],
+          "foot_left": [0.42, 0.3],
+          "foot_right": [0.58, 0.3],
+          "hips": [0.5, 0.3],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+        ]
+      },
+      "drag_drop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 65,
+        "loop": false,
+        "anchor_track": {
+          "root": [0.5, 0.18],
+          "foot_left": [0.42, 0.3],
+          "foot_right": [0.58, 0.3],
+          "hips": [0.5, 0.3],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
+          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png"
+        ]
+      },
+      "edge_peek_left": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 120,
+        "loop": true,
+        "frames": [
+          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png"
+        ]
+      },
+      "edge_peek_right": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 120,
+        "loop": true,
+        "frames": [
+          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
+          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png"
+        ]
+      },
+      "taskbar_sit_loop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 120,
+        "loop": true,
+        "frames": [
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
+          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
+          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png"
+        ]
+      }
+    },
+    "states": {
+      "idle": {
+        "clip": "idle_breath_loop",
+        "loop": true,
+        "min_hold_ms": 400,
+        "priority": 10,
+        "renderer_binding": {
+          "sprite_clip": "idle_breath_loop",
+          "live2d_model": "template_model",
+          "live2d_motion_group": "idle",
+          "live2d_expression": "neutral",
+          "fallback_state": "idle"
+        }
+      },
+      "talk": {
+        "clip": "talk_loop",
+        "loop": true,
+        "min_hold_ms": 250,
+        "priority": 20,
+        "renderer_binding": {
+          "sprite_clip": "talk_loop",
+          "live2d_model": "template_model",
+          "live2d_motion_group": "talk",
+          "live2d_expression": "talking",
+          "fallback_state": "idle"
+        }
+      },
+      "talking": {
+        "clip": "talk_loop",
+        "loop": true,
+        "min_hold_ms": 250,
+        "priority": 20,
+        "renderer_binding": {
+          "sprite_clip": "talk_loop",
+          "live2d_model": "template_model",
+          "live2d_motion_group": "talk",
+          "live2d_expression": "talking",
+          "fallback_state": "idle"
+        }
+      },
+      "thinking": {
+        "clip": "talk_loop",
+        "loop": true,
+        "min_hold_ms": 350,
+        "priority": 20,
+        "renderer_binding": {
+          "sprite_clip": "talk_loop",
+          "live2d_model": "template_model",
+          "live2d_motion_group": "thinking",
+          "live2d_expression": "thinking",
+          "fallback_state": "idle"
+        }
+      },
+      "clicked": {
+        "clip": "clicked_react",
+        "loop": false,
+        "min_hold_ms": 120,
+        "priority": 40,
+        "renderer_binding": {
+          "sprite_clip": "clicked_react",
+          "live2d_model": "template_model",
+          "live2d_motion_group": "clicked",
+          "live2d_expression": "surprised",
+          "fallback_state": "idle"
+        }
+      },
+      "happy": {
+        "clip": "happy_loop",
+        "loop": false,
+        "min_hold_ms": 180,
+        "priority": 35,
+        "renderer_binding": {
+          "sprite_clip": "happy_loop",
+          "live2d_model": "template_model",
+          "live2d_motion_group": "happy",
+          "live2d_expression": "happy",
+          "fallback_state": "idle"
+        }
+      },
+      "remind": {
+        "clip": "happy_loop",
+        "loop": false,
+        "min_hold_ms": 180,
+        "priority": 32
+      },
+      "sleep": {
+        "clip": "sleep_loop",
+        "loop": true,
+        "min_hold_ms": 900,
+        "priority": 15,
+        "renderer_binding": {
+          "sprite_clip": "sleep_loop",
+          "live2d_model": "template_model",
+          "live2d_motion_group": "sleep",
+          "live2d_expression": "sleepy",
+          "fallback_state": "idle"
+        }
+      },
+      "sleeping": {
+        "clip": "sleep_loop",
+        "loop": true,
+        "min_hold_ms": 900,
+        "priority": 15,
+        "renderer_binding": {
+          "sprite_clip": "sleep_loop",
+          "live2d_model": "template_model",
+          "live2d_motion_group": "sleep",
+          "live2d_expression": "sleepy",
+          "fallback_state": "idle"
+        }
+      },
+      "walk_start": {
+        "clip": "walk_start",
+        "loop": false,
+        "min_hold_ms": 0,
+        "priority": 30
+      },
+      "walking": {
+        "clip": "walk_loop",
+        "loop": true,
+        "min_hold_ms": 0,
+        "priority": 30
+      },
+      "walk_stop": {
+        "clip": "walk_stop",
+        "loop": false,
+        "min_hold_ms": 0,
+        "priority": 30
+      },
+      "drag_pickup": {
+        "clip": "drag_pickup",
+        "loop": false,
+        "min_hold_ms": 0,
+        "priority": 80
+      },
+      "drag_hold": {
+        "clip": "drag_hold_loop",
+        "loop": true,
+        "min_hold_ms": 0,
+        "priority": 80
+      },
+      "dragging": {
+        "clip": "drag_hold_loop",
+        "loop": true,
+        "min_hold_ms": 0,
+        "priority": 80
+      },
+      "drag_drop": {
+        "clip": "drag_drop",
+        "loop": false,
+        "min_hold_ms": 0,
+        "priority": 80
+      },
+      "edge_peek_left": {
+        "clip": "edge_peek_left",
+        "loop": true,
+        "min_hold_ms": 300,
+        "priority": 25
+      },
+      "edge_peek_right": {
+        "clip": "edge_peek_right",
+        "loop": true,
+        "min_hold_ms": 300,
+        "priority": 25
+      },
+      "taskbar_sit": {
+        "clip": "taskbar_sit_loop",
+        "loop": true,
+        "min_hold_ms": 700,
+        "priority": 18
+      }
+    }
+  },
   "pending_review": {
     "enabled_in_runtime": false,
     "frames": [

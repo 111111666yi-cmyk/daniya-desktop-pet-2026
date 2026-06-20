@@ -4,6 +4,7 @@ import logging
 import socket
 import sys
 import traceback
+import hashlib
 from collections import deque
 from datetime import datetime
 from typing import Any, TYPE_CHECKING
@@ -42,6 +43,7 @@ from .system_status import SystemStatusManager
 from .time_event_manager import TimeEventManager
 from .startup_timing import StartupTimer
 from .weather_manager import WeatherManager
+from .utils import bundled_root
 from core.long_term_memory import LongTermMemoryStore
 
 if TYPE_CHECKING:
@@ -219,6 +221,8 @@ class AppController(QObject):
         self.window.behavior_engine.idle_behavior.is_night = self.is_night_behavior
         self.window.behavior_engine.idle_behavior._mood_manager = self.mood_manager
         self.window.behavior_engine.idle_behavior._state_manager = self.window.animation_manager.state_manager
+        self.window.behavior_engine.idle_behavior.set_enabled(False)
+        self.window._stop_pet_feature_timers()
         self.window.edge_peek_allowed_callback = self._edge_peek_allowed
 
         self.idle_manager = IdleManager(self.app_config, self.window.can_show_idle_message)
@@ -312,6 +316,10 @@ class AppController(QObject):
 
     def show(self) -> None:
         self.window.show_at_config_position()
+        self.window.behavior_engine.idle_behavior.set_enabled(
+            bool(self.app_config.get("idle_behavior_enabled", False))
+        )
+        self.window.sync_feature_timers()
         self.config_manager.save_app_config(self.app_config)
         self.startup_timer.mark("first show")
         QTimer.singleShot(0, self._initialize_optional_services)
@@ -1103,7 +1111,13 @@ def _stop_timer_manager(mgr: object) -> None:
         timer.stop()
 
 
-_SINGLE_INSTANCE_PORT = 52317
+def _stable_single_instance_port() -> int:
+    seed = str(bundled_root()).encode("utf-8", "ignore")
+    digest = hashlib.blake2s(seed, digest_size=2).digest()
+    return 42000 + (int.from_bytes(digest, "big") % 20000)
+
+
+_SINGLE_INSTANCE_PORT = _stable_single_instance_port()
 _SINGLE_INSTANCE_LOCK: socket.socket | None = None
 
 

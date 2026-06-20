@@ -82,11 +82,7 @@ class MenuManager:
         )
         input_action.triggered.connect(self._toggle_input)
 
-        # 2. 功能中心
-        hub_action = menu.addAction(ic("chip"), "功能中心")
-        hub_action.triggered.connect(self._open_function_center)
-
-        # 3. 设置
+        # 2. 设置
         settings_action = menu.addAction(ic("settings"), "设置")
         settings_action.triggered.connect(self.controller.open_settings_center)
 
@@ -102,6 +98,8 @@ class MenuManager:
 
         # 6. 更多
         more = menu.addMenu(ic("host"), "更多")
+
+        self._add_function_center_menu(more)
 
         size_menu = more.addMenu(ic("size"), "大小")
         labels = {
@@ -129,7 +127,7 @@ class MenuManager:
 
         renderer_menu = more.addMenu(ic("chip"), "渲染器")
         current_renderer = self.controller.app_config.get("renderer_type", "png")
-        for key, label in [("png", "PNG 帧渲染"), ("morph_blend", "形变混合")]:
+        for key, label in [("png", "PNG 帧渲染"), ("morph_blend", "形变混合"), ("live2d_preview", "Live2D 预览")]:
             act = renderer_menu.addAction(label)
             act.setCheckable(True)
             act.setChecked(key == current_renderer)
@@ -168,10 +166,28 @@ class MenuManager:
 
         return menu
 
-    def _open_function_center(self) -> None:
-        from .function_center import FunctionCenterDialog
-        dialog = FunctionCenterDialog(self.controller, self.window)
-        dialog.exec()
+    def _add_function_center_menu(self, parent: QMenu) -> None:
+        hub = parent.addMenu(ic("chip"), "功能中心")
+        items = [
+            ("📖", "剧情", self.show_story_dialog),
+            ("🌱", "养成中心", self.controller.open_growth_center),
+            ("🍅", "番茄钟", self._toggle_pomodoro),
+            ("⏰", "日程提醒", self.show_reminder_dialog),
+            ("📂", "文件整理", self.controller.open_file_organizer),
+            ("🔗", "传送门", self._show_portals_dialog),
+            ("📝", "记一笔", self.show_note_dialog),
+            ("🎮", "小游戏", self._show_games_dialog),
+            ("💬", "历史记录", self.show_history_dialog),
+        ]
+        for emoji, title, callback in items:
+            action = hub.addAction(f"{emoji}  {title}")
+            action.triggered.connect(callback)
+
+    def _toggle_pomodoro(self) -> None:
+        if getattr(self.controller, "pomodoro", None) is not None and self.controller.pomodoro.active:
+            self.controller.cancel_pomodoro()
+        else:
+            self.controller.start_pomodoro(25)
 
     def _add_pet_feature_menu(self, parent: QMenu) -> None:
         pet_features = parent.addMenu(ic("info"), "宠物功能")
