@@ -19,7 +19,7 @@ DEFAULT_STATE_SPECS: dict[str, dict[str, Any]] = {
     "talking": {"clip": "talk_loop", "loop": True, "min_hold_ms": 250, "priority": 20},
     "clicked": {"clip": "clicked_react", "loop": False, "min_hold_ms": 120, "priority": 40},
     "happy": {"clip": "happy_loop", "loop": False, "min_hold_ms": 180, "priority": 35},
-    "thinking": {"clip": "talk_loop", "loop": True, "min_hold_ms": 350, "priority": 20},
+    "thinking": {"clip": "thinking_loop", "loop": True, "min_hold_ms": 350, "priority": 20},
     "sleep": {"clip": "sleep_loop", "loop": True, "min_hold_ms": 900, "priority": 15},
     "sleeping": {"clip": "sleep_loop", "loop": True, "min_hold_ms": 900, "priority": 15},
     "walk_start": {"clip": "walk_start", "loop": False, "min_hold_ms": 0, "priority": 30},
@@ -330,6 +330,7 @@ def _catalog_from_legacy_data(base_dir: Path, data: dict[str, Any], bindings: di
 
     base_idle = _legacy_frames("idle") or ["normal1.png"]
     talk_frames = _expand_frames(_legacy_frames("talk") or ["normal1.png", "normal2.png"], 8)
+    thinking_frames = _expand_frames(_legacy_frames("thinking") or _legacy_frames("talk") or ["normal1.png", "normal2.png"], 12)
     walk_source = _legacy_frames("walking") or ["normal1.png", "normal2.png"]
     walk_loop = _expand_frames(walk_source, 24)
     stand_frame = (_legacy_frames("taskbar_sit") or base_idle[:1] or ["normal1.png"])[0]
@@ -349,6 +350,7 @@ def _catalog_from_legacy_data(base_dir: Path, data: dict[str, Any], bindings: di
     clips = {
         "idle_breath_loop": _clip("idle_breath_loop", idle_loop, 120, True),
         "talk_loop": _clip("talk_loop", talk_frames, 90, True),
+        "thinking_loop": _clip("thinking_loop", thinking_frames, 110, True),
         "clicked_react": _clip("clicked_react", clicked_react, 80, False),
         "happy_loop": _clip("happy_loop", happy_loop, 95, False),
         "sleep_loop": _clip("sleep_loop", sleep_loop, 160, True),

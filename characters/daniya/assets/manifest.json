@@ -85,16 +85,40 @@
       "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png"
     ],
     "talk": [
-      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-      "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
-      "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
-      "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png"
+      "v1_actual_runtime/B_talk_generated_v2/talk_01.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_02.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_03.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_04.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_05.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_06.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_07.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_08.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_09.png"
     ],
     "talking": [
-      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-      "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
-      "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
-      "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png"
+      "v1_actual_runtime/B_talk_generated_v2/talk_01.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_02.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_03.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_04.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_05.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_06.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_07.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_08.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_09.png"
+    ],
+    "thinking": [
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_01.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_02.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_03.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_04.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_05.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_06.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_07.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_08.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_09.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_10.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_11.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_12.png"
     ],
     "hover": [
       "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png"
@@ -249,41 +273,40 @@
     ],
     "talking": [
       {
-        "name": "A_sit_talk",
-        "anchor": "sit_base",
-        "weight": 0.75,
-        "frames": [
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png"
-        ]
-      },
-      {
-        "name": "B_stand_talk",
+        "name": "B_talk_generated_v2",
         "anchor": "stand_base",
-        "weight": 0.25,
+        "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
-          "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png"
+          "v1_actual_runtime/B_talk_generated_v2/talk_01.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_02.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_03.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_04.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_05.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_06.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_07.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_08.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_09.png"
         ]
-      },
+      }
+    ],
+    "thinking": [
       {
-        "name": "C_sleep_talk",
-        "anchor": "sleep_base",
-        "weight": 0.15,
+        "name": "A_thinking_generated_v1",
+        "anchor": "sit_base",
+        "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/yawn_01.png"
-        ]
-      },
-      {
-        "name": "D_special_talk",
-        "anchor": "special_base",
-        "weight": 0.2,
-        "frames": [
-          "v1_actual_runtime/D_special_motion_pack/float_01.png",
-          "v1_actual_runtime/D_special_motion_pack/float_02.png"
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_01.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_02.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_03.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_04.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_05.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_06.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_07.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_08.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_09.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_10.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_11.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_12.png"
         ]
       }
     ],
@@ -511,14 +534,41 @@
           "drag_handle": [0.5, 0.18]
         },
         "frames": [
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
-          "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
-          "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
-          "v1_actual_runtime/B_stand_base_pack/stand_talk_01.png",
-          "v1_actual_runtime/B_stand_base_pack/stand_talk_02.png"
+          "v1_actual_runtime/B_talk_generated_v2/talk_01.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_02.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_03.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_04.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_05.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_06.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_07.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_08.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_09.png"
+        ]
+      },
+      "thinking_loop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 110,
+        "loop": true,
+        "anchor_track": {
+          "root": [0.5, 0.84],
+          "foot_left": [0.42, 0.98],
+          "foot_right": [0.58, 0.98],
+          "hips": [0.5, 0.62],
+          "drag_handle": [0.5, 0.18]
+        },
+        "frames": [
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_01.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_02.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_03.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_04.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_05.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_06.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_07.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_08.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_09.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_10.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_11.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_12.png"
         ]
       },
       "clicked_react": {
@@ -838,12 +888,12 @@
         }
       },
       "thinking": {
-        "clip": "talk_loop",
+        "clip": "thinking_loop",
         "loop": true,
         "min_hold_ms": 350,
         "priority": 20,
         "renderer_binding": {
-          "sprite_clip": "talk_loop",
+          "sprite_clip": "thinking_loop",
           "live2d_model": "template_model",
           "live2d_motion_group": "thinking",
           "live2d_expression": "thinking",
