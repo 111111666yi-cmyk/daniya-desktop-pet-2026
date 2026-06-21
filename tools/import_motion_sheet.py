@@ -35,10 +35,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--grid-rows", type=int, default=None, help="Row count when source is a sheet image")
     parser.add_argument("--frame-prefix", type=str, default=None, help="Output frame prefix; defaults to clip id")
     parser.add_argument("--start-index", type=int, default=1, help="Start index for sliced sheet frames")
+    parser.add_argument("--cell-inset-percent", type=float, default=0.0, help="Optional safe-area inset ratio applied to every sliced sheet cell")
     parser.add_argument("--chroma-key", type=str, default="#00ff00", help="Hex chroma key to remove; use empty string to disable")
     parser.add_argument("--transparent-threshold", type=int, default=16, help="Distance under this becomes fully transparent")
     parser.add_argument("--opaque-threshold", type=int, default=96, help="Distance above this remains fully opaque")
+    parser.add_argument("--alpha-floor", type=int, default=0, help="Force pixels below this alpha to fully transparent after chroma keying")
     parser.add_argument("--no-despill", action="store_true", help="Disable spill cleanup after keying")
+    parser.add_argument("--cleanup-islands", action="store_true", help="Remove disconnected alpha islands after keying")
+    parser.add_argument("--cleanup-alpha-threshold", type=int, default=24, help="Alpha threshold used by island cleanup")
+    parser.add_argument("--cleanup-min-component-area", type=int, default=96, help="Minimum area for detached components to survive cleanup when they are near the main silhouette")
+    parser.add_argument("--cleanup-near-margin-px", type=int, default=64, help="Margin around the main silhouette used to preserve nearby detached components during cleanup")
     parser.add_argument("--target-frame-count", type=int, default=None, help="Optional runtime frame count after resampling the source")
     parser.add_argument("--resample-mode", type=str, default="blend", choices=["blend", "hold"], help="Resampling mode when --target-frame-count is set")
     parser.add_argument("--runtime-dir", type=Path, default=None, help="Override runtime output directory")
@@ -89,10 +95,16 @@ def main() -> int:
         grid_rows=args.grid_rows,
         frame_prefix=frame_prefix,
         start_index=args.start_index,
+        cell_inset_percent=args.cell_inset_percent,
         chroma_key=args.chroma_key or None,
         transparent_threshold=args.transparent_threshold,
         opaque_threshold=args.opaque_threshold,
         despill=not args.no_despill,
+        alpha_floor=args.alpha_floor,
+        cleanup_islands=args.cleanup_islands,
+        cleanup_alpha_threshold=args.cleanup_alpha_threshold,
+        cleanup_min_component_area=args.cleanup_min_component_area,
+        cleanup_near_margin_px=args.cleanup_near_margin_px,
         target_frame_count=args.target_frame_count,
         resample_mode=args.resample_mode,
         loop_for_resample=args.loop,

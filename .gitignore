@@ -14,6 +14,15 @@ assets/voice_clips/*/
 cache/tts/
 characters/*/assets/
 !characters/template/assets/
+!characters/daniya/assets/
+characters/daniya/assets/*
+!characters/daniya/assets/manifest.json
+!characters/daniya/assets/v1_actual_runtime/
+characters/daniya/assets/v1_actual_runtime/*
+!characters/daniya/assets/v1_actual_runtime/B_idle_breath_generated_v4/
+!characters/daniya/assets/v1_actual_runtime/B_idle_breath_generated_v4/*.png
+!characters/daniya/assets/v1_actual_runtime/B_walk_generated_v3_edgeclean24/
+!characters/daniya/assets/v1_actual_runtime/B_walk_generated_v3_edgeclean24/*.png
 characters/test_dummy/
 models/
 runtime/

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from array import array
+from collections import deque
 import json
 import math
 from dataclasses import dataclass
@@ -59,6 +61,13 @@ class FrameDeltaReport:
         }
 
 
+@dataclass(frozen=True)
+class AlphaComponent:
+    area: int
+    bbox: tuple[int, int, int, int]
+    touches: dict[str, bool]
+
+
 def aggregate_anchor_track(metadata: Iterable[FrameMetadata]) -> dict[str, list[float]]:
     totals: dict[str, list[float]] = {}
     counts: dict[str, int] = {}
@@ -91,17 +100,29 @@ def slice_sheet(
     grid_rows: int,
     frame_prefix: str,
     start_index: int = 1,
+    cell_inset_percent: float = 0.0,
 ) -> list[tuple[str, Image.Image]]:
     image = Image.open(sheet_path).convert("RGBA")
     cell_width = image.width // max(1, grid_cols)
     cell_height = image.height // max(1, grid_rows)
+    inset_x = max(0, int(round(cell_width * max(0.0, cell_inset_percent))))
+    inset_y = max(0, int(round(cell_height * max(0.0, cell_inset_percent))))
+    if inset_x * 2 >= cell_width or inset_y * 2 >= cell_height:
+        raise ValueError("cell inset is too large for the selected grid")
     frames: list[tuple[str, Image.Image]] = []
     index = start_index
     for row in range(grid_rows):
         for col in range(grid_cols):
             left = col * cell_width
             top = row * cell_height
-            cell = image.crop((left, top, left + cell_width, top + cell_height))
+            cell = image.crop(
+                (
+                    left + inset_x,
+                    top + inset_y,
+                    left + cell_width - inset_x,
+                    top + cell_height - inset_y,
+                )
+            )
             frames.append((f"{frame_prefix}_{index:02d}.png", cell))
             index += 1
     return frames
@@ -114,6 +135,7 @@ def collect_source_frames(
     grid_rows: int | None = None,
     frame_prefix: str = "frame",
     start_index: int = 1,
+    cell_inset_percent: float = 0.0,
 ) -> list[tuple[str, Image.Image]]:
     if source.is_dir():
         return [(path.name, Image.open(path).convert("RGBA")) for path in sorted(source.iterdir()) if path.suffix.lower() == ".png"]
@@ -126,6 +148,7 @@ def collect_source_frames(
             grid_rows=grid_rows,
             frame_prefix=frame_prefix,
             start_index=start_index,
+            cell_inset_percent=cell_inset_percent,
         )
     raise FileNotFoundError(source)
 
@@ -137,6 +160,7 @@ def prepare_source_frame(
     transparent_threshold: int = 16,
     opaque_threshold: int = 96,
     despill: bool = True,
+    alpha_floor: int = 0,
 ) -> Image.Image:
     if key_color is None:
         return image.convert("RGBA")
@@ -146,6 +170,7 @@ def prepare_source_frame(
         transparent_threshold=transparent_threshold,
         opaque_threshold=opaque_threshold,
         despill=despill,
+        alpha_floor=alpha_floor,
     )
 
 
@@ -156,6 +181,7 @@ def remove_chroma_key(
     transparent_threshold: int = 16,
     opaque_threshold: int = 96,
     despill: bool = True,
+    alpha_floor: int = 0,
 ) -> Image.Image:
     rgba = image.convert("RGBA")
     pixels = rgba.load()
@@ -171,10 +197,141 @@ def remove_chroma_key(
             if distance < opaque_threshold:
                 blend = (distance - transparent_threshold) / max(1.0, opaque_threshold - transparent_threshold)
                 alpha = int(alpha * blend)
+            if alpha_floor > 0 and alpha < alpha_floor:
+                alpha = 0
             if despill and alpha < 255 and green > max(red, blue):
                 green = int((green + max(red, blue)) / 2)
             pixels[x, y] = (red, green, blue, alpha)
     return rgba
+
+
+def cleanup_disconnected_alpha_islands(
+    image: Image.Image,
+    *,
+    alpha_threshold: int = 24,
+    min_component_area: int = 96,
+    near_margin_px: int = 64,
+) -> Image.Image:
+    rgba = image.convert("RGBA")
+    width, height = rgba.size
+    if width <= 0 or height <= 0:
+        return rgba
+
+    alpha = rgba.getchannel("A")
+    alpha_data = alpha.load()
+    labels = array("I", [0]) * (width * height)
+    components: dict[int, AlphaComponent] = {}
+    label = 0
+    main_label = 0
+    main_area = 0
+
+    for y in range(height):
+        row_offset = y * width
+        for x in range(width):
+            idx = row_offset + x
+            if labels[idx] != 0 or alpha_data[x, y] < alpha_threshold:
+                continue
+
+            label += 1
+            queue: deque[tuple[int, int]] = deque([(x, y)])
+            labels[idx] = label
+            area = 0
+            min_x = max_x = x
+            min_y = max_y = y
+
+            while queue:
+                cx, cy = queue.popleft()
+                area += 1
+                if cx < min_x:
+                    min_x = cx
+                if cx > max_x:
+                    max_x = cx
+                if cy < min_y:
+                    min_y = cy
+                if cy > max_y:
+                    max_y = cy
+
+                for nx in range(max(0, cx - 1), min(width - 1, cx + 1) + 1):
+                    for ny in range(max(0, cy - 1), min(height - 1, cy + 1) + 1):
+                        nidx = ny * width + nx
+                        if labels[nidx] != 0 or alpha_data[nx, ny] < alpha_threshold:
+                            continue
+                        labels[nidx] = label
+                        queue.append((nx, ny))
+
+            bbox = (min_x, min_y, max_x, max_y)
+            components[label] = AlphaComponent(
+                area=area,
+                bbox=bbox,
+                touches={
+                    "left": min_x == 0,
+                    "right": max_x == width - 1,
+                    "top": min_y == 0,
+                    "bottom": max_y == height - 1,
+                },
+            )
+            if area > main_area:
+                main_label = label
+                main_area = area
+
+    if main_label == 0:
+        return rgba
+
+    main_component = components[main_label]
+    keep_box = _expand_bbox(main_component.bbox, margin=near_margin_px, width=width, height=height)
+    keep_labels = {main_label}
+    for component_label, component in components.items():
+        if component_label == main_label:
+            continue
+        if _touches_unshared_edge(component.touches, main_component.touches):
+            continue
+        if component.area >= min_component_area and _bboxes_intersect(keep_box, component.bbox):
+            keep_labels.add(component_label)
+
+    pixels = rgba.load()
+    for y in range(height):
+        row_offset = y * width
+        for x in range(width):
+            component_label = labels[row_offset + x]
+            if component_label != 0 and component_label not in keep_labels:
+                red, green, blue, _alpha = pixels[x, y]
+                pixels[x, y] = (red, green, blue, 0)
+    return rgba
+
+
+def _expand_bbox(
+    bbox: tuple[int, int, int, int],
+    *,
+    margin: int,
+    width: int,
+    height: int,
+) -> tuple[int, int, int, int]:
+    left, top, right, bottom = bbox
+    return (
+        max(0, left - margin),
+        max(0, top - margin),
+        min(width - 1, right + margin),
+        min(height - 1, bottom + margin),
+    )
+
+
+def _bboxes_intersect(
+    left: tuple[int, int, int, int],
+    right: tuple[int, int, int, int],
+) -> bool:
+    return not (
+        left[2] < right[0]
+        or right[2] < left[0]
+        or left[3] < right[1]
+        or right[3] < left[1]
+    )
+
+
+def _touches_unshared_edge(
+    component_touches: dict[str, bool],
+    main_touches: dict[str, bool],
+) -> bool:
+    return any(component_touches[edge] and not main_touches[edge] for edge in component_touches)
 
 
 def pad_frame_to_size(image: Image.Image, size: tuple[int, int]) -> Image.Image:
@@ -294,25 +451,43 @@ def build_motion_assets(
     grid_rows: int | None = None,
     frame_prefix: str = "frame",
     start_index: int = 1,
+    cell_inset_percent: float = 0.0,
     chroma_key: str | None = None,
     transparent_threshold: int = 16,
     opaque_threshold: int = 96,
     despill: bool = True,
+    alpha_floor: int = 0,
+    cleanup_islands: bool = False,
+    cleanup_alpha_threshold: int = 24,
+    cleanup_min_component_area: int = 96,
+    cleanup_near_margin_px: int = 64,
     target_frame_count: int | None = None,
     resample_mode: str = "blend",
     loop_for_resample: bool = True,
 ) -> tuple[list[Path], list[FrameMetadata]]:
     output_dir.mkdir(parents=True, exist_ok=True)
     key_color = parse_hex_color(chroma_key or DEFAULT_KEY_COLOR) if chroma_key else None
+    def _prepare(image: Image.Image) -> Image.Image:
+        return prepare_source_frame(
+            image,
+            key_color=key_color,
+            transparent_threshold=transparent_threshold,
+            opaque_threshold=opaque_threshold,
+            despill=despill,
+            alpha_floor=alpha_floor,
+        )
     prepared_frames = [
         (
             frame_name,
-            prepare_source_frame(
-                image,
-                key_color=key_color,
-                transparent_threshold=transparent_threshold,
-                opaque_threshold=opaque_threshold,
-                despill=despill,
+            (
+                cleanup_disconnected_alpha_islands(
+                    _prepare(image),
+                    alpha_threshold=cleanup_alpha_threshold,
+                    min_component_area=cleanup_min_component_area,
+                    near_margin_px=cleanup_near_margin_px,
+                )
+                if cleanup_islands
+                else _prepare(image)
             ),
         )
         for frame_name, image in collect_source_frames(
@@ -321,6 +496,7 @@ def build_motion_assets(
             grid_rows=grid_rows,
             frame_prefix=frame_prefix,
             start_index=start_index,
+            cell_inset_percent=cell_inset_percent,
         )
     ]
     if target_frame_count is not None:

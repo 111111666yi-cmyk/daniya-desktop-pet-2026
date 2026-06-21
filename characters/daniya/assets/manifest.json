@@ -71,9 +71,18 @@
   },
   "animations": {
     "idle": [
-      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-      "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
-      "v1_actual_runtime/D_special_motion_pack/float_01.png"
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_01.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_02.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_03.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_04.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_05.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_06.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_07.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_08.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_09.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_10.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_11.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png"
     ],
     "talk": [
       "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
@@ -138,18 +147,30 @@
       "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png"
     ],
     "walking": [
-      "v1_actual_runtime/B_walk_generated/walk_01.png",
-      "v1_actual_runtime/B_walk_generated/walk_02.png",
-      "v1_actual_runtime/B_walk_generated/walk_03.png",
-      "v1_actual_runtime/B_walk_generated/walk_04.png",
-      "v1_actual_runtime/B_walk_generated/walk_05.png",
-      "v1_actual_runtime/B_walk_generated/walk_06.png",
-      "v1_actual_runtime/B_walk_generated/walk_07.png",
-      "v1_actual_runtime/B_walk_generated/walk_08.png",
-      "v1_actual_runtime/B_walk_generated/walk_09.png",
-      "v1_actual_runtime/B_walk_generated/walk_10.png",
-      "v1_actual_runtime/B_walk_generated/walk_11.png",
-      "v1_actual_runtime/B_walk_generated/walk_12.png"
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_01.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_02.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_03.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_04.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_05.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_06.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_07.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_08.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_09.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_10.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_11.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_12.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_13.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_14.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_15.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_16.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_17.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_18.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_19.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_20.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_21.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_22.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_23.png",
+      "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_24.png"
     ],
     "taskbar_sit": [
       "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png"
@@ -184,14 +205,22 @@
         ]
       },
       {
-        "name": "B_stand_base_pack",
+        "name": "B_idle_breath_generated_v4",
         "anchor": "stand_base",
         "weight": 0.25,
-        "pick": "one",
         "frames": [
-          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
-          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
-          "v1_actual_runtime/B_stand_base_pack/wave_02.png"
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_01.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_02.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_03.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_04.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_05.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_06.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_07.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_08.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_09.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_10.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_11.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png"
         ]
       },
       {
@@ -377,22 +406,34 @@
     ],
     "walking": [
       {
-        "name": "B_generated_walk",
+        "name": "B_generated_walk_v3_edgeclean24",
         "anchor": "stand_base",
         "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/B_walk_generated/walk_01.png",
-          "v1_actual_runtime/B_walk_generated/walk_02.png",
-          "v1_actual_runtime/B_walk_generated/walk_03.png",
-          "v1_actual_runtime/B_walk_generated/walk_04.png",
-          "v1_actual_runtime/B_walk_generated/walk_05.png",
-          "v1_actual_runtime/B_walk_generated/walk_06.png",
-          "v1_actual_runtime/B_walk_generated/walk_07.png",
-          "v1_actual_runtime/B_walk_generated/walk_08.png",
-          "v1_actual_runtime/B_walk_generated/walk_09.png",
-          "v1_actual_runtime/B_walk_generated/walk_10.png",
-          "v1_actual_runtime/B_walk_generated/walk_11.png",
-          "v1_actual_runtime/B_walk_generated/walk_12.png"
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_01.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_02.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_03.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_04.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_05.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_06.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_07.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_08.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_09.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_10.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_11.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_12.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_13.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_14.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_15.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_16.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_17.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_18.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_19.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_20.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_21.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_22.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_23.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_24.png"
         ]
       }
     ],
@@ -444,18 +485,18 @@
           "drag_handle": [0.5, 0.18]
         },
         "frames": [
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
-          "v1_actual_runtime/D_special_motion_pack/float_01.png",
-          "v1_actual_runtime/D_special_motion_pack/float_02.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
-          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
-          "v1_actual_runtime/D_special_motion_pack/float_01.png",
-          "v1_actual_runtime/D_special_motion_pack/float_02.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
-          "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png"
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_01.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_02.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_03.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_04.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_05.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_06.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_07.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_08.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_09.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_10.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_11.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png"
         ]
       },
       "talk_loop": {
@@ -568,19 +609,19 @@
         "frames": [
           "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
           "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
-          "v1_actual_runtime/B_walk_generated/walk_01.png",
-          "v1_actual_runtime/B_walk_generated/walk_02.png",
-          "v1_actual_runtime/B_walk_generated/walk_03.png",
-          "v1_actual_runtime/B_walk_generated/walk_04.png",
-          "v1_actual_runtime/B_walk_generated/walk_05.png",
-          "v1_actual_runtime/B_walk_generated/walk_06.png",
-          "v1_actual_runtime/B_walk_generated/walk_07.png",
-          "v1_actual_runtime/B_walk_generated/walk_08.png"
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_01.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_02.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_03.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_04.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_05.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_06.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_07.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_08.png"
         ]
       },
       "walk_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 60,
+        "frame_duration_ms": 45,
         "loop": true,
         "anchor_track": {
           "root": [0.5, 0.88],
@@ -598,30 +639,30 @@
           "stop_distance_px": 18
         },
         "frames": [
-          "v1_actual_runtime/B_walk_generated/walk_01.png",
-          "v1_actual_runtime/B_walk_generated/walk_01.png",
-          "v1_actual_runtime/B_walk_generated/walk_02.png",
-          "v1_actual_runtime/B_walk_generated/walk_02.png",
-          "v1_actual_runtime/B_walk_generated/walk_03.png",
-          "v1_actual_runtime/B_walk_generated/walk_03.png",
-          "v1_actual_runtime/B_walk_generated/walk_04.png",
-          "v1_actual_runtime/B_walk_generated/walk_04.png",
-          "v1_actual_runtime/B_walk_generated/walk_05.png",
-          "v1_actual_runtime/B_walk_generated/walk_05.png",
-          "v1_actual_runtime/B_walk_generated/walk_06.png",
-          "v1_actual_runtime/B_walk_generated/walk_06.png",
-          "v1_actual_runtime/B_walk_generated/walk_07.png",
-          "v1_actual_runtime/B_walk_generated/walk_07.png",
-          "v1_actual_runtime/B_walk_generated/walk_08.png",
-          "v1_actual_runtime/B_walk_generated/walk_08.png",
-          "v1_actual_runtime/B_walk_generated/walk_09.png",
-          "v1_actual_runtime/B_walk_generated/walk_09.png",
-          "v1_actual_runtime/B_walk_generated/walk_10.png",
-          "v1_actual_runtime/B_walk_generated/walk_10.png",
-          "v1_actual_runtime/B_walk_generated/walk_11.png",
-          "v1_actual_runtime/B_walk_generated/walk_11.png",
-          "v1_actual_runtime/B_walk_generated/walk_12.png",
-          "v1_actual_runtime/B_walk_generated/walk_12.png"
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_01.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_02.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_03.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_04.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_05.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_06.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_07.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_08.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_09.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_10.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_11.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_12.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_13.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_14.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_15.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_16.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_17.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_18.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_19.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_20.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_21.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_22.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_23.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_24.png"
         ]
       },
       "walk_stop": {
@@ -636,12 +677,12 @@
           "drag_handle": [0.5, 0.18]
         },
         "frames": [
-          "v1_actual_runtime/B_walk_generated/walk_12.png",
-          "v1_actual_runtime/B_walk_generated/walk_11.png",
-          "v1_actual_runtime/B_walk_generated/walk_10.png",
-          "v1_actual_runtime/B_walk_generated/walk_09.png",
-          "v1_actual_runtime/B_walk_generated/walk_08.png",
-          "v1_actual_runtime/B_walk_generated/walk_07.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_24.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_23.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_22.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_21.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_20.png",
+          "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_19.png",
           "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
           "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png"
         ]
