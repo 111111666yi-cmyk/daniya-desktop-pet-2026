@@ -1,7 +1,8 @@
 import json
 import sys
+from unittest.mock import Mock
 
-from PySide6.QtCore import QPoint, QRect
+from PySide6.QtCore import QPoint, QRect, Qt
 from PySide6.QtWidgets import QApplication
 
 from src.asset_manager import AssetManager
@@ -240,6 +241,49 @@ def test_pet_window_keeps_logical_size_across_mixed_dpi(monkeypatch):
             assert pixmap is not None and not pixmap.isNull()
             logical_sizes.append((window.image_label.width(), window.image_label.height()))
         assert len(set(logical_sizes)) == 1
+    finally:
+        _close_window(app, window)
+
+
+def test_render_callbacks_do_not_reposition_translucent_window_every_frame(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = _app()
+    config = {
+        "window": {"start_x": 100, "start_y": 100, "always_on_top": False, "show_input": False},
+        "pet": {"pet_height": 96, "target_height": 96},
+        "ui": {"bubble_max_width": 300, "input_min_width": 180},
+    }
+    window = PetWindow(AssetManager(config), config)
+    frame = window.asset_manager.frames_for_state("idle")[0]
+    try:
+        window.show_at_config_position()
+        app.processEvents()
+
+        forbid = Mock(side_effect=AssertionError("render path should not reposition top-level window"))
+        monkeypatch.setattr(window, "_clamped_position", forbid)
+        monkeypatch.setattr(window, "_docked_position", forbid)
+
+        window.render_pet_pixmap(frame)
+        pixmap = window.image_label.pixmap()
+        assert pixmap is not None and not pixmap.isNull()
+        window._display_pixmap(pixmap)
+    finally:
+        _close_window(app, window)
+
+
+def test_translucent_window_avoids_system_background_repaint(monkeypatch):
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    app = _app()
+    config = {
+        "window": {"start_x": 100, "start_y": 100, "always_on_top": False, "show_input": False},
+        "pet": {"pet_height": 96, "target_height": 96},
+        "ui": {"bubble_max_width": 300, "input_min_width": 180},
+    }
+    window = PetWindow(AssetManager(config), config)
+    try:
+        assert window.testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        assert window.testAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
+        assert window.image_label.testAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
     finally:
         _close_window(app, window)
 

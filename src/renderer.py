@@ -37,10 +37,17 @@ class Renderer(Protocol):
 
 
 class PNGFrameRenderer:
-    def __init__(self, base_dir: Path, max_cache_entries: int = 512) -> None:
+    def __init__(
+        self,
+        base_dir: Path,
+        max_cache_entries: int = 512,
+        max_source_entries: int = 128,
+    ) -> None:
         self._base_dir = base_dir
         self._max_cache_entries = max(1, int(max_cache_entries))
+        self._max_source_entries = max(1, int(max_source_entries))
         self._cache: OrderedDict[tuple[str, int, float], QPixmap] = OrderedDict()
+        self._source_cache: OrderedDict[str, QPixmap] = OrderedDict()
 
     def render_frame(self, frame_id: str, target_height: int, dpr: float) -> QPixmap | None:
         key = (frame_id, target_height, round(dpr, 2))
@@ -49,12 +56,8 @@ class PNGFrameRenderer:
             self._cache.move_to_end(key)
             return cached
 
-        path = Path(frame_id)
-        if not path.is_absolute():
-            path = self._base_dir / frame_id
-
-        original = QPixmap(str(path))
-        if original.isNull():
+        source_key, original = self._load_source_pixmap(frame_id)
+        if original is None:
             return None
 
         physical_height = max(1, int(round(target_height * dpr)))
@@ -74,6 +77,7 @@ class PNGFrameRenderer:
         self._cache.move_to_end(key)
         if len(self._cache) > self._max_cache_entries:
             self._cache.popitem(last=False)
+        self._source_cache.move_to_end(source_key)
 
         return scaled
 
@@ -82,3 +86,25 @@ class PNGFrameRenderer:
 
     def clear_cache(self) -> None:
         self._cache.clear()
+        self._source_cache.clear()
+
+    def _load_source_pixmap(self, frame_id: str) -> tuple[str, QPixmap | None]:
+        path = Path(frame_id)
+        if not path.is_absolute():
+            path = self._base_dir / frame_id
+        source_key = str(path)
+
+        cached = self._source_cache.get(source_key)
+        if cached is not None and not cached.isNull():
+            self._source_cache.move_to_end(source_key)
+            return source_key, cached
+
+        original = QPixmap(source_key)
+        if original.isNull():
+            return source_key, None
+
+        self._source_cache[source_key] = original
+        self._source_cache.move_to_end(source_key)
+        if len(self._source_cache) > self._max_source_entries:
+            self._source_cache.popitem(last=False)
+        return source_key, original

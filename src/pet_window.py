@@ -99,6 +99,7 @@ class PetWindow(QWidget):
             flags |= Qt.WindowType.WindowStaysOnTopHint
         self.setWindowFlags(flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
         try:
             opacity = int(self.app_config.get("window", {}).get("opacity_percent", 100)) / 100
         except (TypeError, ValueError):
@@ -127,6 +128,7 @@ class PetWindow(QWidget):
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.image_label.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
+        self.image_label.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
         # Behavior Engine Integration
         from .behavior.behavior_engine import PetBehaviorEngine
         self.behavior_engine = PetBehaviorEngine(
@@ -330,12 +332,8 @@ class PetWindow(QWidget):
             def height(self) -> int: return self._h
 
         self._print_render_debug(path, MockOriginal(orig_w, orig_h), base_height, dpr, scaled, logical_width, logical_display_height)
-        # Remove resize_to_content() to prevent micro-jumping
-        if self.isVisible():
-            if self.dock_side in {"left", "right"}:
-                self.move(self._docked_position(self.dock_side))
-            else:
-                self.move(self._clamped_position(self.pos()))
+        # Keep the render path side-effect free: moving a translucent top-level
+        # window on every animation frame is noticeably expensive on Windows.
 
     def _display_pixmap(self, scaled: QPixmap) -> None:
         dpr = scaled.devicePixelRatio() or 1.0
@@ -345,11 +343,6 @@ class PetWindow(QWidget):
         self._stable_container_size = max(self._stable_container_size, natural_size)
         self.image_label.setFixedSize(self._stable_container_size, self._stable_container_size)
         self.image_label.setPixmap(scaled)
-        if self.isVisible():
-            if self.dock_side in {"left", "right"}:
-                self.move(self._docked_position(self.dock_side))
-            else:
-                self.move(self._clamped_position(self.pos()))
 
     def speak(self, text: str) -> None:
         self.typewriter.speak(text)

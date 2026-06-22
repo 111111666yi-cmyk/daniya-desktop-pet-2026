@@ -106,6 +106,44 @@ class TestPNGFrameRendererCache:
 
         assert len(renderer._cache) == 160
 
+    def test_png_renderer_source_cache_tracks_original_frames_independently(self, tmp_assets):
+        renderer = PNGFrameRenderer(tmp_assets, max_cache_entries=1, max_source_entries=2)
+
+        renderer.render_frame("frame_a.png", 48, 1.0)
+        renderer.render_frame("frame_b.png", 48, 1.0)
+        renderer.render_frame("frame_a.png", 96, 1.0)
+
+        assert len(renderer._cache) == 1
+        assert len(renderer._source_cache) == 2
+        assert str(tmp_assets / "frame_a.png") in renderer._source_cache
+        assert str(tmp_assets / "frame_b.png") in renderer._source_cache
+
+    def test_png_renderer_source_cache_uses_lru_eviction(self, tmp_assets):
+        green = _make_solid_pixmap(64, 64, QColor(0, 255, 0))
+        green.save(str(tmp_assets / "frame_c.png"))
+
+        renderer = PNGFrameRenderer(tmp_assets, max_cache_entries=4, max_source_entries=2)
+        renderer.render_frame("frame_a.png", 48, 1.0)
+        renderer.render_frame("frame_b.png", 48, 1.0)
+        renderer.render_frame("frame_a.png", 96, 1.0)
+        renderer.render_frame("frame_c.png", 48, 1.0)
+
+        assert str(tmp_assets / "frame_a.png") in renderer._source_cache
+        assert str(tmp_assets / "frame_c.png") in renderer._source_cache
+        assert str(tmp_assets / "frame_b.png") not in renderer._source_cache
+
+    def test_png_renderer_clear_cache_also_drops_source_frames(self, tmp_assets):
+        renderer = PNGFrameRenderer(tmp_assets)
+        renderer.render_frame("frame_a.png", 48, 1.0)
+
+        assert renderer._cache
+        assert renderer._source_cache
+
+        renderer.clear_cache()
+
+        assert not renderer._cache
+        assert not renderer._source_cache
+
 
 class TestMorphBlendRendererCrossfade:
     def test_crossfade_triggers_on_frame_change(self, tmp_assets):
