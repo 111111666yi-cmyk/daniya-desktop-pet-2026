@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -36,14 +37,16 @@ class Renderer(Protocol):
 
 
 class PNGFrameRenderer:
-    def __init__(self, base_dir: Path) -> None:
+    def __init__(self, base_dir: Path, max_cache_entries: int = 512) -> None:
         self._base_dir = base_dir
-        self._cache: dict[tuple[str, int, float], QPixmap] = {}
+        self._max_cache_entries = max(1, int(max_cache_entries))
+        self._cache: OrderedDict[tuple[str, int, float], QPixmap] = OrderedDict()
 
     def render_frame(self, frame_id: str, target_height: int, dpr: float) -> QPixmap | None:
         key = (frame_id, target_height, round(dpr, 2))
         cached = self._cache.get(key)
         if cached is not None and not cached.isNull():
+            self._cache.move_to_end(key)
             return cached
 
         path = Path(frame_id)
@@ -68,8 +71,9 @@ class PNGFrameRenderer:
         scaled.setDevicePixelRatio(dpr)
 
         self._cache[key] = scaled
-        if len(self._cache) > 128:
-            self._cache.pop(next(iter(self._cache)))
+        self._cache.move_to_end(key)
+        if len(self._cache) > self._max_cache_entries:
+            self._cache.popitem(last=False)
 
         return scaled
 

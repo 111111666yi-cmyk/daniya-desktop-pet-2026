@@ -199,18 +199,6 @@ class AnimationManager(QObject):
         self._locomotion_distance_px = max(0.0, cumulative_distance_px)
         if self.current_action == "walk_start" and cumulative_distance_px >= self._locomotion_profile.start_distance_px:
             self._enter_walking_loop()
-        if self.current_action != "walking" or not self.current_frames:
-            return
-        phase = (self._locomotion_distance_px / max(1.0, self._locomotion_profile.cycle_distance_px)) % 1.0
-        next_index = min(len(self.current_frames) - 1, int(phase * len(self.current_frames)))
-        if next_index != self.frame_index:
-            self.frame_index = next_index
-            self._emit_frame(
-                self.current_frames[self.frame_index],
-                config=self._action_config("walking"),
-            )
-        elif self._last_emitted_frame is None and self.current_frames:
-            self._emit_frame(self.current_frames[self.frame_index], config=self._action_config("walking"))
 
     def stop_locomotion(self, *, immediate: bool) -> None:
         if immediate:
@@ -230,7 +218,12 @@ class AnimationManager(QObject):
         self.frame_index = 0
         self.animation_timer.stop()
         if self.current_frames:
-            self._emit_frame(self.current_frames[0], config=self._action_config("walking"))
+            config = self._action_config("walking")
+            self._emit_frame(self.current_frames[0], config=config)
+            if len(self.current_frames) > 1:
+                duration = int((config or {}).get("duration_ms", 41))
+                # Keep authored sprite clips within the intended 24-30 fps range.
+                self.animation_timer.start(max(33, duration))
 
     def _emit_frame(self, frame_name: str, *, config: dict[str, Any] | None = None) -> None:
         self._last_emitted_frame = frame_name

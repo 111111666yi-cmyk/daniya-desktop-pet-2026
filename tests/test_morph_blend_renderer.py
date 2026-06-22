@@ -80,6 +80,33 @@ class TestMorphBlendRendererBasicRendering:
         assert r._old_frame_id is None
 
 
+class TestPNGFrameRendererCache:
+    def test_png_renderer_uses_lru_eviction(self, tmp_assets):
+        green = _make_solid_pixmap(64, 64, QColor(0, 255, 0))
+        green.save(str(tmp_assets / "frame_c.png"))
+
+        renderer = PNGFrameRenderer(tmp_assets, max_cache_entries=2)
+        renderer.render_frame("frame_a.png", 48, 1.0)
+        renderer.render_frame("frame_b.png", 48, 1.0)
+        renderer.render_frame("frame_a.png", 48, 1.0)
+        renderer.render_frame("frame_c.png", 48, 1.0)
+
+        assert ("frame_a.png", 48, 1.0) in renderer._cache
+        assert ("frame_c.png", 48, 1.0) in renderer._cache
+        assert ("frame_b.png", 48, 1.0) not in renderer._cache
+
+    def test_png_renderer_default_cache_can_hold_more_than_legacy_limit(self, tmp_path):
+        for idx in range(160):
+            frame = _make_solid_pixmap(16, 16, QColor(idx % 255, (idx * 3) % 255, (idx * 7) % 255))
+            frame.save(str(tmp_path / f"frame_{idx:03d}.png"))
+
+        renderer = PNGFrameRenderer(tmp_path)
+        for idx in range(160):
+            renderer.render_frame(f"frame_{idx:03d}.png", 16, 1.0)
+
+        assert len(renderer._cache) == 160
+
+
 class TestMorphBlendRendererCrossfade:
     def test_crossfade_triggers_on_frame_change(self, tmp_assets):
         r = MorphBlendRenderer(tmp_assets)
