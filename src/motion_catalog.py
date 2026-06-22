@@ -32,7 +32,7 @@ DEFAULT_STATE_SPECS: dict[str, dict[str, Any]] = {
     "edge_peek_left": {"clip": "edge_peek_left", "loop": True, "min_hold_ms": 300, "priority": 25},
     "edge_peek_right": {"clip": "edge_peek_right", "loop": True, "min_hold_ms": 300, "priority": 25},
     "taskbar_sit": {"clip": "taskbar_sit_loop", "loop": True, "min_hold_ms": 700, "priority": 18},
-    "remind": {"clip": "happy_loop", "loop": False, "min_hold_ms": 180, "priority": 32},
+    "remind": {"clip": "remind_loop", "loop": False, "min_hold_ms": 180, "priority": 32},
     "hover": {"clip": "idle_breath_loop", "loop": True, "min_hold_ms": 250, "priority": 12},
 }
 
@@ -329,40 +329,42 @@ def _catalog_from_legacy_data(base_dir: Path, data: dict[str, Any], bindings: di
         return []
 
     base_idle = _legacy_frames("idle") or ["normal1.png"]
-    talk_frames = _expand_frames(_legacy_frames("talk") or ["normal1.png", "normal2.png"], 8)
-    thinking_frames = _expand_frames(_legacy_frames("thinking") or _legacy_frames("talk") or ["normal1.png", "normal2.png"], 12)
+    talk_frames = _expand_frames(_legacy_frames("talk") or ["normal1.png", "normal2.png"], 24)
+    thinking_frames = _expand_frames(_legacy_frames("thinking") or _legacy_frames("talk") or ["normal1.png", "normal2.png"], 24)
     walk_source = _legacy_frames("walking") or ["normal1.png", "normal2.png"]
     walk_loop = _expand_frames(walk_source, 24)
     stand_frame = (_legacy_frames("taskbar_sit") or base_idle[:1] or ["normal1.png"])[0]
     walk_start = _make_walk_start(stand_frame, walk_loop, 10)
     walk_stop = _make_walk_stop(stand_frame, walk_loop, 8)
-    drag_pickup = _expand_frames(_legacy_frames("drag_pickup") or _legacy_frames("drag") or ["normal2.png"], 10)
-    drag_hold = _expand_frames(_legacy_frames("drag_hold") or _legacy_frames("dragging") or _legacy_frames("drag") or ["normal2.png"], 8)
-    drag_drop = _expand_frames(_legacy_frames("drag_drop") or _legacy_frames("drag") or ["normal2.png"], 8)
-    idle_loop = _expand_frames(base_idle, 12)
-    sleep_loop = _expand_frames(_legacy_frames("sleep") or ["normal1.png"], 12)
-    clicked_react = _expand_frames(_legacy_frames("clicked") or ["normal2.png"], 8)
-    happy_loop = _expand_frames(_legacy_frames("happy") or ["normal2.png"], 12)
-    edge_left = _expand_frames(_legacy_frames("edge_peek_left") or base_idle[:1] or ["normal1.png"], 6)
-    edge_right = _expand_frames(_legacy_frames("edge_peek_right") or base_idle[:1] or ["normal1.png"], 6)
-    taskbar = _expand_frames(_legacy_frames("taskbar_sit") or base_idle[:1] or ["normal1.png"], 8)
+    drag_pickup = _expand_frames(_legacy_frames("drag_pickup") or _legacy_frames("drag") or ["normal2.png"], 24)
+    drag_hold = _expand_frames(_legacy_frames("drag_hold") or _legacy_frames("dragging") or _legacy_frames("drag") or ["normal2.png"], 24)
+    drag_drop = _expand_frames(_legacy_frames("drag_drop") or _legacy_frames("drag") or ["normal2.png"], 24)
+    idle_loop = _expand_frames(base_idle, 24)
+    sleep_loop = _expand_frames(_legacy_frames("sleep") or ["normal1.png"], 24)
+    clicked_react = _expand_frames(_legacy_frames("clicked") or ["normal2.png"], 24)
+    happy_loop = _expand_frames(_legacy_frames("happy") or ["normal2.png"], 24)
+    remind_loop = _expand_frames(_legacy_frames("remind") or _legacy_frames("happy") or ["normal2.png"], 24)
+    edge_left = _expand_frames(_legacy_frames("edge_peek_left") or base_idle[:1] or ["normal1.png"], 24)
+    edge_right = _expand_frames(_legacy_frames("edge_peek_right") or base_idle[:1] or ["normal1.png"], 24)
+    taskbar = _expand_frames(_legacy_frames("taskbar_sit") or base_idle[:1] or ["normal1.png"], 24)
 
     clips = {
-        "idle_breath_loop": _clip("idle_breath_loop", idle_loop, 120, True),
-        "talk_loop": _clip("talk_loop", talk_frames, 90, True),
-        "thinking_loop": _clip("thinking_loop", thinking_frames, 110, True),
-        "clicked_react": _clip("clicked_react", clicked_react, 80, False),
-        "happy_loop": _clip("happy_loop", happy_loop, 95, False),
-        "sleep_loop": _clip("sleep_loop", sleep_loop, 160, True),
-        "walk_start": _clip("walk_start", walk_start, 70, False),
-        "walk_loop": _clip("walk_loop", walk_loop, 60, True, locomotion=LocomotionProfile()),
-        "walk_stop": _clip("walk_stop", walk_stop, 70, False),
-        "drag_pickup": _clip("drag_pickup", drag_pickup, 65, False, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
-        "drag_hold_loop": _clip("drag_hold_loop", drag_hold, 85, True, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
-        "drag_drop": _clip("drag_drop", drag_drop, 65, False, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
-        "edge_peek_left": _clip("edge_peek_left", edge_left, 120, True),
-        "edge_peek_right": _clip("edge_peek_right", edge_right, 120, True),
-        "taskbar_sit_loop": _clip("taskbar_sit_loop", taskbar, 120, True),
+        "idle_breath_loop": _clip("idle_breath_loop", idle_loop, 42, True),
+        "talk_loop": _clip("talk_loop", talk_frames, 42, True),
+        "thinking_loop": _clip("thinking_loop", thinking_frames, 42, True),
+        "clicked_react": _clip("clicked_react", clicked_react, 42, False),
+        "happy_loop": _clip("happy_loop", happy_loop, 42, False),
+        "remind_loop": _clip("remind_loop", remind_loop, 42, False),
+        "sleep_loop": _clip("sleep_loop", sleep_loop, 42, True),
+        "walk_start": _clip("walk_start", walk_start, 42, False),
+        "walk_loop": _clip("walk_loop", walk_loop, 42, True, locomotion=LocomotionProfile()),
+        "walk_stop": _clip("walk_stop", walk_stop, 42, False),
+        "drag_pickup": _clip("drag_pickup", drag_pickup, 42, False, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
+        "drag_hold_loop": _clip("drag_hold_loop", drag_hold, 42, True, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
+        "drag_drop": _clip("drag_drop", drag_drop, 42, False, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
+        "edge_peek_left": _clip("edge_peek_left", edge_left, 42, True),
+        "edge_peek_right": _clip("edge_peek_right", edge_right, 42, True),
+        "taskbar_sit_loop": _clip("taskbar_sit_loop", taskbar, 42, True),
     }
 
     states: dict[str, MotionStateSpec] = {}

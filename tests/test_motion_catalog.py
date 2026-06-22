@@ -24,7 +24,7 @@ def test_build_motion_catalog_from_legacy_animations_expands_walk_cycle(tmp_path
 
     drag_clip = catalog.clip_for_state("drag_pickup")
     assert drag_clip is not None
-    assert len(drag_clip.frames) == 10
+    assert len(drag_clip.frames) == 24
 
 
 def test_build_motion_catalog_from_legacy_animations_prefers_thinking_frames(tmp_path: Path) -> None:
@@ -40,8 +40,28 @@ def test_build_motion_catalog_from_legacy_animations_prefers_thinking_frames(tmp
     thinking_clip = catalog.clip_for_state("thinking")
     assert thinking_clip is not None
     assert thinking_clip.clip_id == "thinking_loop"
-    assert len(thinking_clip.frames) == 12
+    assert len(thinking_clip.frames) == 24
     assert set(thinking_clip.frames) == {"think_01.png", "think_02.png", "think_03.png"}
+
+
+def test_build_motion_catalog_from_legacy_animations_uses_dedicated_remind_clip(tmp_path: Path) -> None:
+    payload = {
+        "animations": {
+            "happy": ["happy_01.png", "happy_02.png"],
+            "remind": ["remind_01.png", "remind_02.png"],
+        }
+    }
+
+    catalog = build_motion_catalog(tmp_path, payload)
+
+    remind_state = catalog.state_spec("remind")
+    remind_clip = catalog.clip_for_state("remind")
+    assert remind_state is not None
+    assert remind_state.clip == "remind_loop"
+    assert remind_clip is not None
+    assert remind_clip.clip_id == "remind_loop"
+    assert len(remind_clip.frames) == 24
+    assert set(remind_clip.frames) == {"remind_01.png", "remind_02.png"}
 
 
 def test_build_motion_catalog_from_explicit_motion_data_preserves_renderer_binding(tmp_path: Path) -> None:

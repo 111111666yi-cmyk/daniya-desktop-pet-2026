@@ -82,7 +82,19 @@
       "v1_actual_runtime/B_idle_breath_generated_v4/idle_09.png",
       "v1_actual_runtime/B_idle_breath_generated_v4/idle_10.png",
       "v1_actual_runtime/B_idle_breath_generated_v4/idle_11.png",
-      "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png"
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_13.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_14.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_15.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_16.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_17.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_18.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_19.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_20.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_21.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_22.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_23.png",
+      "v1_actual_runtime/B_idle_breath_generated_v4/idle_24.png"
     ],
     "talk": [
       "v1_actual_runtime/B_talk_generated_v2/talk_01.png",
@@ -93,7 +105,22 @@
       "v1_actual_runtime/B_talk_generated_v2/talk_06.png",
       "v1_actual_runtime/B_talk_generated_v2/talk_07.png",
       "v1_actual_runtime/B_talk_generated_v2/talk_08.png",
-      "v1_actual_runtime/B_talk_generated_v2/talk_09.png"
+      "v1_actual_runtime/B_talk_generated_v2/talk_09.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_10.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_11.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_12.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_13.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_14.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_15.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_16.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_17.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_18.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_19.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_20.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_21.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_22.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_23.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_24.png"
     ],
     "talking": [
       "v1_actual_runtime/B_talk_generated_v2/talk_01.png",
@@ -104,7 +131,22 @@
       "v1_actual_runtime/B_talk_generated_v2/talk_06.png",
       "v1_actual_runtime/B_talk_generated_v2/talk_07.png",
       "v1_actual_runtime/B_talk_generated_v2/talk_08.png",
-      "v1_actual_runtime/B_talk_generated_v2/talk_09.png"
+      "v1_actual_runtime/B_talk_generated_v2/talk_09.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_10.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_11.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_12.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_13.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_14.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_15.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_16.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_17.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_18.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_19.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_20.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_21.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_22.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_23.png",
+      "v1_actual_runtime/B_talk_generated_v2/talk_24.png"
     ],
     "thinking": [
       "v1_actual_runtime/A_thinking_generated_v1/thinking_01.png",
@@ -118,57 +160,282 @@
       "v1_actual_runtime/A_thinking_generated_v1/thinking_09.png",
       "v1_actual_runtime/A_thinking_generated_v1/thinking_10.png",
       "v1_actual_runtime/A_thinking_generated_v1/thinking_11.png",
-      "v1_actual_runtime/A_thinking_generated_v1/thinking_12.png"
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_12.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_13.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_14.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_15.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_16.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_17.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_18.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_19.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_20.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_21.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_22.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_23.png",
+      "v1_actual_runtime/A_thinking_generated_v1/thinking_24.png"
     ],
     "hover": [
       "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png"
     ],
     "clicked": [
-      "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
-      "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_01.png"
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_01.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_02.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_03.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_04.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_05.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_06.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_07.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_08.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_09.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_10.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_11.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_12.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_13.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_14.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_15.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_16.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_17.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_18.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_19.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_20.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_21.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_22.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_23.png",
+      "v1_actual_runtime/A_clicked_generated_v1/clicked_24.png"
     ],
     "drag": [
-      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
-      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_01.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_02.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_03.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_04.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_05.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_06.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_07.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_08.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_09.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_10.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_11.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_12.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_13.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_14.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_15.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_16.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_17.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_18.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_19.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_20.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_21.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_22.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_23.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_24.png"
     ],
     "dragging": [
-      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
-      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_01.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_02.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_03.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_04.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_05.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_06.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_07.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_08.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_09.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_10.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_11.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_12.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_13.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_14.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_15.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_16.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_17.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_18.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_19.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_20.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_21.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_22.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_23.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_24.png"
     ],
     "drag_pickup": [
-      "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
-      "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png"
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_01.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_02.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_03.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_04.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_05.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_06.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_07.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_08.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_09.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_10.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_11.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_12.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_13.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_14.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_15.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_16.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_17.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_18.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_19.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_20.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_21.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_22.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_23.png",
+      "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_24.png"
     ],
     "drag_hold": [
-      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
-      "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_01.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_02.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_03.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_04.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_05.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_06.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_07.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_08.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_09.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_10.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_11.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_12.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_13.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_14.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_15.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_16.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_17.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_18.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_19.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_20.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_21.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_22.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_23.png",
+      "v1_actual_runtime/E_drag_hold_generated_v1/hold_24.png"
     ],
     "drag_drop": [
-      "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
-      "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png"
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_01.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_02.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_03.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_04.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_05.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_06.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_07.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_08.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_09.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_10.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_11.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_12.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_13.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_14.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_15.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_16.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_17.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_18.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_19.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_20.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_21.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_22.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_23.png",
+      "v1_actual_runtime/E_drag_drop_generated_v1/drop_24.png"
     ],
     "sleep": [
-      "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
-      "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
-      "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
-      "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
-      "v1_actual_runtime/C_sleep_base_pack/wake_up_01.png"
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_01.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_02.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_03.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_04.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_05.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_06.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_07.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_08.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_09.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_10.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_11.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_12.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_13.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_14.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_15.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_16.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_17.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_18.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_19.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_20.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_21.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_22.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_23.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_24.png"
     ],
     "sleeping": [
-      "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
-      "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
-      "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
-      "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
-      "v1_actual_runtime/C_sleep_base_pack/wake_up_01.png"
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_01.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_02.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_03.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_04.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_05.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_06.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_07.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_08.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_09.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_10.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_11.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_12.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_13.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_14.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_15.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_16.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_17.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_18.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_19.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_20.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_21.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_22.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_23.png",
+      "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_24.png"
     ],
     "happy": [
-      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-      "v1_actual_runtime/B_stand_base_pack/wave_01.png",
-      "v1_actual_runtime/B_stand_base_pack/wave_02.png"
+      "v1_actual_runtime/B_happy_generated_v1/happy_01.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_02.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_03.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_04.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_05.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_06.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_07.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_08.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_09.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_10.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_11.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_12.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_13.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_14.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_15.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_16.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_17.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_18.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_19.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_20.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_21.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_22.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_23.png",
+      "v1_actual_runtime/B_happy_generated_v1/happy_24.png"
     ],
     "remind": [
-      "v1_actual_runtime/B_stand_base_pack/remind_stand_01.png",
-      "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png"
+      "v1_actual_runtime/B_remind_generated_v1/remind_01.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_02.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_03.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_04.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_05.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_06.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_07.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_08.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_09.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_10.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_11.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_12.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_13.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_14.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_15.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_16.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_17.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_18.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_19.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_20.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_21.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_22.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_23.png",
+      "v1_actual_runtime/B_remind_generated_v1/remind_24.png"
     ],
     "walking": [
       "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_01.png",
@@ -197,13 +464,82 @@
       "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_24.png"
     ],
     "taskbar_sit": [
-      "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png"
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_01.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_02.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_03.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_04.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_05.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_06.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_07.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_08.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_09.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_10.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_11.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_12.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_13.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_14.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_15.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_16.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_17.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_18.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_19.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_20.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_21.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_22.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_23.png",
+      "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_24.png"
     ],
     "edge_peek_left": [
-      "v1_actual_runtime/D_special_motion_pack/peek_left_01.png"
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_01.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_02.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_03.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_04.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_05.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_06.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_07.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_08.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_09.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_10.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_11.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_12.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_13.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_14.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_15.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_16.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_17.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_18.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_19.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_20.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_21.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_22.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_23.png",
+      "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_24.png"
     ],
     "edge_peek_right": [
-      "v1_actual_runtime/D_special_motion_pack/peek_right_01.png"
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_01.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_02.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_03.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_04.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_05.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_06.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_07.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_08.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_09.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_10.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_11.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_12.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_13.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_14.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_15.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_16.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_17.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_18.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_19.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_20.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_21.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_22.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_23.png",
+      "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_24.png"
     ]
   },
   "animation_groups": {
@@ -244,7 +580,19 @@
           "v1_actual_runtime/B_idle_breath_generated_v4/idle_09.png",
           "v1_actual_runtime/B_idle_breath_generated_v4/idle_10.png",
           "v1_actual_runtime/B_idle_breath_generated_v4/idle_11.png",
-          "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png"
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_13.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_14.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_15.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_16.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_17.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_18.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_19.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_20.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_21.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_22.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_23.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_24.png"
         ]
       },
       {
@@ -285,7 +633,22 @@
           "v1_actual_runtime/B_talk_generated_v2/talk_06.png",
           "v1_actual_runtime/B_talk_generated_v2/talk_07.png",
           "v1_actual_runtime/B_talk_generated_v2/talk_08.png",
-          "v1_actual_runtime/B_talk_generated_v2/talk_09.png"
+          "v1_actual_runtime/B_talk_generated_v2/talk_09.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_10.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_11.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_12.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_13.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_14.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_15.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_16.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_17.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_18.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_19.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_20.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_21.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_22.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_23.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_24.png"
         ]
       }
     ],
@@ -306,7 +669,19 @@
           "v1_actual_runtime/A_thinking_generated_v1/thinking_09.png",
           "v1_actual_runtime/A_thinking_generated_v1/thinking_10.png",
           "v1_actual_runtime/A_thinking_generated_v1/thinking_11.png",
-          "v1_actual_runtime/A_thinking_generated_v1/thinking_12.png"
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_12.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_13.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_14.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_15.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_16.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_17.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_18.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_19.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_20.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_21.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_22.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_23.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_24.png"
         ]
       }
     ],
@@ -331,99 +706,232 @@
     ],
     "clicked": [
       {
-        "name": "A_clicked",
+        "name": "A_clicked_generated_v1",
         "anchor": "sit_base",
         "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_02.png"
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_01.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_02.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_03.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_04.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_05.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_06.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_07.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_08.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_09.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_10.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_11.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_12.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_13.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_14.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_15.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_16.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_17.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_18.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_19.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_20.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_21.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_22.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_23.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_24.png"
         ]
       }
     ],
     "happy": [
       {
-        "name": "A_happy",
-        "anchor": "sit_base",
-        "weight": 0.7,
-        "frames": [
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png"
-        ]
-      },
-      {
-        "name": "B_wave",
+        "name": "B_happy_generated_v1",
         "anchor": "stand_base",
-        "weight": 0.3,
+        "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
-          "v1_actual_runtime/B_stand_base_pack/wave_02.png"
+          "v1_actual_runtime/B_happy_generated_v1/happy_01.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_02.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_03.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_04.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_05.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_06.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_07.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_08.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_09.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_10.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_11.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_12.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_13.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_14.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_15.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_16.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_17.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_18.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_19.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_20.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_21.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_22.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_23.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_24.png"
         ]
       }
     ],
     "remind": [
       {
-        "name": "B_remind",
+        "name": "B_remind_generated_v1",
         "anchor": "stand_base",
-        "weight": 0.8,
+        "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/B_stand_base_pack/remind_stand_01.png"
-        ]
-      },
-      {
-        "name": "A_thinking",
-        "anchor": "sit_base",
-        "weight": 0.2,
-        "frames": [
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png"
+          "v1_actual_runtime/B_remind_generated_v1/remind_01.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_02.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_03.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_04.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_05.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_06.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_07.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_08.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_09.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_10.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_11.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_12.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_13.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_14.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_15.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_16.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_17.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_18.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_19.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_20.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_21.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_22.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_23.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_24.png"
         ]
       }
     ],
     "sleeping": [
       {
-        "name": "C_sleep_cycle",
+        "name": "C_sleep_breath_generated_v1",
         "anchor": "sleep_base",
         "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
-          "v1_actual_runtime/C_sleep_base_pack/wake_up_01.png"
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_01.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_02.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_03.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_04.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_05.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_06.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_07.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_08.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_09.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_10.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_11.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_12.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_13.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_14.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_15.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_16.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_17.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_18.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_19.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_20.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_21.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_22.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_23.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_24.png"
         ]
       }
     ],
     "drag_pickup": [
       {
-        "name": "E_pickup",
+        "name": "E_drag_pickup_generated_v1",
         "anchor": "drag_pet_base",
         "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png"
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_01.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_02.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_03.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_04.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_05.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_06.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_07.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_08.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_09.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_10.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_11.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_12.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_13.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_14.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_15.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_16.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_17.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_18.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_19.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_20.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_21.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_22.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_23.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_24.png"
         ]
       }
     ],
     "drag_hold": [
       {
-        "name": "E_hold",
+        "name": "E_drag_hold_generated_v1",
         "anchor": "drag_pet_base",
         "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_01.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_02.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_03.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_04.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_05.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_06.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_07.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_08.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_09.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_10.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_11.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_12.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_13.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_14.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_15.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_16.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_17.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_18.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_19.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_20.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_21.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_22.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_23.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_24.png"
         ]
       }
     ],
     "drag_drop": [
       {
-        "name": "E_drop",
+        "name": "E_drag_drop_generated_v1",
         "anchor": "drag_pet_base",
         "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png"
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_01.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_02.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_03.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_04.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_05.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_06.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_07.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_08.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_09.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_10.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_11.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_12.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_13.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_14.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_15.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_16.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_17.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_18.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_19.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_20.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_21.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_22.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_23.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_24.png"
         ]
       }
     ],
@@ -462,34 +970,100 @@
     ],
     "taskbar_sit": [
       {
-        "name": "A_taskbar_sit",
+        "name": "A_taskbar_sit_generated_v1",
         "anchor": "sit_base",
         "weight": 1.0,
-        "pick": "one",
         "frames": [
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png"
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_01.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_02.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_03.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_04.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_05.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_06.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_07.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_08.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_09.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_10.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_11.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_12.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_13.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_14.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_15.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_16.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_17.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_18.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_19.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_20.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_21.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_22.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_23.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_24.png"
         ]
       }
     ],
     "edge_peek_left": [
       {
-        "name": "D_peek_left",
+        "name": "D_edge_peek_left_generated_v1",
         "anchor": "special_base",
         "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png"
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_01.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_02.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_03.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_04.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_05.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_06.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_07.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_08.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_09.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_10.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_11.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_12.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_13.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_14.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_15.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_16.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_17.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_18.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_19.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_20.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_21.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_22.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_23.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_24.png"
         ]
       }
     ],
     "edge_peek_right": [
       {
-        "name": "D_peek_right",
+        "name": "D_edge_peek_right_generated_v1",
         "anchor": "special_base",
         "weight": 1.0,
         "frames": [
-          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png"
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_01.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_02.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_03.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_04.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_05.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_06.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_07.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_08.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_09.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_10.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_11.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_12.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_13.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_14.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_15.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_16.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_17.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_18.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_19.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_20.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_21.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_22.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_23.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_24.png"
         ]
       }
     ]
@@ -498,14 +1072,29 @@
     "clips": {
       "idle_breath_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 120,
+        "frame_duration_ms": 42,
         "loop": true,
         "anchor_track": {
-          "root": [0.5, 0.84],
-          "foot_left": [0.42, 0.98],
-          "foot_right": [0.58, 0.98],
-          "hips": [0.5, 0.66],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.84
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.66
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
           "v1_actual_runtime/B_idle_breath_generated_v4/idle_01.png",
@@ -519,19 +1108,46 @@
           "v1_actual_runtime/B_idle_breath_generated_v4/idle_09.png",
           "v1_actual_runtime/B_idle_breath_generated_v4/idle_10.png",
           "v1_actual_runtime/B_idle_breath_generated_v4/idle_11.png",
-          "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png"
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_12.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_13.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_14.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_15.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_16.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_17.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_18.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_19.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_20.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_21.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_22.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_23.png",
+          "v1_actual_runtime/B_idle_breath_generated_v4/idle_24.png"
         ]
       },
       "talk_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 90,
+        "frame_duration_ms": 42,
         "loop": true,
         "anchor_track": {
-          "root": [0.5, 0.84],
-          "foot_left": [0.42, 0.98],
-          "foot_right": [0.58, 0.98],
-          "hips": [0.5, 0.66],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.84
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.66
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
           "v1_actual_runtime/B_talk_generated_v2/talk_01.png",
@@ -542,19 +1158,49 @@
           "v1_actual_runtime/B_talk_generated_v2/talk_06.png",
           "v1_actual_runtime/B_talk_generated_v2/talk_07.png",
           "v1_actual_runtime/B_talk_generated_v2/talk_08.png",
-          "v1_actual_runtime/B_talk_generated_v2/talk_09.png"
+          "v1_actual_runtime/B_talk_generated_v2/talk_09.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_10.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_11.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_12.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_13.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_14.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_15.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_16.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_17.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_18.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_19.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_20.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_21.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_22.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_23.png",
+          "v1_actual_runtime/B_talk_generated_v2/talk_24.png"
         ]
       },
       "thinking_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 110,
+        "frame_duration_ms": 42,
         "loop": true,
         "anchor_track": {
-          "root": [0.5, 0.84],
-          "foot_left": [0.42, 0.98],
-          "foot_right": [0.58, 0.98],
-          "hips": [0.5, 0.62],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.84
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.62
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
           "v1_actual_runtime/A_thinking_generated_v1/thinking_01.png",
@@ -568,93 +1214,205 @@
           "v1_actual_runtime/A_thinking_generated_v1/thinking_09.png",
           "v1_actual_runtime/A_thinking_generated_v1/thinking_10.png",
           "v1_actual_runtime/A_thinking_generated_v1/thinking_11.png",
-          "v1_actual_runtime/A_thinking_generated_v1/thinking_12.png"
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_12.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_13.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_14.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_15.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_16.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_17.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_18.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_19.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_20.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_21.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_22.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_23.png",
+          "v1_actual_runtime/A_thinking_generated_v1/thinking_24.png"
         ]
       },
       "clicked_react": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 80,
+        "frame_duration_ms": 42,
         "loop": false,
         "anchor_track": {
-          "root": [0.5, 0.84],
-          "foot_left": [0.42, 0.98],
-          "foot_right": [0.58, 0.98],
-          "hips": [0.5, 0.66],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.84
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.66
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_02.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/surprise_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/confused_02.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png"
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_01.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_02.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_03.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_04.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_05.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_06.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_07.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_08.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_09.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_10.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_11.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_12.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_13.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_14.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_15.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_16.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_17.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_18.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_19.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_20.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_21.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_22.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_23.png",
+          "v1_actual_runtime/A_clicked_generated_v1/clicked_24.png"
         ]
       },
       "happy_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 95,
+        "frame_duration_ms": 42,
         "loop": false,
         "anchor_track": {
-          "root": [0.5, 0.84],
-          "foot_left": [0.42, 0.98],
-          "foot_right": [0.58, 0.98],
-          "hips": [0.5, 0.66],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.84
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.66
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png",
-          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
-          "v1_actual_runtime/B_stand_base_pack/wave_02.png",
-          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
-          "v1_actual_runtime/B_stand_base_pack/wave_02.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/special_01.png",
-          "v1_actual_runtime/B_stand_base_pack/wave_01.png",
-          "v1_actual_runtime/B_stand_base_pack/wave_02.png"
+          "v1_actual_runtime/B_happy_generated_v1/happy_01.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_02.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_03.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_04.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_05.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_06.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_07.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_08.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_09.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_10.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_11.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_12.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_13.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_14.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_15.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_16.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_17.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_18.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_19.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_20.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_21.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_22.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_23.png",
+          "v1_actual_runtime/B_happy_generated_v1/happy_24.png"
         ]
       },
       "sleep_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 160,
+        "frame_duration_ms": 42,
         "loop": true,
         "anchor_track": {
-          "root": [0.5, 0.72],
-          "foot_left": [0.42, 0.9],
-          "foot_right": [0.58, 0.9],
-          "hips": [0.5, 0.6],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.72
+          ],
+          "foot_left": [
+            0.42,
+            0.9
+          ],
+          "foot_right": [
+            0.58,
+            0.9
+          ],
+          "hips": [
+            0.5,
+            0.6
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
-          "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
-          "v1_actual_runtime/C_sleep_base_pack/sleep_pillow_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/doze_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/yawn_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/sleep_curl_02.png",
-          "v1_actual_runtime/C_sleep_base_pack/sleep_pillow_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/wake_up_01.png",
-          "v1_actual_runtime/C_sleep_base_pack/doze_01.png"
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_01.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_02.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_03.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_04.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_05.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_06.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_07.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_08.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_09.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_10.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_11.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_12.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_13.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_14.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_15.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_16.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_17.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_18.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_19.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_20.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_21.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_22.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_23.png",
+          "v1_actual_runtime/C_sleep_breath_generated_v1/sleep_24.png"
         ]
       },
       "walk_start": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 70,
+        "frame_duration_ms": 42,
         "loop": false,
         "anchor_track": {
-          "root": [0.5, 0.88],
-          "foot_left": [0.42, 0.98],
-          "foot_right": [0.58, 0.98],
-          "hips": [0.5, 0.7],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.88
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.7
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
           "v1_actual_runtime/B_stand_base_pack/stand_normal_01.png",
@@ -671,14 +1429,29 @@
       },
       "walk_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 45,
+        "frame_duration_ms": 42,
         "loop": true,
         "anchor_track": {
-          "root": [0.5, 0.88],
-          "foot_left": [0.42, 0.98],
-          "foot_right": [0.58, 0.98],
-          "hips": [0.5, 0.7],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.88
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.7
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "locomotion_profile": {
           "cycle_distance_px": 64,
@@ -717,14 +1490,29 @@
       },
       "walk_stop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 70,
+        "frame_duration_ms": 42,
         "loop": false,
         "anchor_track": {
-          "root": [0.5, 0.88],
-          "foot_left": [0.42, 0.98],
-          "foot_right": [0.58, 0.98],
-          "hips": [0.5, 0.7],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.88
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.7
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
           "v1_actual_runtime/B_walk_generated_v3_edgeclean24/walk_24.png",
@@ -739,111 +1527,329 @@
       },
       "drag_pickup": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 65,
+        "frame_duration_ms": 42,
         "loop": false,
         "anchor_track": {
-          "root": [0.5, 0.18],
-          "foot_left": [0.42, 0.3],
-          "foot_right": [0.58, 0.3],
-          "hips": [0.5, 0.3],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.18
+          ],
+          "foot_left": [
+            0.42,
+            0.3
+          ],
+          "foot_right": [
+            0.58,
+            0.3
+          ],
+          "hips": [
+            0.5,
+            0.3
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/pickup_02.png"
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_01.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_02.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_03.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_04.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_05.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_06.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_07.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_08.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_09.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_10.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_11.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_12.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_13.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_14.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_15.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_16.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_17.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_18.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_19.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_20.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_21.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_22.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_23.png",
+          "v1_actual_runtime/E_drag_pickup_generated_v1/pickup_24.png"
         ]
       },
       "drag_hold_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 85,
+        "frame_duration_ms": 42,
         "loop": true,
         "anchor_track": {
-          "root": [0.5, 0.18],
-          "foot_left": [0.42, 0.3],
-          "foot_right": [0.58, 0.3],
-          "hips": [0.5, 0.3],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.18
+          ],
+          "foot_left": [
+            0.42,
+            0.3
+          ],
+          "foot_right": [
+            0.58,
+            0.3
+          ],
+          "hips": [
+            0.5,
+            0.3
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drag_hold_02.png"
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_01.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_02.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_03.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_04.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_05.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_06.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_07.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_08.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_09.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_10.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_11.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_12.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_13.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_14.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_15.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_16.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_17.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_18.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_19.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_20.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_21.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_22.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_23.png",
+          "v1_actual_runtime/E_drag_hold_generated_v1/hold_24.png"
         ]
       },
       "drag_drop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 65,
+        "frame_duration_ms": 42,
         "loop": false,
         "anchor_track": {
-          "root": [0.5, 0.18],
-          "foot_left": [0.42, 0.3],
-          "foot_right": [0.58, 0.3],
-          "hips": [0.5, 0.3],
-          "drag_handle": [0.5, 0.18]
+          "root": [
+            0.5,
+            0.18
+          ],
+          "foot_left": [
+            0.42,
+            0.3
+          ],
+          "foot_right": [
+            0.58,
+            0.3
+          ],
+          "hips": [
+            0.5,
+            0.3
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
         },
         "frames": [
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_02.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png",
-          "v1_actual_runtime/E_QQ_pet_drag_system/drop_01.png"
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_01.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_02.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_03.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_04.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_05.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_06.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_07.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_08.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_09.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_10.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_11.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_12.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_13.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_14.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_15.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_16.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_17.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_18.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_19.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_20.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_21.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_22.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_23.png",
+          "v1_actual_runtime/E_drag_drop_generated_v1/drop_24.png"
         ]
       },
       "edge_peek_left": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 120,
+        "frame_duration_ms": 42,
         "loop": true,
         "frames": [
-          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_left_01.png"
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_01.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_02.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_03.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_04.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_05.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_06.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_07.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_08.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_09.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_10.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_11.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_12.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_13.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_14.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_15.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_16.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_17.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_18.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_19.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_20.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_21.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_22.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_23.png",
+          "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_24.png"
         ]
       },
       "edge_peek_right": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 120,
+        "frame_duration_ms": 42,
         "loop": true,
         "frames": [
-          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png",
-          "v1_actual_runtime/D_special_motion_pack/peek_right_01.png"
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_01.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_02.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_03.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_04.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_05.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_06.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_07.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_08.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_09.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_10.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_11.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_12.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_13.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_14.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_15.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_16.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_17.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_18.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_19.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_20.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_21.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_22.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_23.png",
+          "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_24.png"
         ]
       },
       "taskbar_sit_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 120,
+        "frame_duration_ms": 42,
         "loop": true,
         "frames": [
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/shy_01.png",
-          "v1_actual_runtime/A_sit_base/batch_04_emotion/greet_01.png",
-          "v1_actual_runtime/A_sit_base/batch_05_emotion_interaction/thinking_01.png"
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_01.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_02.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_03.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_04.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_05.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_06.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_07.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_08.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_09.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_10.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_11.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_12.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_13.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_14.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_15.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_16.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_17.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_18.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_19.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_20.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_21.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_22.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_23.png",
+          "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_24.png"
+        ],
+        "anchor_track": {
+          "root": [
+            0.5,
+            0.84
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.66
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
+        }
+      },
+      "remind_loop": {
+        "kind": "sprite_sequence",
+        "frame_duration_ms": 42,
+        "loop": false,
+        "anchor_track": {
+          "root": [
+            0.5,
+            0.84
+          ],
+          "foot_left": [
+            0.42,
+            0.98
+          ],
+          "foot_right": [
+            0.58,
+            0.98
+          ],
+          "hips": [
+            0.5,
+            0.66
+          ],
+          "drag_handle": [
+            0.5,
+            0.18
+          ]
+        },
+        "frames": [
+          "v1_actual_runtime/B_remind_generated_v1/remind_01.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_02.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_03.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_04.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_05.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_06.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_07.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_08.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_09.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_10.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_11.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_12.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_13.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_14.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_15.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_16.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_17.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_18.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_19.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_20.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_21.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_22.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_23.png",
+          "v1_actual_runtime/B_remind_generated_v1/remind_24.png"
         ]
       }
     },
@@ -927,7 +1933,7 @@
         }
       },
       "remind": {
-        "clip": "happy_loop",
+        "clip": "remind_loop",
         "loop": false,
         "min_hold_ms": 180,
         "priority": 32
