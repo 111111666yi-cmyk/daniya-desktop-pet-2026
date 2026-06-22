@@ -537,6 +537,9 @@ class PetWindow(QWidget):
         if not bool(pet_config.get("edge_peek_enabled", False)):
             self.release_edge_dock()
             return
+        if self.is_input_active():
+            self.release_edge_dock()
+            return
 
         # Prevent snapping if dragging, mouse is pressed down on pet, context menu is open, or a snapping animation is running
         is_user_interacting = (
@@ -679,6 +682,9 @@ class PetWindow(QWidget):
             self.dock_side = None
             return
         if not bool(pet_config.get("edge_peek_enabled", False)):
+            self.dock_side = None
+            return
+        if self.is_input_active():
             self.dock_side = None
             return
         self.dock_side = self._nearest_edge_side(56)
