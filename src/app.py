@@ -1156,6 +1156,7 @@ def run(process_started_at: float | None = None) -> None:
     # [FIX-S3] 单实例锁：防止双开导致配置互覆盖 / 双桌宠重叠
     if not _acquire_single_instance_lock():
         logger.info("single_instance: another instance already running, exiting")
+        app = QApplication.instance() or QApplication(sys.argv)
         QMessageBox.information(
             None,
             "达妮娅已经在运行",

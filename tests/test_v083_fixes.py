@@ -169,6 +169,11 @@ def test_s3_single_instance_lock_second_acquire_fails(monkeypatch: pytest.Monkey
 
     # 重置模块级锁状态，确保干净的起点
     monkeypatch.setattr(app_module, "_SINGLE_INSTANCE_LOCK", None)
+    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    probe.bind(("127.0.0.1", 0))
+    free_port = probe.getsockname()[1]
+    probe.close()
+    monkeypatch.setattr(app_module, "_SINGLE_INSTANCE_PORT", free_port)
 
     # 先用独立 socket 占住目标端口，模拟"已有实例在跑"
     holder = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -193,6 +198,42 @@ def test_s3_single_instance_lock_idempotent(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setattr(app_module, "_SINGLE_INSTANCE_LOCK", fake_lock)
 
     assert _acquire_single_instance_lock() is True
+
+
+def test_s3_run_existing_instance_creates_app_before_message(monkeypatch: pytest.MonkeyPatch) -> None:
+    """S3: 已有实例时，run() 应先构造 QApplication 再弹提示框。"""
+    import src.app as app_module
+
+    monkeypatch.setattr(app_module, "_acquire_single_instance_lock", lambda: False)
+
+    class FakeQApplication:
+        created = False
+
+        @staticmethod
+        def instance() -> None:
+            return None
+
+        def __init__(self, argv: list[str]) -> None:
+            FakeQApplication.created = True
+
+    info_calls: list[tuple[bool, tuple]] = []
+
+    def fake_information(*args) -> None:
+        info_calls.append((FakeQApplication.created, args))
+
+    monkeypatch.setattr(app_module, "QApplication", FakeQApplication)
+    monkeypatch.setattr(app_module.QMessageBox, "information", fake_information)
+
+    def fake_exit(code: int) -> None:
+        raise SystemExit(code)
+
+    monkeypatch.setattr(app_module.sys, "exit", fake_exit)
+
+    with pytest.raises(SystemExit) as exc:
+        app_module.run()
+
+    assert exc.value.code == 0
+    assert info_calls == [(True, (None, "达妮娅已经在运行", "桌宠已经开着一个啦，去屏幕上找找她吧。"))]
 
 
 # ---------------------------------------------------------------------------
