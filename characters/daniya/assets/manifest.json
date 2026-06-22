@@ -1072,7 +1072,7 @@
     "clips": {
       "idle_breath_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": true,
         "anchor_track": {
           "root": [
@@ -1125,7 +1125,7 @@
       },
       "talk_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": true,
         "anchor_track": {
           "root": [
@@ -1178,7 +1178,7 @@
       },
       "thinking_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": true,
         "anchor_track": {
           "root": [
@@ -1231,7 +1231,7 @@
       },
       "clicked_react": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": false,
         "anchor_track": {
           "root": [
@@ -1284,7 +1284,7 @@
       },
       "happy_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": false,
         "anchor_track": {
           "root": [
@@ -1337,7 +1337,7 @@
       },
       "sleep_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": true,
         "anchor_track": {
           "root": [
@@ -1390,7 +1390,7 @@
       },
       "walk_start": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": false,
         "anchor_track": {
           "root": [
@@ -1429,7 +1429,7 @@
       },
       "walk_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": true,
         "anchor_track": {
           "root": [
@@ -1490,7 +1490,7 @@
       },
       "walk_stop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": false,
         "anchor_track": {
           "root": [
@@ -1527,7 +1527,7 @@
       },
       "drag_pickup": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": false,
         "anchor_track": {
           "root": [
@@ -1580,7 +1580,7 @@
       },
       "drag_hold_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": true,
         "anchor_track": {
           "root": [
@@ -1633,7 +1633,7 @@
       },
       "drag_drop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": false,
         "anchor_track": {
           "root": [
@@ -1686,7 +1686,7 @@
       },
       "edge_peek_left": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": true,
         "frames": [
           "v1_actual_runtime/D_edge_peek_left_generated_v1/peek_01.png",
@@ -1717,7 +1717,7 @@
       },
       "edge_peek_right": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": true,
         "frames": [
           "v1_actual_runtime/D_edge_peek_right_generated_v1/peek_01.png",
@@ -1748,7 +1748,7 @@
       },
       "taskbar_sit_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": true,
         "frames": [
           "v1_actual_runtime/A_taskbar_sit_generated_v1/taskbar_01.png",
@@ -1801,7 +1801,7 @@
       },
       "remind_loop": {
         "kind": "sprite_sequence",
-        "frame_duration_ms": 42,
+        "frame_duration_ms": 41,
         "loop": false,
         "anchor_track": {
           "root": [

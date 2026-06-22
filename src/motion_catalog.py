@@ -349,22 +349,22 @@ def _catalog_from_legacy_data(base_dir: Path, data: dict[str, Any], bindings: di
     taskbar = _expand_frames(_legacy_frames("taskbar_sit") or base_idle[:1] or ["normal1.png"], 24)
 
     clips = {
-        "idle_breath_loop": _clip("idle_breath_loop", idle_loop, 42, True),
-        "talk_loop": _clip("talk_loop", talk_frames, 42, True),
-        "thinking_loop": _clip("thinking_loop", thinking_frames, 42, True),
-        "clicked_react": _clip("clicked_react", clicked_react, 42, False),
-        "happy_loop": _clip("happy_loop", happy_loop, 42, False),
-        "remind_loop": _clip("remind_loop", remind_loop, 42, False),
-        "sleep_loop": _clip("sleep_loop", sleep_loop, 42, True),
-        "walk_start": _clip("walk_start", walk_start, 42, False),
-        "walk_loop": _clip("walk_loop", walk_loop, 42, True, locomotion=LocomotionProfile()),
-        "walk_stop": _clip("walk_stop", walk_stop, 42, False),
-        "drag_pickup": _clip("drag_pickup", drag_pickup, 42, False, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
-        "drag_hold_loop": _clip("drag_hold_loop", drag_hold, 42, True, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
-        "drag_drop": _clip("drag_drop", drag_drop, 42, False, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
-        "edge_peek_left": _clip("edge_peek_left", edge_left, 42, True),
-        "edge_peek_right": _clip("edge_peek_right", edge_right, 42, True),
-        "taskbar_sit_loop": _clip("taskbar_sit_loop", taskbar, 42, True),
+        "idle_breath_loop": _clip("idle_breath_loop", idle_loop, 41, True),
+        "talk_loop": _clip("talk_loop", talk_frames, 41, True),
+        "thinking_loop": _clip("thinking_loop", thinking_frames, 41, True),
+        "clicked_react": _clip("clicked_react", clicked_react, 41, False),
+        "happy_loop": _clip("happy_loop", happy_loop, 41, False),
+        "remind_loop": _clip("remind_loop", remind_loop, 41, False),
+        "sleep_loop": _clip("sleep_loop", sleep_loop, 41, True),
+        "walk_start": _clip("walk_start", walk_start, 41, False),
+        "walk_loop": _clip("walk_loop", walk_loop, 41, True, locomotion=LocomotionProfile()),
+        "walk_stop": _clip("walk_stop", walk_stop, 41, False),
+        "drag_pickup": _clip("drag_pickup", drag_pickup, 41, False, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
+        "drag_hold_loop": _clip("drag_hold_loop", drag_hold, 41, True, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
+        "drag_drop": _clip("drag_drop", drag_drop, 41, False, anchor=AnchorTrack.from_data({"drag_handle": [0.5, 0.18]})),
+        "edge_peek_left": _clip("edge_peek_left", edge_left, 41, True),
+        "edge_peek_right": _clip("edge_peek_right", edge_right, 41, True),
+        "taskbar_sit_loop": _clip("taskbar_sit_loop", taskbar, 41, True),
     }
 
     states: dict[str, MotionStateSpec] = {}
