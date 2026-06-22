@@ -96,6 +96,10 @@ drag_debug.log
 DaniyaSummerPet_v*.docx
 .repo_audit_tracked_files.txt
 *.pdf
+_analysis/
+_debug_tabs.py
+_test_launch.py
+交接2.md
 
 # Voice clip pack distribution candidates
 *_candidate.zip
