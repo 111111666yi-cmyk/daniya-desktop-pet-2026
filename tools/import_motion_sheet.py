@@ -36,6 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--frame-prefix", type=str, default=None, help="Output frame prefix; defaults to clip id")
     parser.add_argument("--start-index", type=int, default=1, help="Start index for sliced sheet frames")
     parser.add_argument("--cell-inset-percent", type=float, default=0.0, help="Optional safe-area inset ratio applied to every sliced sheet cell")
+    parser.add_argument("--matting-backend", type=str, default="chroma", choices=["none", "chroma", "rembg"], help="Foreground extraction backend. Use rembg when green spill or silhouette drift makes chroma keying unstable.")
     parser.add_argument("--chroma-key", type=str, default="#00ff00", help="Hex chroma key to remove; use empty string to disable")
     parser.add_argument("--transparent-threshold", type=int, default=16, help="Distance under this becomes fully transparent")
     parser.add_argument("--opaque-threshold", type=int, default=96, help="Distance above this remains fully opaque")
@@ -96,6 +97,7 @@ def main() -> int:
         frame_prefix=frame_prefix,
         start_index=args.start_index,
         cell_inset_percent=args.cell_inset_percent,
+        matting_backend=args.matting_backend,
         chroma_key=args.chroma_key or None,
         transparent_threshold=args.transparent_threshold,
         opaque_threshold=args.opaque_threshold,
@@ -162,6 +164,7 @@ def main() -> int:
         "source": str(args.source),
         "runtime_dir": str(runtime_dir),
         "report_dir": str(report_dir),
+        "matting_backend": args.matting_backend,
         "frame_count": len(frame_paths),
         "target_frame_count": args.target_frame_count,
         "frames": frame_refs,

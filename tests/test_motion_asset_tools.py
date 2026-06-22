@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 from PIL import Image, ImageDraw
+import pytest
 
 from src.motion_asset_tools import (
     FrameMetadata,
@@ -117,6 +119,42 @@ def test_prepare_source_frame_can_zero_low_alpha_haze() -> None:
 
     assert prepared.getpixel((0, 0))[3] == 0
     assert prepared.getpixel((1, 0))[3] == 0
+
+
+def test_prepare_source_frame_can_use_rembg_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    image = Image.new("RGBA", (2, 1), (12, 34, 56, 255))
+
+    def fake_remove(_image: Image.Image) -> Image.Image:
+        result = Image.new("RGBA", (2, 1), (255, 0, 0, 255))
+        result.putpixel((0, 0), (255, 0, 0, 12))
+        return result
+
+    monkeypatch.setattr(
+        "src.motion_asset_tools.importlib.import_module",
+        lambda name: SimpleNamespace(remove=fake_remove),
+    )
+
+    prepared = prepare_source_frame(
+        image,
+        matting_backend="rembg",
+        alpha_floor=24,
+    )
+
+    assert prepared.getpixel((0, 0))[3] == 0
+    assert prepared.getpixel((1, 0))[3] == 255
+
+
+def test_prepare_source_frame_rembg_backend_requires_package(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "src.motion_asset_tools.importlib.import_module",
+        lambda name: (_ for _ in ()).throw(ImportError("missing rembg")),
+    )
+
+    with pytest.raises(RuntimeError, match="rembg backend requested"):
+        prepare_source_frame(
+            Image.new("RGBA", (1, 1), (0, 0, 0, 0)),
+            matting_backend="rembg",
+        )
 
 
 def test_anchor_stability_report_detects_baseline_shift(tmp_path: Path) -> None:

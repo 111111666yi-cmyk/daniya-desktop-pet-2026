@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from array import array
 from collections import deque
+import importlib
+import io
 import json
 import math
 from dataclasses import dataclass
@@ -156,22 +158,61 @@ def collect_source_frames(
 def prepare_source_frame(
     image: Image.Image,
     *,
+    matting_backend: str = "chroma",
     key_color: tuple[int, int, int] | None = None,
     transparent_threshold: int = 16,
     opaque_threshold: int = 96,
     despill: bool = True,
     alpha_floor: int = 0,
 ) -> Image.Image:
-    if key_color is None:
-        return image.convert("RGBA")
-    return remove_chroma_key(
-        image,
-        key_color=key_color,
-        transparent_threshold=transparent_threshold,
-        opaque_threshold=opaque_threshold,
-        despill=despill,
-        alpha_floor=alpha_floor,
-    )
+    if matting_backend == "none":
+        prepared = image.convert("RGBA")
+    elif matting_backend == "chroma":
+        if key_color is None:
+            prepared = image.convert("RGBA")
+        else:
+            prepared = remove_chroma_key(
+                image,
+                key_color=key_color,
+                transparent_threshold=transparent_threshold,
+                opaque_threshold=opaque_threshold,
+                despill=despill,
+                alpha_floor=0,
+            )
+    elif matting_backend == "rembg":
+        prepared = remove_background_with_rembg(image)
+    else:
+        raise ValueError(f"unsupported matting backend: {matting_backend}")
+    return apply_alpha_floor(prepared, alpha_floor=alpha_floor)
+
+
+def remove_background_with_rembg(image: Image.Image) -> Image.Image:
+    try:
+        rembg = importlib.import_module("rembg")
+    except ImportError as exc:
+        raise RuntimeError(
+            "rembg backend requested but the 'rembg' package is not installed in this environment"
+        ) from exc
+
+    result = rembg.remove(image.convert("RGBA"))
+    if isinstance(result, Image.Image):
+        return result.convert("RGBA")
+    if isinstance(result, (bytes, bytearray)):
+        return Image.open(io.BytesIO(result)).convert("RGBA")
+    raise TypeError(f"unsupported rembg result type: {type(result)!r}")
+
+
+def apply_alpha_floor(image: Image.Image, *, alpha_floor: int = 0) -> Image.Image:
+    rgba = image.convert("RGBA")
+    if alpha_floor <= 0:
+        return rgba
+    pixels = rgba.load()
+    for y in range(rgba.height):
+        for x in range(rgba.width):
+            red, green, blue, alpha = pixels[x, y]
+            if alpha < alpha_floor:
+                pixels[x, y] = (red, green, blue, 0)
+    return rgba
 
 
 def remove_chroma_key(
@@ -452,6 +493,7 @@ def build_motion_assets(
     frame_prefix: str = "frame",
     start_index: int = 1,
     cell_inset_percent: float = 0.0,
+    matting_backend: str = "chroma",
     chroma_key: str | None = None,
     transparent_threshold: int = 16,
     opaque_threshold: int = 96,
@@ -470,6 +512,7 @@ def build_motion_assets(
     def _prepare(image: Image.Image) -> Image.Image:
         return prepare_source_frame(
             image,
+            matting_backend=matting_backend,
             key_color=key_color,
             transparent_threshold=transparent_threshold,
             opaque_threshold=opaque_threshold,
